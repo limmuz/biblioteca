@@ -1,0 +1,239 @@
+.page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding-top: calc(var(--header-height) + var(--page-side-margin) + 32px);
+  padding-bottom: 60px;
+}
+
+.main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Hero section ─────────────────────────────────────────────── */
+.hero {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 50px;
+}
+
+.bookCover {
+  width: 200px;
+  min-width: 200px;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: -12px 12px 12px rgba(17, 26, 25, 0.16);
+  flex-shrink: 0;
+}
+
+.heroInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 40px;
+}
+
+.bookTitle {
+  font-family: var(--font-serif);
+  font-size: 36px;
+  font-weight: 400;
+  color: var(--color-ink);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.bookAuthor {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-sage);
+  margin: 0;
+}
+
+.heroButtons {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.btnLer {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-cream-text);
+  background-color: var(--color-forest);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 10px 28px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+  letter-spacing: 0.02em;
+}
+
+.btnLer:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.btnAdicionar {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-cream-text);
+  background-color: var(--color-amber);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+  letter-spacing: 0.02em;
+}
+
+.btnAdicionar:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+/* ── Details card ─────────────────────────────────────────────── */
+.detailsCard {
+  background-color: var(--color-warm-beige);
+  border-radius: 12px;
+  padding: 32px 40px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
+/* ── Synopsis column ──────────────────────────────────────────── */
+.sinopseCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.sinopseTitle {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 400;
+  color: #000000;
+  margin: 0;
+}
+
+.sinopseDivider {
+  width: 100%;
+  height: 1px;
+  background-color: var(--color-sage);
+  border: none;
+  margin: 0;
+}
+
+.sinopseText {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-ink);
+  line-height: 1.7;
+  margin: 0;
+  white-space: pre-line;
+}
+
+/* ── Meta column ──────────────────────────────────────────────── */
+.metaCol {
+  width: 280px;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metaRow {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.metaLabel {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 400;
+  color: #000000;
+  flex-shrink: 0;
+  margin: 0;
+}
+
+.metaTag {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--color-ink);
+  border: 1.5px solid var(--color-ink);
+  border-radius: var(--radius-pill);
+  padding: 2px 12px;
+  white-space: nowrap;
+}
+
+.metaValue {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--color-ink);
+  border: 1.5px solid var(--color-ink);
+  border-radius: var(--radius-pill);
+  padding: 2px 12px;
+  white-space: nowrap;
+}
+
+.metaButtons {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+/* ── Footer ───────────────────────────────────────────────────── */
+.footerWrap {
+  margin-top: 20px;
+}
+
+@media (max-width: 1024px) {
+  .main {
+    padding: 0 40px;
+  }
+  .metaCol {
+    width: 220px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 0 20px;
+  }
+  .hero {
+    flex-direction: column;
+    align-items: center;
+  }
+  .heroInfo {
+    padding-top: 0;
+    align-items: center;
+    text-align: center;
+  }
+  .detailsCard {
+    flex-direction: column;
+  }
+  .metaCol {
+    width: 100%;
+  }
+}

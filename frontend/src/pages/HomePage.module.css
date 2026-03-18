@@ -1,0 +1,173 @@
+.page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding-top: calc(var(--header-height) + var(--page-side-margin) + 32px);
+  padding-bottom: 60px;
+}
+
+.main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Section headings ─────────────────────────────────────────── */
+.sectionTitle {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 400;
+  color: #000000;
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Carousel ─────────────────────────────────────────────────── */
+.carousel {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+}
+
+.carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.carouselCard {
+  background-color: var(--color-sage);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  min-width: 480px;
+  width: 480px;
+  height: 298px;
+  scroll-snap-align: start;
+  flex-shrink: 0;
+  cursor: pointer;
+  overflow: hidden;
+  transition: opacity 0.2s ease;
+  padding: 14px;
+  align-items: flex-start;
+}
+
+.carouselCard:hover {
+  opacity: 0.92;
+}
+
+.carouselCover {
+  width: 180px;
+  min-width: 180px;
+  height: 270px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+
+.carouselInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.carouselTitle {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--color-cream-text);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.carouselAuthor {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-warm-beige);
+  margin: 0;
+}
+
+.carouselExcerpt {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-cream-text);
+  margin: 0;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Mini book grid ───────────────────────────────────────────── */
+.bookGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 42px 24px;
+}
+
+/* ── More button ──────────────────────────────────────────────── */
+.moreBtn {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-cream-text);
+  background-color: var(--color-forest);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 10px 32px;
+  cursor: pointer;
+  align-self: center;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+  letter-spacing: 0.03em;
+}
+
+.moreBtn:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+/* ── Footer wrapper ───────────────────────────────────────────── */
+.footerWrap {
+  margin-top: 20px;
+}
+
+@media (max-width: 1024px) {
+  .main {
+    padding: 0 40px;
+  }
+  .bookGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 0 20px;
+  }
+  .bookGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px 16px;
+  }
+  .carouselCard {
+    min-width: 320px;
+    width: 320px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bookGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 12px;
+  }
+}

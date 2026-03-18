@@ -1,0 +1,74 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.forgotLink {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-sage);
+  text-align: right;
+}
+
+.forgotLink a {
+  color: var(--color-sage);
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.forgotLink a:hover {
+  color: var(--color-forest);
+}
+
+.submitBtn {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-cream-text);
+  background-color: var(--color-forest);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 10px 40px;
+  cursor: pointer;
+  align-self: center;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+  letter-spacing: 0.03em;
+}
+
+.submitBtn:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.submitBtn:active {
+  transform: translateY(0);
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background-color: var(--color-sage);
+  border: none;
+  margin: 0;
+}
+
+.bottomLink {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-sage);
+  text-align: center;
+  margin: 0;
+}
+
+.bottomLink a {
+  color: var(--color-sage);
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.bottomLink a:hover {
+  color: var(--color-forest);
+}
