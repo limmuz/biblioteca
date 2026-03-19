@@ -1,0 +1,72 @@
+.page {
+  background-color: var(--color-bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  /* Espaço para não ficar embaixo da Header */
+  padding: 120px 20px 40px 20px; 
+}
+
+.title {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--color-forest);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form label {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-forest);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input, .textarea, .select {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  padding: 12px 16px;
+  background-color: var(--color-cream);
+  border: 1px solid var(--color-sage);
+  border-radius: 8px;
+  color: var(--color-forest);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.submitBtn {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-cream-text);
+  background-color: var(--color-forest);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 12px 40px;
+  cursor: pointer;
+  align-self: center;
+  margin-top: 10px;
+  transition: opacity 0.2s;
+}
+
+.submitBtn:hover {
+  opacity: 0.9;
+}
