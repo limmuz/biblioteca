@@ -1,7 +1,0 @@
-com/qs/biblioteca/model/Livro.class
-com/qs/biblioteca/BibliotecaApplication.class
-com/qs/biblioteca/config/WebConfig.class
-com/qs/biblioteca/controller/LivroController.class
-com/qs/biblioteca/repository/LivroRepository.class
-com/qs/biblioteca/config/SecurityConfig.class
-com/qs/biblioteca/service/OpenLibraryService.class
