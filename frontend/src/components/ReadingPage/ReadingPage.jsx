@@ -1,54 +1,41 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import AppHeader from '../shared/AppHeader';
-import Footer from '../Footer/Footer';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import api from '../../services/api';
 import styles from './ReadingPage.module.css';
-import { getBookById } from '../../data/books';
-import { bookData } from './bookContent';
 
 export default function ReadingPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const book = id ? getBookById(id) : null;
-  const title = book ? book.title : bookData.title;
-  const author = book ? `por ${book.author}` : bookData.author;
+  const location = useLocation();
+  const [book, setBook] = useState(location.state?.bookData || null);
+
+  useEffect(() => {
+    // Limpa o ID de barras e prefixos
+    const cleanId = id.replace('works', '').replace(/\//g, '');
+    
+    // Se não temos os dados do livro, buscamos no banco
+    if (!book) {
+      api.get(`/livros/${cleanId}`)
+        .then(res => setBook(res.data))
+        .catch(() => {
+          console.error("Livro não encontrado para leitura.");
+          navigate('/home');
+        });
+    }
+  }, [id, book, navigate]);
+
+  if (!book) return <div className={styles.canvas} style={{color: 'white', padding: '100px'}}>Iniciando leitor...</div>;
 
   return (
-    <div className={styles.page}>
-      <AppHeader />
-      <main className={styles.main} aria-label="Conteúdo do livro">
-        {/* Book title & author */}
-        <div className={styles.bookHeader}>
-          <h1 className={styles.bookTitle}>{title}</h1>
-          <p className={styles.bookAuthor}>{author}</p>
-        </div>
+    <div className={styles.readingContainer}>
+      <header className={styles.readingHeader} style={{display: 'flex', alignItems: 'center', padding: '20px', gap: '20px', borderBottom: '1px solid var(--color-sage)'}}>
+        <button onClick={() => navigate(-1)} style={{cursor: 'pointer', background: 'none', border: '1px solid var(--color-sage)', color: 'white', padding: '5px 15px', borderRadius: '20px'}}>Sair</button>
+        <h1 style={{color: 'var(--color-forest)', fontSize: '22px'}}>{book.title}</h1>
+      </header>
 
-        {/* Reading content */}
-        <article className={styles.contentCard}>
-          {bookData.blocks.map((block, i) =>
-            block.type === 'quote' ? (
-              <blockquote key={i} className={styles.blockquote}>
-                {block.text}
-              </blockquote>
-            ) : (
-              <p key={i} className={styles.paragraph}>
-                {block.text}
-              </p>
-            )
-          )}
-        </article>
-
-        {/* Finish reading button */}
-        <button
-          className={styles.finishBtn}
-          onClick={() => navigate(book ? `/livro/${book.id}` : '/home')}
-          aria-label="Terminar leitura"
-        >
-          Terminar leitura
-        </button>
-
-        {/* Footer */}
-        <div className={styles.footerWrap}>
-          <Footer />
+      <main className={styles.canvas}>
+        <div className={styles.textWrapper} style={{maxWidth: '800px', margin: '40px auto', padding: '0 20px', color: 'var(--color-forest)', lineHeight: '1.8', fontSize: '19px', fontFamily: 'serif'}}>
+          <p>{book.excerpt || book.summary || "O conteúdo integral deste livro não está disponível para leitura offline no momento."}</p>
         </div>
       </main>
     </div>
