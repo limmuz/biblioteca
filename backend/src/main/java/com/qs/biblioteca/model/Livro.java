@@ -14,4 +14,8 @@ public class Livro {
     private String cover;
     private String excerpt;
     private String status; // "LIDO", "LENDO", "RECOMENDADO"
+
+    // NOVOS CAMPOS
+    private String language; // idioma do livro
+    private Integer pages;   // número de páginas
 }

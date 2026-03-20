@@ -24,89 +24,68 @@
   margin: 0;
 }
 
-/* ── Carousel ─────────────────────────────────────────────────── */
-.carousel {
+/* ── Carrossel retangular (Últimas leituras) ─────────────────── */
+.carouselRect {
   display: flex;
-  gap: 10px;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 8px;
-  scrollbar-width: none;
+  gap: 16px;
+  padding: 1rem 0;
+  scroll-behavior: smooth;
 }
 
-.carousel::-webkit-scrollbar {
+.carouselRect::-webkit-scrollbar {
   display: none;
 }
 
-.carouselCard {
-  background-color: var(--color-sage);
-  border-radius: 12px;
+.carouselRectCard {
+  flex: 0 0 auto; /* não encolhe nem cresce */
   display: flex;
-  flex-direction: row;
-  gap: 12px;
-  min-width: 480px;
-  width: 480px;
-  height: 298px;
-  scroll-snap-align: start;
-  flex-shrink: 0;
-  cursor: pointer;
+  background-color: var(--color-forest); /* verde floresta */
+  border-radius: 10px;
   overflow: hidden;
-  transition: opacity 0.2s ease;
-  padding: 14px;
-  align-items: flex-start;
+  width: 450px;
+  min-width: 450px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  transition: transform 0.2s;
 }
 
-.carouselCard:hover {
-  opacity: 0.92;
+.carouselRectCard:hover {
+  transform: scale(1.03);
 }
 
-.carouselCover {
-  width: 180px;
-  min-width: 180px;
-  height: 270px;
+.carouselRectImage {
+  width: 150px;
+  height: 220px;
   object-fit: cover;
-  border-radius: 8px;
-  display: block;
 }
 
-.carouselInfo {
+.carouselRectInfo {
+  padding: 0.5rem 1rem;
+  color: white;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-top: 16px;
-  flex: 1;
-  min-width: 0;
+  justify-content: flex-start;
 }
 
-.carouselTitle {
-  font-family: var(--font-serif);
-  font-size: 24px;
-  font-weight: 400;
-  color: var(--color-cream-text);
-  margin: 0;
-  line-height: 1.2;
+.carouselRectTitle {
+  font-weight: bold;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
 }
 
-.carouselAuthor {
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--color-warm-beige);
-  margin: 0;
+.carouselRectAuthor {
+  font-style: italic;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
 }
 
-.carouselExcerpt {
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--color-cream-text);
-  margin: 0;
-  line-height: 1.6;
-  display: -webkit-box;
-  -webkit-line-clamp: 5;
-  -webkit-box-orient: vertical;
+.carouselRectExcerpt {
+  font-size: 0.8rem;
+  line-height: 1.2rem;
+  max-height: 5rem; /* limita altura da sinopse */
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Mini book grid ───────────────────────────────────────────── */
