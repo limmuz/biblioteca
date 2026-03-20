@@ -15,13 +15,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(Customizer.withDefaults()) 
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/livros/**", "/api/auth/**", "/livros/**").permitAll() 
-                .anyRequest().authenticated() // Tranca qualquer outra rota
-            );
-        
+                .csrf(csrf -> csrf.disable()) // IMPORTANTE
+                .cors(Customizer.withDefaults())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/", "/api/livros/**", "/api/auth/**", "/livros/**").permitAll()
+                        .anyRequest().authenticated()
+                );
+
         return http.build();
     }
 }

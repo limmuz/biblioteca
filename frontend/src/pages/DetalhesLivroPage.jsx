@@ -9,12 +9,14 @@ export default function DetalhesLivroPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const [book, setBook] = useState(location.state?.bookData || null);
   const [loading, setLoading] = useState(!book);
   const [error, setError] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
+  const [statusSelecionado, setStatusSelecionado] = useState(book?.status || "RECOMENDADO");
 
+  // Carregar livro se não veio pelo estado
   useEffect(() => {
     if (book) {
       setLoading(false);
@@ -22,8 +24,9 @@ export default function DetalhesLivroPage() {
     }
 
     api.get(`/livros/${id}`)
-      .then((response) => {
-        setBook(response.data);
+      .then((res) => {
+        setBook(res.data);
+        setStatusSelecionado(res.data.status || "RECOMENDADO");
         setLoading(false);
       })
       .catch((err) => {
@@ -33,22 +36,25 @@ export default function DetalhesLivroPage() {
       });
   }, [id, book]);
 
-  // FUNÇÃO PARA ADICIONAR AO MONGODB + POP-UP
-  const handleAdicionarBiblioteca = async () => {
+  // Função para adicionar ou atualizar status do livro
+  const handleAdicionarBiblioteca = async (newStatus) => {
+    if (!book) return;
     setAdicionando(true);
+
     try {
       const payload = {
         title: book.title,
         author: book.author,
         cover: book.cover,
-        excerpt: book.excerpt || book.summary || "Sinopse não disponível.",
-        status: "QUERO LER"
+        excerpt: book.excerpt || "Sinopse não disponível",
+        status: newStatus,
+        pages: book.pages,
+        language: book.language,
       };
 
-      await api.post('/livros', payload);
-      
-      // Pop-up de aviso
-      alert(`📚 Sucesso! "${book.title}" foi adicionado à sua biblioteca.`);
+      await api.put('/livros/${book.id}', payload);
+
+      alert(`📚 "${book.title}" adicionado/atualizado com status "${newStatus}"`);
       navigate('/home');
     } catch (err) {
       console.error(err);
@@ -90,55 +96,57 @@ export default function DetalhesLivroPage() {
           <div className={styles.heroInfo}>
             <h1 className={styles.bookTitle}>{book.title}</h1>
             <p className={styles.bookAuthor}>por {book.author}</p>
+
             <div className={styles.heroButtons}>
-              <button
-                className={styles.btnLer}
-                onClick={() => navigate(`/leitura/${book.id}`)}
-              >
+              <button className={styles.btnLer} onClick={() => navigate(`/leitura/${book.id}`)}>
                 Ler
-              </button>
-              <button 
-                className={styles.btnAdicionar} 
-                onClick={handleAdicionarBiblioteca}
-                disabled={adicionando}
-              >
-                {adicionando ? 'Adicionando...' : 'Adicionar a lista de leitura'}
               </button>
             </div>
           </div>
         </div>
 
         <div className={styles.detailsCard}>
+          {/* Coluna Sinopse */}
           <div className={styles.sinopseCol}>
             <h2 className={styles.sinopseTitle}>Sinopse</h2>
             <hr className={styles.sinopseDivider} />
-            <p className={styles.sinopseText}>
-              {book.excerpt || book.summary || "Sinopse não disponível para este título."}
-            </p>
+            <p className={styles.sinopseText}>{book.excerpt || "Sinopse não disponível."}</p>
           </div>
 
+          {/* Coluna Meta */}
           <div className={styles.metaCol}>
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Status</span>
-              <span className={styles.metaValue} style={{ color: 'var(--color-sage)' }}>
-                {book.status || "RECOMENDADO"}
-              </span>
+              <select
+                value={statusSelecionado}
+                onChange={(e) => setStatusSelecionado(e.target.value)}
+                style={{ marginLeft: '10px', padding: '4px 8px', borderRadius: '8px', cursor: 'pointer' }}
+              >
+                <option value="LIDO">LIDO</option>
+                <option value="LENDO">LENDO</option>
+                <option value="QUERO LER">QUERO LER</option>
+                <option value="RECOMENDADO">RECOMENDADO</option>
+              </select>
             </div>
+
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Idioma</span>
-              <span className={styles.metaValue}>{book.language || 'Português'}</span>
+              <span className={styles.metaValue}>{book.language || "Desconhecido"}</span>
             </div>
+
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Páginas</span>
-              <span className={styles.metaValue}>{book.pages || '--'}</span>
+              <span className={styles.metaValue}>{book.pages || "--"}</span>
             </div>
-            
+
             <div className={styles.metaButtons}>
-               <button className={styles.btnLer} onClick={() => navigate(`/leitura/${book.id}`)}>Ler</button>
-               <button className={styles.btnAdicionar} onClick={handleAdicionarBiblioteca}>Adicionar à lista</button>
+              <button className={styles.btnAdicionar} onClick={handleAdicionarBiblioteca} disabled={adicionando}>
+                {adicionando ? 'Adicionando...' : 'Adicionar/Atualizar na lista'}
+              </button>
             </div>
           </div>
         </div>
+
         <div className={styles.footerWrap}>
           <Footer />
         </div>
