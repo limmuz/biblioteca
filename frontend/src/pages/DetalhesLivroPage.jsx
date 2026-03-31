@@ -52,7 +52,7 @@ export default function DetalhesLivroPage() {
         language: book.language,
       };
 
-      await api.put('/livros/${book.id}', payload);
+      await api.put(`/livros/${book.id}`, payload);
 
       alert(`📚 "${book.title}" adicionado/atualizado com status "${newStatus}"`);
       navigate('/home');

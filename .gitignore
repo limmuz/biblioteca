@@ -1,16 +1,23 @@
 cat <<EOF > .gitignore
-# Java
+# Java & Maven
 **/target/
 **/*.class
 **/*.jar
+.mvn/wrapper/maven-wrapper.jar
 
 # Node / React
 **/node_modules/
 **/dist/
 .vite/
+.eslintcache
 
 # IDEs
-.vscode/
-.idea/
+*.iws
+*.iml
+*.ipr
 *.swp
+
+# Logs e OS
+*.log
+.DS_Store
 EOF
