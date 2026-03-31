@@ -32,7 +32,7 @@ export default function ListagemPage() {
       setLoading(true);
       try {
        
-        const response = await api.get(`/livros/externos/${queryBusca}`);
+        const response = await api.get('/livros?search=' + queryBusca);
         setLivros(response.data);
       } catch (err) {
         console.error("Erro na busca:", err);

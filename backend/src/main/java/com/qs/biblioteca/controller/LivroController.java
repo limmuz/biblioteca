@@ -2,7 +2,6 @@ package com.qs.biblioteca.controller;
 
 import com.qs.biblioteca.model.Livro;
 import com.qs.biblioteca.repository.LivroRepository;
-import com.qs.biblioteca.service.OpenLibraryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,28 +9,19 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 @RequestMapping("/api/livros")
 public class LivroController {
 
     @Autowired
     private LivroRepository livroRepository;
 
-    @Autowired
-    private OpenLibraryService openLibraryService;
 
-    // Listar todos os livros do banco local
     @GetMapping
     public List<Livro> listarTodos() {
         return livroRepository.findAll();
     }
 
-    // Buscar livros externos (Open Library) por categoria
-    @GetMapping("/externos/{categoria}")
-    public List<Livro> buscarExternos(@PathVariable String categoria) {
-        return openLibraryService.buscarPorCategoria(categoria);
-    }
-
-    // Buscar livro por ID
     @GetMapping("/{id}")
     public ResponseEntity<Livro> buscarPorId(@PathVariable String id) {
         return livroRepository.findById(id)
@@ -39,7 +29,6 @@ public class LivroController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Salvar livro no banco local
     @PostMapping
     public ResponseEntity<Livro> salvarLivro(@RequestBody Livro livro) {
         if (livro.getTitle() == null || livro.getTitle().isEmpty()) {

@@ -1,0 +1,12 @@
+{
+  "name": "biblioteca-fullstack",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:back\" \"npm run dev:front\"",
+    "dev:back": "cd backend && mvnw.cmd spring-boot:run",
+    "dev:front": "cd frontend && npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.1"
+  }
+}
