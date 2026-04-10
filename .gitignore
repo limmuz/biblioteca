@@ -1,23 +1,37 @@
-cat <<EOF > .gitignore
-# Java & Maven
+# Java / Maven
 **/target/
 **/*.class
 **/*.jar
-.mvn/wrapper/maven-wrapper.jar
 
-# Node / React
+# Node / Frontend
 **/node_modules/
 **/dist/
 .vite/
 .eslintcache
 
-# IDEs
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+
+# Logs and temp
+*.log
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 *.iws
 *.iml
 *.ipr
 *.swp
-
-# Logs e OS
-*.log
-.DS_Store
-EOF

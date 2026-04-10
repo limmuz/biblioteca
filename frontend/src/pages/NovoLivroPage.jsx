@@ -14,7 +14,12 @@ export default function NovoLivroPage() {
     author: '',
     cover: '',
     excerpt: '',
-    status: 'QUERO LER'
+    status: 'QUERO LER',
+    language: '',
+    pages: '',
+    publisher: '',
+    publishedDate: '',
+    categoriesInput: ''
   });
 
   const handleChange = (e) => {
@@ -25,8 +30,23 @@ export default function NovoLivroPage() {
     e.preventDefault();
     setCarregando(true);
     try {
-      await api.post('/livros', livro);
-      navigate('/'); 
+      const payload = {
+        title: livro.title,
+        author: livro.author,
+        cover: livro.cover,
+        excerpt: livro.excerpt,
+        status: livro.status,
+        language: livro.language || 'Nao informado',
+        pages: Number(livro.pages) || 0,
+        publisher: livro.publisher || 'Nao informado',
+        publishedDate: livro.publishedDate || 'Nao informado',
+        categories: livro.categoriesInput
+          ? livro.categoriesInput.split(',').map((c) => c.trim()).filter(Boolean)
+          : ['Nao informado']
+      };
+
+      await api.post('/livros', payload);
+      navigate('/home');
     } catch (error) {
       console.error("Erro ao salvar:", error);
       alert('Falha ao salvar o livro.');
@@ -60,6 +80,31 @@ export default function NovoLivroPage() {
           <label>
             Sinopse
             <textarea className={styles.textarea} name="excerpt" value={livro.excerpt} onChange={handleChange} required />
+          </label>
+
+          <label>
+            Categorias (separe por virgula)
+            <input className={styles.input} type="text" name="categoriesInput" value={livro.categoriesInput} onChange={handleChange} placeholder="Ficcao, Fantasia, Aventura" />
+          </label>
+
+          <label>
+            Idioma
+            <input className={styles.input} type="text" name="language" value={livro.language} onChange={handleChange} placeholder="Portugues" />
+          </label>
+
+          <label>
+            Paginas
+            <input className={styles.input} type="number" min="0" name="pages" value={livro.pages} onChange={handleChange} />
+          </label>
+
+          <label>
+            Editora
+            <input className={styles.input} type="text" name="publisher" value={livro.publisher} onChange={handleChange} />
+          </label>
+
+          <label>
+            Publicacao
+            <input className={styles.input} type="text" name="publishedDate" value={livro.publishedDate} onChange={handleChange} placeholder="7 fevereiro 2014" />
           </label>
 
           <label>

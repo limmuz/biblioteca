@@ -47,7 +47,7 @@ export default function ListagemPage() {
   return (
     <div className={styles.page}>
       <AppHeader />
-      <main className={styles.main} style={{ paddingTop: '120px' }}>
+      <main className={styles.main}>
         <h1 className={styles.title}>
           {queryBusca ? `Resultados para: "${queryBusca}"` : "Sua Biblioteca"}
         </h1>
