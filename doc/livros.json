@@ -1,163 +1,276 @@
-[{
-  "_id": {
-    "$oid": "69bc9bdc727f2de765cabdda"
-  },
-  "title": "The Art of Loving",
-  "author": "Erich Fromm",
-  "cover": "https://covers.openlibrary.org/b/id/4741809-L.jpg",
-  "excerpt": "Livro encontrado via busca global na Open Library.",
-  "status": "QUERO LER",
-  "_class": "com.qs.biblioteca.model.Livro"
-},
-{
-  "_id": {
-    "$oid": "69bc9be3727f2de765cabddb"
-  },
-  "title": "Guess How Much I Love You",
-  "author": "Sam McBratney",
-  "cover": "https://covers.openlibrary.org/b/id/13282906-L.jpg",
-  "excerpt": "Livro encontrado via busca global na Open Library.",
-  "status": "QUERO LER",
-  "_class": "com.qs.biblioteca.model.Livro"
-},
-{
-  "_id": {
-    "$oid": "69bc9bed727f2de765cabddc"
-  },
-  "title": "Women in Love",
-  "author": "D. H. Lawrence",
-  "cover": "https://covers.openlibrary.org/b/id/13140934-L.jpg",
-  "excerpt": "Livro encontrado via busca global na Open Library.",
-  "status": "QUERO LER",
-  "_class": "com.qs.biblioteca.model.Livro"
-},
-{
-  "_id": {
-    "$oid": "69bc9f04727f2de765cabddd"
-  },
-  "title": "Love and Freindship",
-  "author": "Jane Austen",
-  "cover": "https://covers.openlibrary.org/b/id/12641527-L.jpg",
-  "excerpt": "Livro encontrado via busca global na Open Library.",
-  "status": "QUERO LER",
-  "_class": "com.qs.biblioteca.model.Livro"
-},
-{
-  "_id": {
-    "$oid": "69bca9e58396522aa2d78fbd"
-  },
-  "title": "Harry Potter e a Pedra Filosofal",
-  "author": "J.K.Rowling",
-  "cover": "https://livrariapublica.com.br/capa/harry-potter-e-a-pedra-filosofal-jk-rowling-pdf-B01LQM96G4.webp",
-  "excerpt": "\"Harry Potter e a Pedra Filosofal\", de J.K. Rowling, introduz Harry, um órfão infeliz que descobre aos 11 anos ser um bruxo. Ele ingressa na Escola Hogwarts, faz amizade com Rony e Hermione, e descobre que é famoso por sobreviver ao ataque de Voldemort, que matou seus pais. O trio protege a Pedra Filosofal, escondida na escola, enfrentando obstáculos e o vilão.",
-  "status": "QUERO LER",
-  "_class": "com.qs.biblioteca.model.Livro"
-},
-{
-  "_id": {
-    "$oid": "69bcab368396522aa2d78fc9"
-  },
-  "title": "Don Quijote de la Mancha",
-  "author": "Miguel de Cervantes Saavedra",
-  "cover": "https://covers.openlibrary.org/b/id/14428305-L.jpg",
-  "excerpt": "Livro encontrado via Open Library.",
-  "status": "RECOMENDADO",
-  "language": "Desconhecido",
-  "pages": 0,
-  "_class": "com.qs.biblioteca.model.Livro"
-},
-{
-  "_id": {
-    "$oid": "69bcabe38396522aa2d78fca"
-  },
-  "title": "Guess How Much I Love You",
-  "author": "Sam McBratney",
-  "cover": "https://covers.openlibrary.org/b/id/13282906-L.jpg",
-  "excerpt": "Livro encontrado via busca global na Open Library.",
-  "status": "LIDO",
-  "_class": "com.qs.biblioteca.model.Livro"
-},
-{
-  "_id": {
-    "$oid": "69cc1c3563354ae76e0a5713"
-  },
-  "title": "A cabeça do santo",
-  "author": "Socorro Acioli",
-  "cover": "/books/book-cabeca-santo.png",
-  "excerpt": "Pouco antes de morrer, a mãe de Samuel lhe faz um último pedido: que ele vá encontrar a avó e o pai que nunca conheceu...",
-  "status": "LIDO",
-  "language": "Português",
-  "pages": 176
-},
-{
-  "_id": {
-    "$oid": "69cc1c3563354ae76e0a5714"
-  },
-  "title": "O cara que estou a fim não é um cara?!",
-  "author": "Sumiko Arai",
-  "cover": "/books/book-cara-que.png",
-  "excerpt": "Aya é uma garota do ensino médio que está muito interessada em um 'moço' misterioso...",
-  "status": "LIDO",
-  "language": "Português",
-  "pages": 180
-},
-{
-  "_id": {
-    "$oid": "69cc1c3563354ae76e0a5715"
-  },
-  "title": "Rivalidade ardente",
-  "author": "Rachel Reid",
-  "cover": "/books/book-rivalidade.png",
-  "excerpt": "Uma história sobre a competição e paixão no mundo do hóquei...",
-  "status": "LENDO",
-  "language": "Português",
-  "pages": 380
-},
-{
-  "_id": {
-    "$oid": "69cc1c3563354ae76e0a5716"
-  },
-  "title": "Sherlock Holmes",
-  "author": "Arthur Conan Doyle",
-  "cover": "/books/book-sherlock.png",
-  "excerpt": "As famosas aventuras do detetive mais sagaz da Baker Street.",
-  "status": "QUERO LER",
-  "language": "Português",
-  "pages": 320
-},
-{
-  "_id": {
-    "$oid": "69cc1c3563354ae76e0a5717"
-  },
-  "title": "Amari — Irmãos da noite",
-  "author": "B. B. Alston",
-  "cover": "/books/book-amari.png",
-  "excerpt": "Amari Peters nunca desistiu de encontrar seu irmão desaparecido...",
-  "status": "QUERO LER",
-  "language": "Português",
-  "pages": 384
-},
-{
-  "_id": {
-    "$oid": "69cc1c3563354ae76e0a5718"
-  },
-  "title": "A diferença invisível",
-  "author": "Julie Dachez",
-  "cover": "/books/book-diferenca.png",
-  "excerpt": "Uma graphic novel sobre o diagnóstico de autismo na vida adulta.",
-  "status": "RECOMENDADO",
-  "language": "Português",
-  "pages": 184
-},
-{
-  "_id": {
-    "$oid": "69cc1c3563354ae76e0a5719"
-  },
-  "title": "Persépolis",
-  "author": "Marjane Satrapi",
-  "cover": "/books/book-persepolis.png",
-  "excerpt": "A autobiografia emocionante de uma infância no Irã durante a Revolução Islâmica.",
-  "status": "RECOMENDADO",
-  "language": "Português",
-  "pages": 280
-}]
+﻿[
+    {
+        "_id":  {
+                    "$oid":  "69bc9bdc727f2de765cabdda"
+                },
+        "title":  "The Art of Loving",
+        "author":  "Erich Fromm",
+        "cover":  "https://covers.openlibrary.org/b/id/4741809-L.jpg",
+        "excerpt":  "Neste classico da psicologia humanista, Erich Fromm defende que amar nao e apenas sentimento, mas uma pratica que exige maturidade, cuidado, responsabilidade e conhecimento de si.",
+        "status":  "QUERO LER",
+        "_class":  "com.qs.biblioteca.model.Livro",
+        "language":  "Ingles",
+        "pages":  160,
+        "categories":  [
+                           "Psicologia",
+                           "Filosofia",
+                           "Relacionamentos"
+                       ],
+        "publisher":  "Harper & Row",
+        "publishedDate":  "1956"
+    },
+    {
+        "_id":  {
+                    "$oid":  "69bc9be3727f2de765cabddb"
+                },
+        "title":  "Guess How Much I Love You",
+        "author":  "Sam McBratney",
+        "cover":  "https://covers.openlibrary.org/b/id/13282906-L.jpg",
+        "excerpt":  "Em uma conversa afetuosa entre Pequeno e Grande Lebre, a historia mostra, com delicadeza, como o amor pode ser imenso e dificil de medir em palavras.",
+        "status":  "QUERO LER",
+        "_class":  "com.qs.biblioteca.model.Livro",
+        "language":  "Ingles",
+        "pages":  32,
+        "categories":  [
+                           "Infantil",
+                           "Ficcao",
+                           "Familia"
+                       ],
+        "publisher":  "Candlewick Press",
+        "publishedDate":  "1994"
+    },
+    {
+        "_id":  {
+                    "$oid":  "69bc9bed727f2de765cabddc"
+                },
+        "title":  "Women in Love",
+        "author":  "D. H. Lawrence",
+        "cover":  "https://covers.openlibrary.org/b/id/13140934-L.jpg",
+        "excerpt":  "Romance que acompanha as irmas Ursula e Gudrun em relacoes marcadas por paixao, conflitos emocionais e questionamentos sobre liberdade, desejo e sociedade.",
+        "status":  "QUERO LER",
+        "_class":  "com.qs.biblioteca.model.Livro",
+        "language":  "Ingles",
+        "pages":  528,
+        "categories":  [
+                           "Romance",
+                           "Classico",
+                           "Drama"
+                       ],
+        "publisher":  "Thomas Seltzer",
+        "publishedDate":  "1920"
+    },
+    {
+        "_id":  {
+                    "$oid":  "69bc9f04727f2de765cabddd"
+                },
+        "title":  "Love and Freindship",
+        "author":  "Jane Austen",
+        "cover":  "https://covers.openlibrary.org/b/id/12641527-L.jpg",
+        "excerpt":  "Narrativa satirica de juventude em que Jane Austen ironiza o sentimentalismo exagerado ao acompanhar cartas e episodios de amores dramaticos e decisoes impulsivas.",
+        "status":  "QUERO LER",
+        "_class":  "com.qs.biblioteca.model.Livro",
+        "language":  "Ingles",
+        "pages":  96,
+        "categories":  [
+                           "Novela",
+                           "Classico",
+                           "Satira"
+                       ],
+        "publisher":  "Juvenilia Press",
+        "publishedDate":  "1790"
+    },
+    {
+        "_id":  {
+                    "$oid":  "69bca9e58396522aa2d78fbd"
+                },
+        "title":  "Harry Potter e a Pedra Filosofal",
+        "author":  "J.K.Rowling",
+        "cover":  "https://livrariapublica.com.br/capa/harry-potter-e-a-pedra-filosofal-jk-rowling-pdf-B01LQM96G4.webp",
+        "excerpt":  "Harry descobre aos onze anos que e um bruxo e passa a estudar em Hogwarts, onde faz grandes amizades e enfrenta os primeiros misterios ligados ao passado de seus pais.",
+        "status":  "QUERO LER",
+        "_class":  "com.qs.biblioteca.model.Livro",
+        "language":  "Portugues",
+        "pages":  264,
+        "categories":  [
+                           "Fantasia",
+                           "Aventura",
+                           "Juvenil"
+                       ],
+        "publisher":  "Rocco",
+        "publishedDate":  "26 junho 1997"
+    },
+    {
+        "_id":  {
+                    "$oid":  "69bcab368396522aa2d78fc9"
+                },
+        "title":  "Don Quijote de la Mancha",
+        "author":  "Miguel de Cervantes Saavedra",
+        "cover":  "https://covers.openlibrary.org/b/id/14428305-L.jpg",
+        "excerpt":  "Dom Quixote, inspirado por romances de cavalaria, parte em aventuras ao lado de Sancho Panca. Entre humor e critica social, a obra reflete sobre idealismo e realidade.",
+        "status":  "RECOMENDADO",
+        "language":  "Espanhol",
+        "pages":  992,
+        "_class":  "com.qs.biblioteca.model.Livro",
+        "categories":  [
+                           "Classico",
+                           "Aventura",
+                           "Satira"
+                       ],
+        "publisher":  "Francisco de Robles",
+        "publishedDate":  "1605"
+    },
+    {
+        "_id":  {
+                    "$oid":  "69bcabe38396522aa2d78fca"
+                },
+        "title":  "Guess How Much I Love You",
+        "author":  "Sam McBratney",
+        "cover":  "https://covers.openlibrary.org/b/id/13282906-L.jpg",
+        "excerpt":  "Em uma conversa afetuosa entre Pequeno e Grande Lebre, a historia mostra, com delicadeza, como o amor pode ser imenso e dificil de medir em palavras.",
+        "status":  "LIDO",
+        "_class":  "com.qs.biblioteca.model.Livro",
+        "language":  "Ingles",
+        "pages":  32,
+        "categories":  [
+                           "Infantil",
+                           "Ficcao",
+                           "Familia"
+                       ],
+        "publisher":  "Candlewick Press",
+        "publishedDate":  "1994"
+    },
+    {
+        "_id":  {
+                    "$oid":  "69cc1c3563354ae76e0a5713"
+                },
+        "title":  "A cabeça do santo",
+        "author":  "Socorro Acioli",
+        "cover":  "/books/book-cabeca-santo.png",
+        "excerpt":  "Apos a morte da mae, Samuel viaja ao sertao para cumprir um pedido antigo. Em Candeia, ele encontra abrigo dentro de uma enorme cabeca de santo e passa a ouvir vozes femininas, envolvendo-se nos desejos e segredos da cidade.",
+        "status":  "LIDO",
+        "language":  "Português",
+        "pages":  176,
+        "categories":  [
+                           "Ficção",
+                           "Realismo mágico",
+                           "Fantasia"
+                       ],
+        "publisher":  "Companhia das Letras",
+        "publishedDate":  "7 fevereiro 2014"
+    },
+    {
+        "_id":  {
+                    "$oid":  "69cc1c3563354ae76e0a5714"
+                },
+        "title":  "O cara que estou a fim não é um cara?!",
+        "author":  "Sumiko Arai",
+        "cover":  "/books/book-cara-que.png",
+        "excerpt":  "Aya se encanta por um atendente misterioso de loja de discos, mas logo descobre que a pessoa por quem se apaixonou guarda segredos sobre identidade e sentimentos.",
+        "status":  "LIDO",
+        "language":  "Português",
+        "pages":  180,
+        "categories":  [
+                           "Manga",
+                           "Romance",
+                           "Comedia"
+                       ],
+        "publisher":  "Panini",
+        "publishedDate":  "2023"
+    },
+    {
+        "_id":  {
+                    "$oid":  "69cc1c3563354ae76e0a5715"
+                },
+        "title":  "Rivalidade ardente",
+        "author":  "Rachel Reid",
+        "cover":  "/books/book-rivalidade.png",
+        "excerpt":  "Dois jogadores de hoquei rivais, com personalidades opostas, descobrem uma atracao inesperada. A historia mistura competicao, vulnerabilidade e romance.",
+        "status":  "LENDO",
+        "language":  "Português",
+        "pages":  380,
+        "categories":  [
+                           "Romance",
+                           "Esporte",
+                           "Contemporaneo"
+                       ],
+        "publisher":  "Carina Press",
+        "publishedDate":  "2019"
+    },
+    {
+        "_id":  {
+                    "$oid":  "69cc1c3563354ae76e0a5716"
+                },
+        "title":  "Sherlock Holmes",
+        "author":  "Arthur Conan Doyle",
+        "cover":  "/books/book-sherlock.png",
+        "excerpt":  "Coletanea de investigacoes em que Sherlock Holmes e Dr. Watson resolvem casos complexos com logica, observacao minuciosa e raciocinio dedutivo.",
+        "status":  "QUERO LER",
+        "language":  "Português",
+        "pages":  320,
+        "categories":  [
+                           "Misterio",
+                           "Classico",
+                           "Detetive"
+                       ],
+        "publisher":  "George Newnes",
+        "publishedDate":  "1892"
+    },
+    {
+        "_id":  {
+                    "$oid":  "69cc1c3563354ae76e0a5717"
+                },
+        "title":  "Amari - Irmãos da noite",
+        "author":  "B. B. Alston",
+        "cover":  "/books/book-amari.png",
+        "excerpt":  "Ao investigar o desaparecimento do irmao, Amari entra em um mundo sobrenatural e precisa provar seu valor em provas perigosas para descobrir a verdade.",
+        "status":  "QUERO LER",
+        "language":  "Português",
+        "pages":  384,
+        "categories":  [
+                           "Fantasia",
+                           "Juvenil",
+                           "Aventura"
+                       ],
+        "publisher":  "Balzer + Bray",
+        "publishedDate":  "2021"
+    },
+    {
+        "_id":  {
+                    "$oid":  "69cc1c3563354ae76e0a5718"
+                },
+        "title":  "A diferença invisível",
+        "author":  "Julie Dachez",
+        "cover":  "/books/book-diferenca.png",
+        "excerpt":  "Graphic novel sobre uma mulher que enfrenta dificuldades sociais ate descobrir o diagnostico de autismo na vida adulta, em uma jornada de autoconhecimento.",
+        "status":  "RECOMENDADO",
+        "language":  "Português",
+        "pages":  184,
+        "categories":  [
+                           "Graphic novel",
+                           "Biografico",
+                           "Saude mental"
+                       ],
+        "publisher":  "Nemo",
+        "publishedDate":  "2016"
+    },
+    {
+        "_id":  {
+                    "$oid":  "69cc1c3563354ae76e0a5719"
+                },
+        "title":  "Persépolis",
+        "author":  "Marjane Satrapi",
+        "cover":  "/books/book-persepolis.png",
+        "excerpt":  "Marjane Satrapi narra sua infancia e juventude durante e apos a Revolucao Iraniana, abordando politica, identidade, familia e liberdade em formato autobiografico.",
+        "status":  "RECOMENDADO",
+        "language":  "Português",
+        "pages":  280,
+        "categories":  [
+                           "Graphic novel",
+                           "Autobiografia",
+                           "Historia"
+                       ],
+        "publisher":  "L'Association",
+        "publishedDate":  "2000"
+    }
+]
+

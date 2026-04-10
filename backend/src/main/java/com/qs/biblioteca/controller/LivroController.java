@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+@CrossOrigin(originPatterns = "http://localhost:*", allowCredentials = "true")
 @RequestMapping("/api/livros")
 public class LivroController {
 
@@ -18,7 +18,10 @@ public class LivroController {
 
 
     @GetMapping
-    public List<Livro> listarTodos() {
+    public List<Livro> listarTodos(@RequestParam(required = false) String search) {
+        if (search != null && !search.isBlank()) {
+            return livroRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(search, search);
+        }
         return livroRepository.findAll();
     }
 
@@ -49,8 +52,21 @@ public class LivroController {
                     l.setExcerpt(livroAtualizado.getExcerpt());
                     l.setPages(livroAtualizado.getPages());
                     l.setLanguage(livroAtualizado.getLanguage());
+                    l.setCategories(livroAtualizado.getCategories());
+                    l.setPublisher(livroAtualizado.getPublisher());
+                    l.setPublishedDate(livroAtualizado.getPublishedDate());
                     Livro salvo = livroRepository.save(l);
                     return ResponseEntity.ok(salvo);
                 }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> removerLivro(@PathVariable String id) {
+        if (!livroRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        livroRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
