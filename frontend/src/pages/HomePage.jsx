@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "../components/shared/AppHeader";
 import Footer from "../components/Footer/Footer";
@@ -12,6 +12,35 @@ export default function HomePage() {
   const [readingList, setReadingList] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const carouselRef = useRef(null);
+  const scrollIntervalRef = useRef(null);
+
+  const stopScroll = () => {
+    clearInterval(scrollIntervalRef.current);
+    scrollIntervalRef.current = null;
+  };
+
+  const handleCarouselMouseMove = (e) => {
+    const el = carouselRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const threshold = 80;
+
+    if (x < threshold) {
+      if (scrollIntervalRef.current) return;
+      scrollIntervalRef.current = setInterval(() => {
+        el.scrollLeft -= 5;
+      }, 16);
+    } else if (x > rect.width - threshold) {
+      if (scrollIntervalRef.current) return;
+      scrollIntervalRef.current = setInterval(() => {
+        el.scrollLeft += 5;
+      }, 16);
+    } else {
+      stopScroll();
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,7 +94,13 @@ export default function HomePage() {
         {recentlyRead.length > 0 && (
           <>
             <h2 className={styles.sectionTitle}>Últimas leituras</h2>
-            <div className={styles.carouselRect} aria-label="Últimas leituras">
+            <div
+              className={styles.carouselRect}
+              ref={carouselRef}
+              onMouseMove={handleCarouselMouseMove}
+              onMouseLeave={stopScroll}
+              aria-label="Últimas leituras"
+            >
               {recentlyRead.map((book) => (
                 <div
                   key={book.id}

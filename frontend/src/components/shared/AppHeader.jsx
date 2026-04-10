@@ -6,10 +6,21 @@ import HomeIcon from '../../assets/icon-home.svg?react';
 import BookmarkIcon from '../../assets/icon-bookmark.svg?react';
 import SearchIcon from '../../assets/icon-search.svg?react';
 import ExitIcon from '../../assets/icon-exit.svg?react';
+import { clearSession, getUser } from '../../services/auth';
 
 export default function AppHeader() {
   const navigate = useNavigate();
   const [termo, setTermo] = useState('');
+  const user = getUser();
+
+  const initials = user.nome
+    ? user.nome.split(' ').slice(0, 2).map((n) => n[0].toUpperCase()).join('')
+    : '?';
+
+  const handleLogout = () => {
+    clearSession();
+    navigate('/login');
+  };
 
   const handleSearch = (e) => {
     if (e.key === 'Enter' && termo.trim()) {
@@ -51,9 +62,14 @@ export default function AppHeader() {
           <SearchIcon className={styles.searchIcon} />
         </div>
 
-        <button className={styles.navBtn} onClick={() => navigate('/login')} title="Sair">
-          <ExitIcon className={styles.exitIcon} />
-        </button>
+        <div className={styles.userArea}>
+          <div className={styles.avatar} title={user.nome || 'Usuário'}>
+            {initials}
+          </div>
+          <button className={styles.navBtn} onClick={handleLogout} title="Sair">
+            <ExitIcon className={styles.exitIcon} />
+          </button>
+        </div>
       </nav>
     </header>
   );

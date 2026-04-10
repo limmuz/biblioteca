@@ -14,54 +14,58 @@ export default function DetalhesLivroPage() {
   const [loading, setLoading] = useState(!book);
   const [error, setError] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
-  const [statusSelecionado, setStatusSelecionado] = useState(book?.status || "RECOMENDADO");
+  const [toastVisible, setToastVisible] = useState(false);
 
-  // Carregar livro se não veio pelo estado
   useEffect(() => {
-    if (book) {
-      setLoading(false);
-      return;
-    }
-
+    if (book) { setLoading(false); return; }
     api.get(`/livros/${id}`)
-      .then((res) => {
-        setBook(res.data);
-        setStatusSelecionado(res.data.status || "RECOMENDADO");
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Erro ao buscar detalhes:", err);
-        setError(true);
-        setLoading(false);
-      });
+      .then((res) => { setBook(res.data); setLoading(false); })
+      .catch(() => { setError(true); setLoading(false); });
   }, [id, book]);
 
-  // Função para adicionar ou atualizar status do livro
-  const handleAdicionarBiblioteca = async (newStatus) => {
-    if (!book) return;
+  const handleAdicionar = async () => {
+    if (!book || adicionando) return;
     setAdicionando(true);
-
     try {
-      const payload = {
+      await api.put(`/livros/${book.id}`, {
         title: book.title,
         author: book.author,
         cover: book.cover,
-        excerpt: book.excerpt || "Sinopse não disponível",
-        status: newStatus,
+        excerpt: book.excerpt || 'Sinopse não disponível',
+        status: 'QUERO LER',
         pages: book.pages,
         language: book.language,
-      };
-
-      await api.put(`/livros/${book.id}`, payload);
-
-      alert(`📚 "${book.title}" adicionado/atualizado com status "${newStatus}"`);
-      navigate('/home');
+        categories: book.categories,
+        publisher: book.publisher,
+        publishedDate: book.publishedDate,
+      });
+      setBook({ ...book, status: 'QUERO LER' });
+      setToastVisible(true);
     } catch (err) {
       console.error(err);
-      alert("Erro ao adicionar livro. Verifique a conexão com o backend.");
     } finally {
       setAdicionando(false);
     }
+  };
+
+  const handleComecarLer = async () => {
+    setToastVisible(false);
+    try {
+      await api.put(`/livros/${book.id}`, { ...book, status: 'LENDO' });
+    } catch (err) {
+      console.error(err);
+    }
+    navigate(`/leitura/${book.id}`);
+  };
+
+  const handleRemoverLista = async () => {
+    setToastVisible(false);
+    try {
+      await api.delete(`/livros/${book.id}`);
+    } catch (err) {
+      console.error(err);
+    }
+    navigate('/home');
   };
 
   if (loading) {
@@ -87,61 +91,83 @@ export default function DetalhesLivroPage() {
     );
   }
 
+  const categorias = Array.isArray(book.categories) && book.categories.length > 0
+    ? book.categories
+    : ['Nao informado'];
+  const idioma = book.language || 'Nao informado';
+  const editora = book.publisher || 'Nao informado';
+  const publicacao = book.publishedDate || 'Nao informado';
+  const paginas = book.pages || '--';
+
   return (
     <div className={styles.page}>
       <AppHeader />
-      <main className={styles.main} style={{ paddingTop: '100px' }}>
+      <main className={styles.main}>
+
+        {/* ── Hero: capa + título + botões ───────────────────────────── */}
         <div className={styles.hero}>
           <img src={book.cover} alt={book.title} className={styles.bookCover} />
           <div className={styles.heroInfo}>
             <h1 className={styles.bookTitle}>{book.title}</h1>
             <p className={styles.bookAuthor}>por {book.author}</p>
-
             <div className={styles.heroButtons}>
               <button className={styles.btnLer} onClick={() => navigate(`/leitura/${book.id}`)}>
                 Ler
+              </button>
+              <button className={styles.btnAdicionar} onClick={handleAdicionar} disabled={adicionando}>
+                {adicionando ? 'Adicionando...' : 'Adicionar a lista de leitura'}
               </button>
             </div>
           </div>
         </div>
 
+        {/* ── Card de detalhes: sinopse + meta ───────────────────────── */}
         <div className={styles.detailsCard}>
+
           {/* Coluna Sinopse */}
           <div className={styles.sinopseCol}>
             <h2 className={styles.sinopseTitle}>Sinopse</h2>
             <hr className={styles.sinopseDivider} />
-            <p className={styles.sinopseText}>{book.excerpt || "Sinopse não disponível."}</p>
+            <p className={styles.sinopseText}>{book.excerpt || 'Sinopse não disponível.'}</p>
           </div>
 
           {/* Coluna Meta */}
           <div className={styles.metaCol}>
             <div className={styles.metaRow}>
-              <span className={styles.metaLabel}>Status</span>
-              <select
-                value={statusSelecionado}
-                onChange={(e) => setStatusSelecionado(e.target.value)}
-                style={{ marginLeft: '10px', padding: '4px 8px', borderRadius: '8px', cursor: 'pointer' }}
-              >
-                <option value="LIDO">LIDO</option>
-                <option value="LENDO">LENDO</option>
-                <option value="QUERO LER">QUERO LER</option>
-                <option value="RECOMENDADO">RECOMENDADO</option>
-              </select>
+              <span className={styles.metaLabel}>Categorias</span>
+              <div className={styles.metaTagsWrap}>
+                {categorias.map((cat) => (
+                  <span key={cat} className={styles.metaTag}>{cat}</span>
+                ))}
+              </div>
             </div>
 
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Idioma</span>
-              <span className={styles.metaValue}>{book.language || "Desconhecido"}</span>
+              <span className={styles.metaValue}>{idioma}</span>
+            </div>
+
+            <div className={styles.metaRow}>
+              <span className={styles.metaLabel}>Editora</span>
+              <span className={styles.metaValue}>{editora}</span>
+            </div>
+
+            <div className={styles.metaRow}>
+              <span className={styles.metaLabel}>Publicação</span>
+              <span className={styles.metaValue}>{publicacao}</span>
             </div>
 
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Páginas</span>
-              <span className={styles.metaValue}>{book.pages || "--"}</span>
+              <span className={styles.metaValue}>{paginas}</span>
             </div>
 
             <div className={styles.metaButtons}>
-              <button className={styles.btnAdicionar} onClick={handleAdicionarBiblioteca} disabled={adicionando}>
-                {adicionando ? 'Adicionando...' : 'Adicionar/Atualizar na lista'}
+              <button className={styles.btnLer} onClick={() => navigate(`/leitura/${book.id}`)}>
+                Ler
+              </button>
+              <button className={styles.btnAdicionar} onClick={handleAdicionar} disabled={adicionando}>
+                {adicionando ? 'Adicionando...' : 'Adicionar a lista de leitura'}
               </button>
             </div>
           </div>
@@ -151,6 +177,24 @@ export default function DetalhesLivroPage() {
           <Footer />
         </div>
       </main>
+
+      {/* ── Toast "Adicionado!" ─────────────────────────────────────── */}
+      {toastVisible && (
+        <div className={styles.toast}>
+          <div className={styles.toastContent}>
+            <strong className={styles.toastTitle}>Adicionado!</strong>
+            <p className={styles.toastMsg}>O livro foi adicionado à sua lista de leituras</p>
+          </div>
+          <div className={styles.toastActions}>
+            <button className={styles.btnToastPrimary} onClick={handleComecarLer}>
+              Começar a ler
+            </button>
+            <button className={styles.btnToastSecondary} onClick={handleRemoverLista}>
+              Remover da lista
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

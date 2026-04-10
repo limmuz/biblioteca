@@ -2,16 +2,34 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthCard from '../components/auth/AuthCard';
 import FormInput from '../components/auth/FormInput';
+import api from '../services/api';
+import { saveSession } from '../services/auth';
 import styles from './LoginPage.module.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    navigate('/home');
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await api.post('/auth/login', {
+        email,
+        senha: password,
+      });
+      saveSession(response.data);
+      navigate('/home');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Falha no login. Verifique seu email e senha.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -37,8 +55,9 @@ export default function LoginPage() {
           Esqueceu senha? Clique <Link to="/redefinir-senha">aqui</Link>!
         </p>
         <button type="submit" className={styles.submitBtn}>
-          Entrar
+          {loading ? 'Entrando...' : 'Entrar'}
         </button>
+        {error ? <p style={{ color: '#d14343', marginTop: '10px' }}>{error}</p> : null}
       </form>
       <hr className={styles.divider} />
       <p className={styles.bottomLink}>
