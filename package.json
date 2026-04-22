@@ -1,0 +1,14 @@
+{
+  "name": "biblioteca-fullstack",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:back\" \"npm run dev:front\"",
+    "free-ports": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$ports=5173,5174,5175,8080; foreach($p in $ports){Get-NetTCPConnection -LocalPort $p -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }}\"",
+    "dev:clean": "npm run free-ports && npm run dev",
+    "dev:back": "cd backend && mvnw.cmd spring-boot:run",
+    "dev:front": "cd frontend && npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^8.0.1"
+  }
+}

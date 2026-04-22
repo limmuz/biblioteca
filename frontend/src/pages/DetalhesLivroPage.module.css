@@ -19,6 +19,10 @@
   display: flex;
   flex-direction: row;
   align-items: flex-start;
+  justify-content: center;
+  max-width: 980px;
+  margin: 0 auto;
+  width: 100%;
   gap: 50px;
 }
 
@@ -71,7 +75,7 @@
   color: var(--color-cream-text);
   background-color: var(--color-forest);
   border: none;
-  border-radius: var(--radius-pill);
+  border-radius: 10px;
   padding: 10px 28px;
   cursor: pointer;
   transition: opacity 0.2s ease, transform 0.15s ease;
@@ -90,7 +94,7 @@
   color: var(--color-cream-text);
   background-color: var(--color-amber);
   border: none;
-  border-radius: var(--radius-pill);
+  border-radius: 10px;
   padding: 10px 24px;
   cursor: pointer;
   transition: opacity 0.2s ease, transform 0.15s ease;
@@ -109,6 +113,9 @@
   padding: 32px 40px;
   display: flex;
   flex-direction: row;
+  max-width: 1120px;
+  margin: 0 auto;
+  width: 100%;
   gap: 10px;
 }
 
@@ -149,49 +156,58 @@
 
 /* ── Meta column ──────────────────────────────────────────────── */
 .metaCol {
-  width: 280px;
-  min-width: 240px;
+  width: 360px;
+  min-width: 320px;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
 .metaRow {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 10px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 8px;
 }
 
 .metaLabel {
   font-family: var(--font-serif);
-  font-size: 20px;
+  font-size: 34px;
   font-weight: 400;
   color: #000000;
   flex-shrink: 0;
   margin: 0;
 }
 
+.metaTagsWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .metaTag {
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 400;
   color: var(--color-ink);
-  border: 1.5px solid var(--color-ink);
-  border-radius: var(--radius-pill);
-  padding: 2px 12px;
+  border: none;
+  border-radius: 999px;
+  background: #f7f4e8;
+  padding: 4px 12px;
   white-space: nowrap;
 }
 
 .metaValue {
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 400;
   color: var(--color-ink);
-  border: 1.5px solid var(--color-ink);
-  border-radius: var(--radius-pill);
-  padding: 2px 12px;
+  border: none;
+  border-radius: 999px;
+  background: #f7f4e8;
+  padding: 4px 12px;
+  width: fit-content;
   white-space: nowrap;
 }
 
@@ -208,12 +224,95 @@
   margin-top: 20px;
 }
 
+/* ── Toast ────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color-warm-beige);
+  border-radius: 12px;
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  min-width: 360px;
+  max-width: 90vw;
+}
+
+.toastContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toastTitle {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  color: var(--color-ink);
+}
+
+.toastMsg {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-sage);
+  margin: 0;
+}
+
+.toastActions {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btnToastPrimary {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-cream-text);
+  background-color: var(--color-forest);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 8px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.btnToastPrimary:hover {
+  opacity: 0.85;
+}
+
+.btnToastSecondary {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-ink);
+  background-color: transparent;
+  border: 1.5px solid var(--color-ink);
+  border-radius: var(--radius-pill);
+  padding: 8px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.btnToastSecondary:hover {
+  opacity: 0.7;
+}
+
 @media (max-width: 1024px) {
   .main {
     padding: 0 40px;
   }
   .metaCol {
-    width: 220px;
+    width: 300px;
+    min-width: 280px;
+  }
+  .metaLabel {
+    font-size: 28px;
   }
 }
 
@@ -235,5 +334,18 @@
   }
   .metaCol {
     width: 100%;
+    min-width: 0;
+  }
+  .metaRow {
+    grid-template-columns: 110px 1fr;
+  }
+  .metaLabel {
+    font-size: 24px;
+  }
+  .toast {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    bottom: 16px;
   }
 }
