@@ -37,6 +37,7 @@
   color: #d14343;
   font-size: 13px;
   margin-top: 6px;
+  text-align: center;
 }
 
 .infoMsg {
@@ -112,4 +113,34 @@
 
 .bottomLink a:hover {
   color: var(--color-forest);
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+}
+
+.group {
+  flex: 1; 
+}
+
+.groupNumero {
+  flex: 1;
+}
+
+.groupComplemento {
+  flex: 2;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+}
+
+.groupCidade {
+  flex: 2;
+}
+
+.groupUf {
+  flex: 1;
 }
