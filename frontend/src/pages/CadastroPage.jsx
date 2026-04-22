@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthCard from '../components/auth/AuthCard';
 import FormInput from '../components/auth/FormInput';
@@ -13,6 +13,8 @@ export default function CadastroPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [cep, setCep] = useState('');
   const [logradouro, setLogradouro] = useState('');
+  const [numero, setNumero] = useState('');
+  const [complemento, setComplemento] = useState('');
   const [bairro, setBairro] = useState('');
   const [cidade, setCidade] = useState('');
   const [uf, setUf] = useState('');
@@ -35,32 +37,36 @@ export default function CadastroPage() {
     setCepError('');
   };
 
-  const handleCepBlur = async () => {
-    const cleanedCep = normalizeCep(cep);
-    if (cleanedCep.length !== 8) {
-      return;
-    }
+  useEffect(() => {
+    const fetchAddress = async () => {
+      const cleanedCep = normalizeCep(cep);
+      
+      if (cleanedCep.length === 8) {
+        setCepLoading(true);
+        setCepError('');
+        try {
+          const response = await fetch(`https://viacep.com.br/ws/${cleanedCep}/json/`);
+          const data = await response.json();
 
-    setCepLoading(true);
-    setCepError('');
-    try {
-      const response = await fetch(`https://viacep.com.br/ws/${cleanedCep}/json/`);
-      const data = await response.json();
-
-      if (data.erro) {
-        setCepError('CEP nao encontrado. Preencha o endereco manualmente.');
-      } else {
-        setLogradouro(data.logradouro || '');
-        setBairro(data.bairro || '');
-        setCidade(data.localidade || '');
-        setUf(data.uf || '');
+          if (data.erro) {
+            setCepError('CEP não encontrado.');
+          } else {
+            setLogradouro(data.logradouro || '');
+            setBairro(data.bairro || '');
+            setCidade(data.localidade || '');
+            setUf(data.uf || '');
+            document.getElementById('cadastro-numero')?.focus();
+          }
+        } catch (err) {
+          setCepError('Falha ao consultar CEP.');
+        } finally {
+          setCepLoading(false);
+        }
       }
-    } catch (err) {
-      setCepError('Falha ao consultar CEP. Preencha o endereco manualmente.');
-    } finally {
-      setCepLoading(false);
-    }
-  };
+    };
+
+    fetchAddress();
+  }, [cep]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -80,6 +86,8 @@ export default function CadastroPage() {
         senha: password,
         cep: normalizeCep(cep),
         logradouro,
+        numero,
+        complemento,
         bairro,
         cidade,
         uf,
@@ -108,7 +116,7 @@ export default function CadastroPage() {
           id="cadastro-password"
           label="Senha"
           type="password"
-          placeholder="••••••••••••••"
+          placeholder="Digite sua senha"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
@@ -116,7 +124,7 @@ export default function CadastroPage() {
           id="cadastro-confirm"
           label="Repita a senha"
           type="password"
-          placeholder="••••••••••••••"
+          placeholder="Digite novamente a senha"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
         />
@@ -131,7 +139,6 @@ export default function CadastroPage() {
             placeholder="00000-000"
             value={cep}
             onChange={handleCepChange}
-            onBlur={handleCepBlur}
             maxLength={9}
           />
           {cepLoading ? <p className={styles.infoMsg}>Buscando endereco...</p> : null}
@@ -150,6 +157,32 @@ export default function CadastroPage() {
           />
         </div>
 
+        <div className={styles.row}>
+          <div className={`${styles.group} ${styles.groupNumero}`}>
+            <label className={styles.fieldLabel} htmlFor="cadastro-numero">Número</label>
+            <input
+              id="cadastro-numero"
+              className={styles.fieldInput}
+              type="text"
+              placeholder="Ex: 123"
+              value={numero}
+              onChange={(e) => setNumero(e.target.value)}
+            />
+          </div>
+
+          <div className={`${styles.group} ${styles.groupComplemento}`}>
+            <label className={styles.fieldLabel} htmlFor="cadastro-complemento">Complemento</label>
+            <input
+              id="cadastro-complemento"
+              className={styles.fieldInput}
+              type="text"
+              placeholder="Apto, Bloco..."
+              value={complemento}
+              onChange={(e) => setComplemento(e.target.value)}
+            />
+          </div>
+        </div>
+
         <div className={styles.group}>
           <label className={styles.fieldLabel} htmlFor="cadastro-bairro">Bairro</label>
           <input
@@ -161,30 +194,32 @@ export default function CadastroPage() {
             onChange={(e) => setBairro(e.target.value)}
           />
         </div>
+        
+        <div className={styles.row}>
+          <div className={`${styles.group} ${styles.groupCidade}`}>
+            <label className={styles.fieldLabel} htmlFor="cadastro-cidade">Cidade</label>
+            <input
+              id="cadastro-cidade"
+              className={styles.fieldInput}
+              type="text"
+              placeholder="Cidade"
+              value={cidade}
+              onChange={(e) => setCidade(e.target.value)}
+            />
+          </div>
 
-        <div className={styles.group}>
-          <label className={styles.fieldLabel} htmlFor="cadastro-cidade">Cidade</label>
-          <input
-            id="cadastro-cidade"
-            className={styles.fieldInput}
-            type="text"
-            placeholder="Cidade"
-            value={cidade}
-            onChange={(e) => setCidade(e.target.value)}
-          />
-        </div>
-
-        <div className={styles.group}>
-          <label className={styles.fieldLabel} htmlFor="cadastro-uf">UF</label>
-          <input
-            id="cadastro-uf"
-            className={styles.fieldInput}
-            type="text"
-            placeholder="UF"
-            value={uf}
-            onChange={(e) => setUf(e.target.value.toUpperCase().slice(0, 2))}
-            maxLength={2}
-          />
+          <div className={`${styles.group} ${styles.groupUf}`}>
+            <label className={styles.fieldLabel} htmlFor="cadastro-uf">UF</label>
+            <input
+              id="cadastro-uf"
+              className={styles.fieldInput}
+              type="text"
+              placeholder="UF"
+              value={uf}
+              onChange={(e) => setUf(e.target.value.toUpperCase().slice(0, 2))}
+              maxLength={2}
+            />
+          </div>
         </div>
 
         <button type="submit" className={styles.submitBtn} disabled={loading}>
