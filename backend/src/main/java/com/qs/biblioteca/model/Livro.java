@@ -3,6 +3,7 @@ package com.qs.biblioteca.model;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import java.util.List;
 
 @Data
 @Document(collection = "livros")
@@ -13,9 +14,10 @@ public class Livro {
     private String author;
     private String cover;
     private String excerpt;
-    private String status; // "LIDO", "LENDO", "RECOMENDADO"
-
-    // NOVOS CAMPOS
-    private String language; // idioma do livro
-    private Integer pages;   // número de páginas
+    private String status;
+    private String language;
+    private Integer pages;
+    private List<String> categories;
+    private String publisher;
+    private String publishedDate;
 }
