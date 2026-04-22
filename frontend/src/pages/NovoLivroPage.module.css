@@ -42,7 +42,7 @@
   font-family: var(--font-sans);
   font-size: 14px;
   padding: 12px 16px;
-  background-color: var(--color-cream);
+  background-color: var(--color-bg);
   border: 1px solid var(--color-sage);
   border-radius: 8px;
   color: var(--color-forest);

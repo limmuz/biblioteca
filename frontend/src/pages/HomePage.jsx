@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "../components/shared/AppHeader";
 import Footer from "../components/Footer/Footer";
@@ -12,28 +12,61 @@ export default function HomePage() {
   const [readingList, setReadingList] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const carouselRef = useRef(null);
+  const scrollIntervalRef = useRef(null);
+
+  const stopScroll = () => {
+    clearInterval(scrollIntervalRef.current);
+    scrollIntervalRef.current = null;
+  };
+
+  const handleCarouselMouseMove = (e) => {
+    const el = carouselRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const threshold = 80;
+
+    if (x < threshold) {
+      if (scrollIntervalRef.current) return;
+      scrollIntervalRef.current = setInterval(() => {
+        el.scrollLeft -= 5;
+      }, 16);
+    } else if (x > rect.width - threshold) {
+      if (scrollIntervalRef.current) return;
+      scrollIntervalRef.current = setInterval(() => {
+        el.scrollLeft += 5;
+      }, 16);
+    } else {
+      stopScroll();
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 1. Busca seus livros do MongoDB
-        const resMeusLivros = await api.get("/livros");
-        const meusLivros = resMeusLivros.data;
+        // 1. Busca centralizada no seu banco MongoDB (Spring Boot)
+        const res = await api.get("/livros");
+        const todosOsLivros = res.data;
 
-        // Filtra o que é seu por status
-        setRecentlyRead(meusLivros.filter((b) => b.status === "LIDO"));
+        // 2. Filtragem por Status conforme o Banco de Dados e Layout
+        // Últimas leituras: Apenas os que já foram lidos
+        setRecentlyRead(todosOsLivros.filter((b) => b.status === "LIDO"));
+
+        // Sua lista de leitura: O que está em progresso ou planejado
         setReadingList(
-          meusLivros.filter(
-            (b) => b.status === "LENDO" || b.status === "QUERO LER",
-          ),
+          todosOsLivros.filter(
+            (b) => b.status === "LENDO" || b.status === "QUERO LER"
+          )
         );
 
-        // 2. Busca recomendações reais da API externa (Open Library) via seu backend
-        // Vamos usar "Love" (Romance) como padrão para recomendações
-        const resRec = await api.get("/livros/externos/love");
-        setRecommendations(resRec.data);
+        // Recomendações: Filtra livros marcados como RECOMENDADO no banco
+        // Se não houver nenhum, ele pega os 4 primeiros para não deixar vazio
+        const recs = todosOsLivros.filter((b) => b.status === "RECOMENDADO");
+        setRecommendations(recs.length > 0 ? recs : todosOsLivros.slice(0, 4));
+
       } catch (err) {
-        console.error("Erro ao carregar dados:", err);
+        console.error("Erro ao carregar dados do MongoDB:", err);
       } finally {
         setLoading(false);
       }
@@ -47,7 +80,7 @@ export default function HomePage() {
       <div className={styles.page}>
         <AppHeader />
         <main className={styles.main}>
-          <h2 style={{ color: "white", padding: "100px" }}>Carregando...</h2>
+          <h2 style={{ color: "white", padding: "100px" }}>Carregando sua biblioteca... 📚</h2>
         </main>
       </div>
     );
@@ -56,12 +89,18 @@ export default function HomePage() {
     <div className={styles.page}>
       <AppHeader />
       <main className={styles.main}>
-
-        {/* ── Últimas leituras (Carrossel) ─────────────────── */}
+        
+        {/* ── Últimas leituras (Carrossel Retangular) ─────────────────── */}
         {recentlyRead.length > 0 && (
           <>
             <h2 className={styles.sectionTitle}>Últimas leituras</h2>
-            <div className={styles.carouselRect} aria-label="Últimas leituras">
+            <div
+              className={styles.carouselRect}
+              ref={carouselRef}
+              onMouseMove={handleCarouselMouseMove}
+              onMouseLeave={stopScroll}
+              aria-label="Últimas leituras"
+            >
               {recentlyRead.map((book) => (
                 <div
                   key={book.id}
@@ -85,8 +124,8 @@ export default function HomePage() {
             </div>
           </>
         )}
-        
-        {/* ── Sua lista de leitura (Grid) ──────────────────── */}
+
+        {/* ── Sua lista de leitura (Grid de Cards) ──────────────────── */}
         <h2 className={styles.sectionTitle}>Sua lista de leitura</h2>
         <div className={styles.bookGrid}>
           {readingList.length > 0 ? (
@@ -95,26 +134,28 @@ export default function HomePage() {
             ))
           ) : (
             <p style={{ color: "var(--color-sage)", padding: "20px" }}>
-              Sua lista está vazia. Adicione livros!
+              Nenhum livro sendo lido no momento. 📖
             </p>
           )}
         </div>
 
-        {/* ── Recomendações (API Open Library) ─────────────────────── */}
-        <h2 className={styles.sectionTitle}>Recomendações da Open Library</h2>
-        <div className={styles.bookGrid}>
-          {recommendations.slice(0, 4).map((book) => (
-            <BookCardMini key={book.id + "-rec"} book={book} />
-          ))}
-        </div>
+        {/* ── Recomendações (Fiel ao Figma) ─────────────────────── */}
+        {recommendations.length > 0 && (
+          <>
+            <h2 className={styles.sectionTitle}>Recomendações</h2>
+            <div className={styles.bookGrid}>
+              {recommendations.slice(0, 4).map((book) => (
+                <BookCardMini key={book.id + "-rec"} book={book} />
+              ))}
+            </div>
+          </>
+        )}
 
         <button
           className={styles.moreBtn}
-          onClick={() =>
-            navigate("/listagem", { state: { query: "trending" } })
-          }
+          onClick={() => navigate("/listagem")}
         >
-          Ver mais recomendações
+          Ver mais recomendações ✨
         </button>
 
         <div className={styles.footerWrap}>
