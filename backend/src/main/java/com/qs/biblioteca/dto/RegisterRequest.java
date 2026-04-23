@@ -10,12 +10,12 @@ public class RegisterRequest {
     @NotBlank
     private String nome;
 
-    @Email
-    @NotBlank
+    @Email(message = "O email deve ser válido")
+    @NotBlank(message = "O email é obrigatório")
     private String email;
 
-    @NotBlank
-    @Size(min = 6)
+    @NotBlank(message = "A senha é obrigatória")
+    @Size(min = 6, message = "A senha deve ter pelo menos 6 caracteres")
     private String senha;
 
     private String cep;
