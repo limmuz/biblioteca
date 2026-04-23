@@ -1,31 +1,40 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import styles from './AppHeader.module.css';
-import LogoIcon from '../../assets/icon-logo.svg?react';
-import HomeIcon from '../../assets/icon-home.svg?react';
-import BookmarkIcon from '../../assets/icon-bookmark.svg?react';
-import SearchIcon from '../../assets/icon-search.svg?react';
-import ExitIcon from '../../assets/icon-exit.svg?react';
-import { clearSession, getUser } from '../../services/auth';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import styles from "./AppHeader.module.css";
+
+import { 
+  BsHouse,
+  BsBookmark,
+  BsJournalPlus,
+  BsSearch,
+  BsBoxArrowRight
+} from "react-icons/bs";
+
+import LogoIcon from "../../assets/icon-logo.svg?react";
+import { clearSession, getUser } from "../../services/auth";
 
 export default function AppHeader() {
   const navigate = useNavigate();
-  const [termo, setTermo] = useState('');
+  const [termo, setTermo] = useState("");
   const user = getUser();
 
   const initials = user.nome
-    ? user.nome.split(' ').slice(0, 2).map((n) => n[0].toUpperCase()).join('')
-    : '?';
+    ? user.nome
+        .split(" ")
+        .slice(0, 2)
+        .map((n) => n[0].toUpperCase())
+        .join("")
+    : "?";
 
   const handleLogout = () => {
     clearSession();
-    navigate('/login');
+    navigate("/login");
   };
 
   const handleSearch = (e) => {
-    if (e.key === 'Enter' && termo.trim()) {
-      navigate('/listagem', { state: { query: termo } });
-      setTermo('');
+    if (e.key === "Enter" && termo.trim()) {
+      navigate("/listagem", { state: { query: termo } });
+      setTermo("");
     }
   };
 
@@ -37,17 +46,31 @@ export default function AppHeader() {
 
       <nav className={styles.nav}>
         <div className={styles.navIcons}>
-          <button onClick={() => navigate('/home')} className={styles.navBtn} title="Início">
-            <HomeIcon className={styles.navIcon} />
-          </button>
-          
-          <button onClick={() => navigate('/listagem')} className={styles.navBtn} title="Minha Biblioteca">
-            <BookmarkIcon className={styles.bookmarkIcon} />
+
+          <button
+            onClick={() => navigate("/home")}
+            className={styles.navBtn}
+            title="Início"
+          >
+            <BsHouse className={styles.navIcon} />
           </button>
 
-          <button onClick={() => navigate('/novo-livro')} className={styles.navBtn} title="Cadastrar Manualmente">
-            <span style={{fontSize: '24px', color: 'var(--color-forest)', fontWeight: 'bold'}}>+</span>
+          <button
+            onClick={() => navigate("/listagem")}
+            className={styles.navBtn}
+            title="Minha Biblioteca"
+          >
+            <BsBookmark className={styles.navIcon} />
           </button>
+
+          <button
+            onClick={() => navigate("/novo-livro")}
+            className={styles.navBtn}
+            title="Cadastrar Livro"
+          >
+            <BsJournalPlus className={styles.navIcon} />
+          </button>
+
         </div>
 
         <div className={styles.searchBar}>
@@ -59,15 +82,24 @@ export default function AppHeader() {
             onChange={(e) => setTermo(e.target.value)}
             onKeyDown={handleSearch}
           />
-          <SearchIcon className={styles.searchIcon} />
+
+          <BsSearch className={styles.searchIcon} />
         </div>
 
         <div className={styles.userArea}>
-          <div className={styles.avatar} title={user.nome || 'Usuário'}>
+          <div
+            className={styles.avatar}
+            title={user.nome || "Usuário"}
+          >
             {initials}
           </div>
-          <button className={styles.navBtn} onClick={handleLogout} title="Sair">
-            <ExitIcon className={styles.exitIcon} />
+
+          <button
+            className={styles.navBtn}
+            onClick={handleLogout}
+            title="Sair"
+          >
+            <BsBoxArrowRight className={styles.navIcon} />
           </button>
         </div>
       </nav>
