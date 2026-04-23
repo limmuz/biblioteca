@@ -15,9 +15,16 @@ export default function HomePage() {
   const carouselRef = useRef(null);
   const scrollIntervalRef = useRef(null);
 
+  const isLibraryEmpty = 
+    recentlyRead.length === 0 && 
+    readingList.length === 0 && 
+    recommendations.length === 0;
+
   const stopScroll = () => {
-    clearInterval(scrollIntervalRef.current);
-    scrollIntervalRef.current = null;
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
   };
 
   const handleCarouselMouseMove = (e) => {
@@ -45,23 +52,17 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 1. Busca centralizada no seu banco MongoDB (Spring Boot)
         const res = await api.get("/livros");
         const todosOsLivros = res.data;
 
-        // 2. Filtragem por Status conforme o Banco de Dados e Layout
-        // Últimas leituras: Apenas os que já foram lidos
         setRecentlyRead(todosOsLivros.filter((b) => b.status === "LIDO"));
 
-        // Sua lista de leitura: O que está em progresso ou planejado
         setReadingList(
           todosOsLivros.filter(
             (b) => b.status === "LENDO" || b.status === "QUERO LER"
           )
         );
 
-        // Recomendações: Filtra livros marcados como RECOMENDADO no banco
-        // Se não houver nenhum, ele pega os 4 primeiros para não deixar vazio
         const recs = todosOsLivros.filter((b) => b.status === "RECOMENDADO");
         setRecommendations(recs.length > 0 ? recs : todosOsLivros.slice(0, 4));
 
@@ -90,7 +91,6 @@ export default function HomePage() {
       <AppHeader />
       <main className={styles.main}>
         
-        {/* ── Últimas leituras (Carrossel Retangular) ─────────────────── */}
         {recentlyRead.length > 0 && (
           <>
             <h2 className={styles.sectionTitle}>Últimas leituras</h2>
@@ -125,7 +125,6 @@ export default function HomePage() {
           </>
         )}
 
-        {/* ── Sua lista de leitura (Grid de Cards) ──────────────────── */}
         <h2 className={styles.sectionTitle}>Sua lista de leitura</h2>
         <div className={styles.bookGrid}>
           {readingList.length > 0 ? (
@@ -139,7 +138,6 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* ── Recomendações (Fiel ao Figma) ─────────────────────── */}
         {recommendations.length > 0 && (
           <>
             <h2 className={styles.sectionTitle}>Recomendações</h2>
@@ -153,9 +151,9 @@ export default function HomePage() {
 
         <button
           className={styles.moreBtn}
-          onClick={() => navigate("/listagem")}
+          onClick={() => navigate(isLibraryEmpty ? "/novo-livro" : "/listagem")}
         >
-          Ver mais recomendações ✨
+          {isLibraryEmpty ? "Cadastrar meu primeiro livro" : "Ver mais recomendações"}
         </button>
 
         <div className={styles.footerWrap}>
