@@ -1,0 +1,53 @@
+.page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding-top: calc(var(--header-height) + var(--page-side-margin) + 32px);
+  padding-bottom: 60px;
+}
+
+.main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sectionTitle {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 400;
+  color: #000000;
+  text-align: center;
+  margin: 0;
+}
+
+.bookGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 42px 24px;
+}
+
+.footerWrap {
+  margin-top: 20px;
+}
+
+@media (max-width: 1024px) {
+  .main {
+    padding: 0 40px;
+  }
+  .bookGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 0 20px;
+  }
+  .bookGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px 16px;
+  }
+}

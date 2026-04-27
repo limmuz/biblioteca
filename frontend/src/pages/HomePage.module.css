@@ -1,0 +1,153 @@
+.page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding-top: calc(var(--header-height) + var(--page-side-margin) + 32px);
+  padding-bottom: 60px;
+}
+
+.main {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Section headings ─────────────────────────────────────────── */
+.sectionTitle {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 400;
+  color: #000000;
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Carrossel retangular (Últimas leituras) ─────────────────── */
+.carouselRect {
+  display: flex;
+  overflow-x: auto;
+  gap: 16px;
+  padding: 1rem 0;
+  scroll-behavior: smooth;
+  cursor: default;
+}
+
+.carouselRect::-webkit-scrollbar {
+  display: none;
+}
+
+.carouselRectCard {
+  flex: 0 0 auto; /* não encolhe nem cresce */
+  display: flex;
+  background-color: var(--color-forest); /* verde floresta */
+  border-radius: 10px;
+  overflow: hidden;
+  width: 450px;
+  min-width: 450px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  transition: transform 0.2s;
+}
+
+.carouselRectCard:hover {
+  transform: scale(1.03);
+}
+
+.carouselRectImage {
+  width: 150px;
+  height: 220px;
+  object-fit: cover;
+}
+
+.carouselRectInfo {
+  padding: 0.5rem 1rem;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.carouselRectTitle {
+  font-weight: bold;
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.carouselRectAuthor {
+  font-style: italic;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.carouselRectExcerpt {
+  font-size: 0.8rem;
+  line-height: 1.2rem;
+  max-height: 5rem; /* limita altura da sinopse */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Mini book grid ───────────────────────────────────────────── */
+.bookGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 42px 24px;
+}
+
+/* ── More button ──────────────────────────────────────────────── */
+.moreBtn {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-cream-text);
+  background-color: var(--color-forest);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 10px 32px;
+  cursor: pointer;
+  align-self: center;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+  letter-spacing: 0.03em;
+}
+
+.moreBtn:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+/* ── Footer wrapper ───────────────────────────────────────────── */
+.footerWrap {
+  margin-top: 20px;
+}
+
+@media (max-width: 1024px) {
+  .main {
+    padding: 0 40px;
+  }
+  .bookGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .main {
+    padding: 0 20px;
+  }
+  .bookGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px 16px;
+  }
+  .carouselRectCard {
+    min-width: 320px;
+    width: 320px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bookGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 12px;
+  }
+}

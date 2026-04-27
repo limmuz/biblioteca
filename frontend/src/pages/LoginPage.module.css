@@ -1,0 +1,146 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fieldLabel {
+  font-family: var(--font-poppins);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-ink);
+}
+
+.fieldInput {
+  width: 100%;
+  border-radius: 8px;
+  border: 2px solid var(--color-ink);
+  padding: 12px 14px;
+  font-family: var(--font-poppins);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-ink);
+  background-color: var(--color-bg);
+}
+
+.fieldInput:focus {
+  border-color: var(--color-forest);
+}
+
+.errorMsg {
+  color: #d14343;
+  font-size: 13px;
+  margin-top: 6px;
+  text-align: center;
+}
+
+.infoMsg {
+  color: var(--color-sage);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.forgotLink {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-sage);
+  text-align: right;
+}
+
+.forgotLink a {
+  color: var(--color-sage);
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.forgotLink a:hover {
+  color: var(--color-forest);
+}
+
+.submitBtn {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-cream-text);
+  background-color: var(--color-forest);
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 10px 40px;
+  cursor: pointer;
+  align-self: center;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+  letter-spacing: 0.03em;
+}
+
+.submitBtn:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.submitBtn:active {
+  transform: translateY(0);
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background-color: var(--color-sage);
+  border: none;
+  margin: 0;
+}
+
+.bottomLink {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-sage);
+  text-align: center;
+  margin: 0;
+}
+
+.bottomLink a {
+  color: var(--color-sage);
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.bottomLink a:hover {
+  color: var(--color-forest);
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+}
+
+.group {
+  flex: 1; 
+}
+
+.groupNumero {
+  flex: 1;
+}
+
+.groupComplemento {
+  flex: 2;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+}
+
+.groupCidade {
+  flex: 2;
+}
+
+.groupUf {
+  flex: 1;
+}
