@@ -1,0 +1,6 @@
+/home/limmuz/Downloads/biblioteca/backend/src/test/java/com/qs/biblioteca/TestcontainersConfiguration.java
+/home/limmuz/Downloads/biblioteca/backend/src/test/java/com/qs/biblioteca/e2e/AuthE2ETest.java
+/home/limmuz/Downloads/biblioteca/backend/src/test/java/com/qs/biblioteca/e2e/LivroE2ETest.java
+/home/limmuz/Downloads/biblioteca/backend/src/test/java/com/qs/biblioteca/integration/GoogleBooksVcrTest.java
+/home/limmuz/Downloads/biblioteca/backend/src/test/java/com/qs/biblioteca/integration/LivroServiceIntegrationTest.java
+/home/limmuz/Downloads/biblioteca/backend/src/test/java/com/qs/biblioteca/unit/LivroValidatorParamTest.java
