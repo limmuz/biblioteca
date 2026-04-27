@@ -1,96 +1,90 @@
-# Projeto Lybre - Biblioteca Pessoal
+# 📚 Projeto Biblioteca
 
-Aplicacao fullstack para cadastro e gerenciamento de livros, com backend Spring Boot + MongoDB e frontend React (Vite).
+Sistema de gerenciamento de biblioteca com autenticação JWT, CRUD de livros e validações de regras de negócio. O projeto foi desenvolvido com separação de responsabilidades entre Backend (Spring Boot) e Frontend, utilizando MongoDB como banco de dados.
 
-## Entrega final
+## 🛠 Tecnologias e Versões
 
-Data de entrega do projeto: 26/05/2026.
-
-## Status rapido (10/04/2026)
-
-Ja existe no repositorio:
-- Estrutura backend e frontend criada.
-- Autenticacao JWT completa (cadastro, login, rotas protegidas e logout).
-- CRUD de livros com busca e delete no backend.
-- Integracao frontend com API real (sem mocks no fluxo principal).
-- Consulta de CEP no cadastro (ViaCEP) com fallback manual.
-- CI inicial configurada (build frontend + testes backend).
-- Base de livros atualizada em doc/livros.json com sinopses e metadados.
-- Scripts para desenvolvimento local com limpeza de portas (dev:clean).
-
-Pontos que ainda precisam de fechamento:
-- Finalizar RTM.md completo com rastreabilidade RF x testes e diagramas UML.
-- Refinar responsividade final web/mobile em todas as telas.
-- Evoluir cobertura de testes e consolidar evidencias para entrega.
-- Integrar fluxo real de redefinicao de senha no backend/frontend.
+* **Backend:** Java 17
+* **Framework:** Spring Boot 3.x
+* **Gerenciador de Dependências:** Maven (Wrapper incluso no projeto)
+* **Banco de Dados:** MongoDB
+* **Frontend:** Node.js (v18+) e NPM
+* **Testes e Cobertura:** JUnit 5, Testcontainers e JaCoCo (Meta de Cobertura: > 80%)
 
 ---
 
-## Atualizacao para o grupo
+## ⚙️ Pré-requisitos
 
-### O que eu ja conclui
-- Auth e sessao completas (cadastro/login + JWT + logout + protected routes).
-- CRUD de livros com busca, update e delete.
-- Seed de livros atualizado com sinopses e metadados (categorias, editora e publicacao).
-- Pipeline CI inicial (build frontend + testes backend).
-- Endereco no cadastro com consulta de CEP e fallback manual.
-- Ajustes de CORS para localhost em portas dinamicas do frontend.
-- Script de inicializacao local com limpeza automatica de portas.
+Para rodar este projeto na sua máquina, você precisará ter instalado:
 
-### Enquete de pendencias (escolham 1 parte cada)
-
-Escolham qual opcao cada um vai assumir para fechar rapido:
-
-- [ ] Opcao 1: Ajustes finais de responsividade web/mobile nas telas principais.
-- [ ] Opcao 2: Finalizar RTM.md com RF x testes + diagramas UML de sequencia.
-- [ ] Opcao 3: Evidencias de qualidade (cobertura >= 80%, link da CI e SonarQube).
-
-Prazo para escolher as opcoes no grupo: 12/04.
-Prazo para concluir as pendencias: 12/05.
+1. **Java JDK 17** (Verifique com: java -version)
+2. **Node.js** (Recomendado v18 LTS ou superior. Verifique com: node -v)
+3. **Docker** (Essencial para rodar o MongoDB e os Testcontainers)
+   * *Windows:* Docker Desktop (certifique-se de que o aplicativo está aberto e rodando).
+   * *Linux:* Docker Engine (verifique com: docker ps).
+4. **Git**
 
 ---
 
-## Cronograma ate 26/05
+## 🚀 Como Executar o Projeto
 
-### 21/04 a 12/05 - Execucao das pendencias pelos colegas
-- Colega 1: responsividade web/mobile nas telas principais.
-- Colega 2: RTM.md (RF x testes) + diagramas UML de sequencia.
-- Colega 3: evidencias de qualidade (cobertura, CI e SonarQube).
+Primeiro, clone o repositório e entre na pasta:
 
-### 13/05 a 19/05 - Revisao final em grupo
-- Validar entregas dos colegas.
-- Corrigir ajustes finais.
+git clone https://github.com/limmuz/biblioteca.git
+cd biblioteca
 
-### 20/05 a 26/05 - Fechamento da entrega
-- Consolidar documentacao final.
-- Organizar apresentacao.
-- Entregar o projeto em 26/05/2026.
 
----
+### 1. Banco de Dados (MongoDB)
+Para rodar a aplicação localmente, você precisa de uma instância do MongoDB rodando no Docker na porta padrão (27017).
 
-## Como rodar localmente
+Linux e Windows (via terminal):
+docker run -d -p 27017:27017 --name biblioteca-mongo mongo:latest
 
-### Pre-requisitos
-- Java 17+
-- Node.js 18+
-- MongoDB local na porta 27017
+*(Nota: Para os testes automatizados, o banco subirá sozinho usando Testcontainers, você não precisa fazer isso).*
 
-### Fullstack pelo script raiz (recomendado)
-```bash
+
+### 2. Rodando o Backend
+Abra um terminal, acesse a pasta backend e use o Maven Wrapper para iniciar o servidor Spring Boot.
+
+No Linux / macOS:
+cd backend
+./mvnw spring-boot:run
+
+No Windows:
+cd backend
+mvnw.cmd spring-boot:run
+
+O backend estará rodando em http://localhost:8080.
+
+
+### 3. Rodando o Frontend
+Abra outro terminal, acesse a pasta frontend, instale as dependências e inicie o servidor.
+
+Linux e Windows:
+cd frontend
 npm install
-npm run dev:clean
-```
+npm start
 
-### Fullstack pelo script raiz (sem limpeza)
-```bash
-npm run dev
-```
+*(Se o seu frontend usar Vite, o comando pode ser npm run dev).*
+O frontend estará acessível no seu navegador (geralmente em http://localhost:3000 ou 5173).
 
-### Observacoes importantes
-- O comando dev:clean fecha processos presos nas portas 5173/5174/5175/8080 antes de subir o projeto.
-- Se importar dados com mongoimport, use o banco Biblioteca (B maiusculo) para manter consistencia local.
+---
 
-### Importar livros no banco local
-```bash
-"C:\Program Files\MongoDB\Tools\100\bin\mongoimport.exe" --uri "mongodb://localhost:27017/Biblioteca" --collection livros --file "doc/livros.json" --jsonArray --drop
-```
+## 🧪 Como Rodar os Testes e Gerar Relatório de Cobertura
+
+O backend possui uma suíte robusta de testes E2E e de Unidade. A meta de cobertura é de no mínimo 80%. O projeto exige que o Docker esteja rodando, pois utiliza Testcontainers para subir um banco de dados real e efêmero durante os testes, garantindo fidelidade sem usar Mocks.
+
+Abra o terminal na pasta backend:
+
+No Linux / macOS:
+./mvnw clean test
+
+No Windows:
+mvnw.cmd clean test
+
+### 📊 Visualizando o Relatório JaCoCo
+Se todos os testes passarem (BUILD SUCCESS), o relatório HTML de cobertura será gerado automaticamente.
+
+Para visualizar as porcentagens de cobertura do código:
+1. Navegue até a pasta: backend/target/site/jacoco/
+2. Abra o arquivo index.html no seu navegador de preferência.
