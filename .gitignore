@@ -1,1 +1,40 @@
 node_modules
+# Java / Maven
+**/target/
+**/*.class
+**/*.jar
+
+# Node / Frontend
+**/node_modules/
+**/dist/
+.vite/
+.eslintcache
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+
+# Logs and temp
+*.log
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.iws
+*.iml
+*.ipr
+*.swp
+
+.idea/
