@@ -1,0 +1,71 @@
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.label {
+  font-family: var(--font-poppins);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-ink);
+}
+
+.inputBox {
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  border: 2px solid var(--color-ink);
+  padding: 12px 14px;
+  gap: 8px;
+  background-color: var(--color-bg);
+  transition: border-color 0.2s ease;
+}
+
+.inputBox:focus-within {
+  border-color: var(--color-forest);
+}
+
+.input {
+  flex: 1;
+  font-family: var(--font-poppins);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-ink);
+  background: transparent;
+  border: none;
+  outline: none;
+  min-width: 0;
+}
+
+.input::placeholder {
+  color: var(--color-sage);
+}
+
+.icon {
+  width: 20px;
+  height: 16px;
+  color: var(--color-sage);
+  flex-shrink: 0;
+}
+
+.eyeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  color: var(--color-sage);
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.eyeBtn:hover {
+  color: var(--color-ink);
+}
+
+.eyeIcon {
+  width: 20px;
+  height: 20px;
+}
