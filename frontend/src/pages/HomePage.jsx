@@ -20,34 +20,32 @@ export default function HomePage() {
     readingList.length === 0 && 
     recommendations.length === 0;
 
-  const stopScroll = () => {
-    if (scrollIntervalRef.current) {
-      clearInterval(scrollIntervalRef.current);
-      scrollIntervalRef.current = null;
-    }
-  };
+  // Auto-scroll animation for "Últimas leituras"
+  const autoScrollRef = useRef(null);
+  const isPausedRef = useRef(false);
 
-  const handleCarouselMouseMove = (e) => {
+  useEffect(() => {
     const el = carouselRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const threshold = 80;
+    if (!el || recentlyRead.length === 0) return;
 
-    if (x < threshold) {
-      if (scrollIntervalRef.current) return;
-      scrollIntervalRef.current = setInterval(() => {
-        el.scrollLeft -= 5;
-      }, 16);
-    } else if (x > rect.width - threshold) {
-      if (scrollIntervalRef.current) return;
-      scrollIntervalRef.current = setInterval(() => {
-        el.scrollLeft += 5;
-      }, 16);
-    } else {
-      stopScroll();
-    }
-  };
+    const startAutoScroll = () => {
+      autoScrollRef.current = setInterval(() => {
+        if (isPausedRef.current) return;
+        if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 2) {
+          el.scrollLeft = 0;
+        } else {
+          el.scrollLeft += 1;
+        }
+      }, 20);
+    };
+
+    startAutoScroll();
+    return () => clearInterval(autoScrollRef.current);
+  }, [recentlyRead]);
+
+  const stopScroll = () => { isPausedRef.current = false; };
+  const handleCarouselMouseMove = () => { isPausedRef.current = true; };
+  const handleCarouselMouseLeave = () => { isPausedRef.current = false; };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -97,8 +95,8 @@ export default function HomePage() {
             <div
               className={styles.carouselRect}
               ref={carouselRef}
-              onMouseMove={handleCarouselMouseMove}
-              onMouseLeave={stopScroll}
+              onMouseEnter={handleCarouselMouseMove}
+              onMouseLeave={handleCarouselMouseLeave}
               aria-label="Últimas leituras"
             >
               {recentlyRead.map((book) => (
@@ -132,9 +130,11 @@ export default function HomePage() {
               <BookCardMini key={book.id} book={book} />
             ))
           ) : (
-            <p style={{ color: "var(--color-sage)", padding: "20px" }}>
-              Nenhum livro sendo lido no momento. 📖
-            </p>
+            <div className={styles.emptyState}>
+              <span className={styles.emptyIcon}>📖</span>
+              <p className={styles.emptyText}>Nenhum livro sendo lido no momento.</p>
+              <p className={styles.emptySubText}>Adicione um livro à sua lista de leitura!</p>
+            </div>
           )}
         </div>
 

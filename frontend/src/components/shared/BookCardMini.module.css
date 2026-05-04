@@ -1,5 +1,13 @@
 .card {
-  background-color: var(--color-bg);
+
+  background-color: var(--color-bg); 
+  border: none;                      
+  padding: 0;                        
+  text-align: left;                  
+  font-family: inherit;              
+  width: 100%;                       
+  
+  /* Seus estilos originais mantidos */
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -12,6 +20,11 @@
 .card:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(17, 26, 25, 0.12);
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
 }
 
 .cover {

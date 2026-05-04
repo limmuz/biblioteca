@@ -16,8 +16,8 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.web.client.RestTemplate; // <-- Import correto
-import org.springframework.web.client.HttpClientErrorException; // <-- Necessario para pegar os 404/401
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.HttpClientErrorException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,7 +30,6 @@ class LivroE2ETest {
     @LocalServerPort
     private int port;
 
-    // Substituído o TestRestTemplate pelo RestTemplate nativo e removido o @Autowired
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
@@ -51,13 +50,8 @@ class LivroE2ETest {
         livroRepository.deleteAll();
         usuarioRepository.deleteAll();
 
-        // Registra um usuário e obtém o JWT para autenticar as requisições
         jwtToken = registrarEObterToken("teste@email.com", "senha123");
     }
-
-    // ══════════════════════════════════════════════════════════════
-    // POST /api/livros
-    // ══════════════════════════════════════════════════════════════
 
     @Nested
     @DisplayName("POST /api/livros")
@@ -126,10 +120,6 @@ class LivroE2ETest {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // GET /api/livros
-    // ══════════════════════════════════════════════════════════════
-
     @Nested
     @DisplayName("GET /api/livros")
     class ListarLivrosTests {
@@ -195,10 +185,6 @@ class LivroE2ETest {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // GET /api/livros/{id}
-    // ══════════════════════════════════════════════════════════════
-
     @Nested
     @DisplayName("GET /api/livros/{id}")
     class BuscarLivroPorIdTests {
@@ -231,10 +217,6 @@ class LivroE2ETest {
             }
         }
     }
-
-    // ══════════════════════════════════════════════════════════════
-    // PUT /api/livros/{id}
-    // ══════════════════════════════════════════════════════════════
 
     @Nested
     @DisplayName("PUT /api/livros/{id}")
@@ -309,9 +291,7 @@ class LivroE2ETest {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // DELETE /api/livros/{id}
-    // ══════════════════════════════════════════════════════════════
+
 
     @Nested
     @DisplayName("DELETE /api/livros/{id}")
@@ -322,7 +302,6 @@ class LivroE2ETest {
         void deletar_existente_deveRetornar204() {
             Livro salvo = salvarLivroNoBanco("Livro a Deletar", "Autor Teste");
 
-            // No Java RestTemplate puro, um DELETE 204 também pode devolver 200, então validamos que não lançou erro
             ResponseEntity<Void> response = restTemplate.exchange(
                     livrosUrl + "/" + salvo.getId(),
                     HttpMethod.DELETE,
@@ -379,10 +358,6 @@ class LivroE2ETest {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // GET /api/usuarios/me (cobre UsuarioController)
-    // ══════════════════════════════════════════════════════════════
-
     @Nested
     @DisplayName("GET /api/usuarios/me")
     class UsuarioMeTests {
@@ -413,8 +388,6 @@ class LivroE2ETest {
             }
         }
     }
-
-    // ── helpers privados ──────────────────────────────────────────
 
     private String registrarEObterToken(String email, String senha) {
         RegisterRequest reg = new RegisterRequest();

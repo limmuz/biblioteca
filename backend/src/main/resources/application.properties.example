@@ -1,0 +1,9 @@
+# ── Exemplo de configuração — NÃO subir o arquivo real com senhas ──
+# Copie este arquivo para application.properties e preencha com seus dados
+
+# MongoDB Atlas
+spring.data.mongodb.uri=mongodb+srv://SEU_USUARIO:SUA_SENHA@SEU_CLUSTER.mongodb.net/biblioteca_db?retryWrites=true&w=majority
+
+# JWT
+jwt.secret=coloque-aqui-uma-chave-secreta-com-pelo-menos-32-caracteres
+jwt.expiration-ms=86400000

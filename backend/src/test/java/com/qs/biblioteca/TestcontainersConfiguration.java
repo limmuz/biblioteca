@@ -8,11 +8,7 @@ import org.testcontainers.utility.DockerImageName;
 
 /**
  * Configuração Testcontainers compartilhada entre todos os testes.
- *
- * A anotação @ServiceConnection (Spring Boot 3.1+/4.x) extrai automaticamente
- * a URI do container em execução e sobrescreve spring.data.mongodb.uri,
- * eliminando a necessidade de @DynamicPropertySource manual.
- *
+
  * Uso nos testes:
  *   @SpringBootTest
  *   @Import(TestcontainersConfiguration.class)

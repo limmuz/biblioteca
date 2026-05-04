@@ -23,7 +23,7 @@ export default function DetalhesLivroPage() {
       .catch(() => { setError(true); setLoading(false); });
   }, [id, book]);
 
-  const handleAdicionar = async () => {
+  const handleAdicionarFavoritos = async () => {
     if (!book || adicionando) return;
     setAdicionando(true);
     try {
@@ -43,6 +43,7 @@ export default function DetalhesLivroPage() {
       setToastVisible(true);
     } catch (err) {
       console.error(err);
+      alert('Erro ao adicionar aos favoritos');
     } finally {
       setAdicionando(false);
     }
@@ -58,14 +59,35 @@ export default function DetalhesLivroPage() {
     navigate(`/leitura/${book.id}`);
   };
 
-  const handleRemoverLista = async () => {
+  const handleRemoverFavoritos = async () => {
     setToastVisible(false);
     try {
-      await api.delete(`/livros/${book.id}`);
+      await api.put(`/livros/${book.id}`, { ...book, status: 'LIDO' });
+      navigate('/home');
     } catch (err) {
       console.error(err);
+      alert('Erro ao remover dos favoritos');
     }
-    navigate('/home');
+  };
+
+  const handleEditar = () => {
+    navigate(`/editar-livro/${book.id}`, { state: { bookData: book } });
+  };
+
+  const handleExcluirPermanente = async () => {
+    const confirmar = window.confirm(
+      'Tem certeza que deseja excluir este livro permanentemente? Esta ação não pode ser desfeita.'
+    );
+    if (!confirmar) return;
+
+    try {
+      await api.delete(`/livros/${book.id}`);
+      alert('Livro excluído com sucesso!');
+      navigate('/home');
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao excluir o livro');
+    }
   };
 
   if (loading) {
@@ -104,7 +126,6 @@ export default function DetalhesLivroPage() {
       <AppHeader />
       <main className={styles.main}>
 
-        {/* ── Hero: capa + título + botões ───────────────────────────── */}
         <div className={styles.hero}>
           <img src={book.cover} alt={book.title} className={styles.bookCover} />
           <div className={styles.heroInfo}>
@@ -114,24 +135,21 @@ export default function DetalhesLivroPage() {
               <button className={styles.btnLer} onClick={() => navigate(`/leitura/${book.id}`)}>
                 Ler
               </button>
-              <button className={styles.btnAdicionar} onClick={handleAdicionar} disabled={adicionando}>
+              <button className={styles.btnAdicionar} onClick={handleAdicionarFavoritos} disabled={adicionando}>
                 {adicionando ? 'Adicionando...' : 'Adicionar a lista de leitura'}
               </button>
             </div>
           </div>
         </div>
 
-        {/* ── Card de detalhes: sinopse + meta ───────────────────────── */}
         <div className={styles.detailsCard}>
 
-          {/* Coluna Sinopse */}
           <div className={styles.sinopseCol}>
             <h2 className={styles.sinopseTitle}>Sinopse</h2>
             <hr className={styles.sinopseDivider} />
             <p className={styles.sinopseText}>{book.excerpt || 'Sinopse não disponível.'}</p>
           </div>
 
-          {/* Coluna Meta */}
           <div className={styles.metaCol}>
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Categorias</span>
@@ -163,11 +181,11 @@ export default function DetalhesLivroPage() {
             </div>
 
             <div className={styles.metaButtons}>
-              <button className={styles.btnLer} onClick={() => navigate(`/leitura/${book.id}`)}>
-                Ler
+              <button className={styles.btnEditar} onClick={handleEditar}>
+                Editar
               </button>
-              <button className={styles.btnAdicionar} onClick={handleAdicionar} disabled={adicionando}>
-                {adicionando ? 'Adicionando...' : 'Adicionar a lista de leitura'}
+              <button className={styles.btnExcluir} onClick={handleExcluirPermanente}>
+                Excluir
               </button>
             </div>
           </div>
@@ -178,7 +196,6 @@ export default function DetalhesLivroPage() {
         </div>
       </main>
 
-      {/* ── Toast "Adicionado!" ─────────────────────────────────────── */}
       {toastVisible && (
         <div className={styles.toast}>
           <div className={styles.toastContent}>
@@ -189,7 +206,7 @@ export default function DetalhesLivroPage() {
             <button className={styles.btnToastPrimary} onClick={handleComecarLer}>
               Começar a ler
             </button>
-            <button className={styles.btnToastSecondary} onClick={handleRemoverLista}>
+            <button className={styles.btnToastSecondary} onClick={handleRemoverFavoritos}>
               Remover da lista
             </button>
           </div>

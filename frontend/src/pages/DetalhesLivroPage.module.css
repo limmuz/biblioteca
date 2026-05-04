@@ -116,7 +116,7 @@
   max-width: 1120px;
   margin: 0 auto;
   width: 100%;
-  gap: 10px;
+  gap: 48px;
 }
 
 /* ── Synopsis column ──────────────────────────────────────────── */
@@ -156,28 +156,30 @@
 
 /* ── Meta column ──────────────────────────────────────────────── */
 .metaCol {
-  width: 360px;
+  width: 380px;
   min-width: 320px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .metaRow {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  align-items: center;
-  column-gap: 12px;
-  row-gap: 8px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .metaLabel {
   font-family: var(--font-serif);
-  font-size: 34px;
-  font-weight: 400;
+  font-size: 18px;
+  font-weight: 600;
   color: #000000;
   flex-shrink: 0;
   margin: 0;
+  line-height: 1.6;
+  min-width: 90px;
 }
 
 .metaTagsWrap {
@@ -217,6 +219,44 @@
   gap: 10px;
   flex-wrap: wrap;
   margin-top: 8px;
+}
+
+.btnEditar {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-cream-text);
+  background-color: var(--color-forest);
+  border: none;
+  border-radius: 10px;
+  padding: 10px 28px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+  letter-spacing: 0.02em;
+}
+
+.btnEditar:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.btnExcluir {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-cream-text);
+  background-color: #d14343;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 28px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+  letter-spacing: 0.02em;
+}
+
+.btnExcluir:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
 }
 
 /* ── Footer ───────────────────────────────────────────────────── */
@@ -312,7 +352,7 @@
     min-width: 280px;
   }
   .metaLabel {
-    font-size: 28px;
+    font-size: 18px;
   }
 }
 
@@ -331,16 +371,18 @@
   }
   .detailsCard {
     flex-direction: column;
+    gap: 24px;
   }
   .metaCol {
     width: 100%;
     min-width: 0;
   }
   .metaRow {
-    grid-template-columns: 110px 1fr;
+    flex-direction: column;
+    gap: 4px;
   }
   .metaLabel {
-    font-size: 24px;
+    font-size: 16px;
   }
   .toast {
     flex-direction: column;

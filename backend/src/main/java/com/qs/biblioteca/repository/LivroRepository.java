@@ -9,4 +9,5 @@ import java.util.List;
 @Repository
 public interface LivroRepository extends MongoRepository<Livro, String> {
 	List<Livro> findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(String title, String author);
+	boolean existsByTitleIgnoreCaseAndAuthorIgnoreCase(String title, String author);
 }

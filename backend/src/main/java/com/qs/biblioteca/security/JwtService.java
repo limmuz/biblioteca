@@ -27,6 +27,10 @@ public class JwtService {
 
     @PostConstruct
     public void init() {
+        if (jwtSecret.length() < 32) {
+            throw new IllegalArgumentException("JWT secret deve ter pelo menos 32 caracteres");
+        }
+
         byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
         this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
@@ -58,8 +62,7 @@ public class JwtService {
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        Claims claims = extractAllClaims(token);
-        return claimsResolver.apply(claims);
+        return claimsResolver.apply(extractAllClaims(token));
     }
 
     private Claims extractAllClaims(String token) {
