@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.web.client.RestTemplate; // <-- Importação corrigida
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,7 +30,6 @@ class AuthE2ETest {
     @LocalServerPort
     private int port;
 
-    // Substituído o TestRestTemplate problemático pelo RestTemplate real nativo
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Autowired
@@ -43,10 +42,6 @@ class AuthE2ETest {
         baseUrl = "http://localhost:" + port + "/api/auth";
         usuarioRepository.deleteAll();
     }
-
-    // ══════════════════════════════════════════════════════════════
-    // REGISTRO
-    // ══════════════════════════════════════════════════════════════
 
     @Nested
     @DisplayName("POST /api/auth/register")
@@ -126,9 +121,7 @@ class AuthE2ETest {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════
-    // LOGIN
-    // ══════════════════════════════════════════════════════════════
+
 
     @Nested
     @DisplayName("POST /api/auth/login")
@@ -193,7 +186,7 @@ class AuthE2ETest {
         @DisplayName("Login deve ser case-insensitive para o email")
         void login_comEmailEmMaiusculo_deveAutenticar() {
             AuthRequest request = new AuthRequest();
-            request.setEmail("ANA@EMAIL.COM"); // maiúsculo
+            request.setEmail("ANA@EMAIL.COM");
             request.setSenha("minhasenha");
 
             ResponseEntity<AuthResponse> response = restTemplate.postForEntity(
@@ -219,8 +212,6 @@ class AuthE2ETest {
             }
         }
     }
-
-    // ── factory auxiliar ──────────────────────────────────────────
 
     private static RegisterRequest novoRegisterRequest(
             String nome, String email, String senha) {

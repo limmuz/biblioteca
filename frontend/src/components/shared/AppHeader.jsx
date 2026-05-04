@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "./AppHeader.module.css";
 
@@ -16,7 +16,19 @@ import { clearSession, getUser } from "../../services/auth";
 export default function AppHeader() {
   const navigate = useNavigate();
   const [termo, setTermo] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const user = getUser();
+
+  useEffect(() => {
+    const saved = localStorage.getItem('lybre_avatar');
+    if (saved) setAvatarUrl(saved);
+
+    const onStorage = (e) => {
+      if (e.key === 'lybre_avatar') setAvatarUrl(e.newValue);
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
 
   const initials = user.nome
     ? user.nome
@@ -87,12 +99,17 @@ export default function AppHeader() {
         </div>
 
         <div className={styles.userArea}>
-          <div
-            className={styles.avatar}
+          <button
+            className={styles.avatarBtn}
+            onClick={() => navigate('/perfil')}
             title={user.nome || "Usuário"}
           >
-            {initials}
-          </div>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className={styles.avatarImg} />
+            ) : (
+              <div className={styles.avatar}>{initials}</div>
+            )}
+          </button>
 
           <button
             className={styles.navBtn}

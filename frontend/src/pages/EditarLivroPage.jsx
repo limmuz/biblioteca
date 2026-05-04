@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import AppHeader from '../components/shared/AppHeader';
 import Footer from '../components/Footer/Footer';
 import api from '../services/api';
 import styles from './NovoLivroPage.module.css';
 
-export default function NovoLivroPage() {
+export default function EditarLivroPage() {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  
   const [carregando, setCarregando] = useState(false);
-  const [erro, setErro] = useState('');
+  const [loading, setLoading] = useState(!location.state?.bookData);
   
   const [livro, setLivro] = useState({
     title: '',
@@ -23,13 +26,54 @@ export default function NovoLivroPage() {
     categoriesInput: ''
   });
 
+  useEffect(() => {
+    if (location.state?.bookData) {
+      const book = location.state.bookData;
+      setLivro({
+        title: book.title || '',
+        author: book.author || '',
+        cover: book.cover || '',
+        excerpt: book.excerpt || '',
+        status: book.status || 'QUERO LER',
+        language: book.language || '',
+        pages: book.pages || '',
+        publisher: book.publisher || '',
+        publishedDate: book.publishedDate || '',
+        categoriesInput: Array.isArray(book.categories) ? book.categories.join(', ') : ''
+      });
+      setLoading(false);
+    } else {
+      api.get(`/livros/${id}`)
+        .then((res) => {
+          const book = res.data;
+          setLivro({
+            title: book.title || '',
+            author: book.author || '',
+            cover: book.cover || '',
+            excerpt: book.excerpt || '',
+            status: book.status || 'QUERO LER',
+            language: book.language || '',
+            pages: book.pages || '',
+            publisher: book.publisher || '',
+            publishedDate: book.publishedDate || '',
+            categoriesInput: Array.isArray(book.categories) ? book.categories.join(', ') : ''
+          });
+          setLoading(false);
+        })
+        .catch((err) => {
+          console.error(err);
+          alert('Erro ao carregar livro');
+          navigate('/home');
+        });
+    }
+  }, [id, location.state, navigate]);
+
   const handleChange = (e) => {
     setLivro({ ...livro, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErro('');
     setCarregando(true);
     try {
       const payload = {
@@ -47,35 +91,45 @@ export default function NovoLivroPage() {
           : ['Nao informado']
       };
 
-      await api.post('/livros', payload);
-      navigate('/home');
+      await api.put(`/livros/${id}`, payload);
+      alert('Livro atualizado com sucesso!');
+      navigate(`/livro/${id}`);
     } catch (error) {
-      console.error("Erro ao salvar:", error);
-      let mensagemErro = 'Erro ao salvar o livro. ';
+      console.error("Erro ao atualizar:", error);
+      let mensagemErro = 'Erro ao atualizar o livro. ';
       
-      if (error.response?.status === 409) {
-        mensagemErro = `Este livro já está cadastrado na sua biblioteca: "${livro.title}" de ${livro.author}.`;
-      } else if (error.response?.status === 400) {
+      if (error.response?.status === 400) {
         mensagemErro += 'Verifique se todos os campos obrigatórios estão preenchidos corretamente.';
-      } else if (error.response?.data?.message) {
-        mensagemErro = error.response.data.message;
+      } else if (error.response?.status === 404) {
+        mensagemErro += 'Livro não encontrado.';
       } else if (error.message === 'Network Error') {
         mensagemErro += 'Verifique se o backend está rodando.';
       } else {
         mensagemErro += 'Tente novamente.';
       }
       
-      setErro(mensagemErro);
-    } finally{
+      alert(mensagemErro);
+    } finally {
       setCarregando(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <AppHeader />
+        <main className={styles.main}>
+          <h2 className={styles.title}>Carregando...</h2>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
       <AppHeader />
       <main className={styles.main}>
-        <h2 className={styles.title}>Novo Livro</h2>
+        <h2 className={styles.title}>Editar Livro</h2>
         
         <form onSubmit={handleSubmit} className={styles.form}>
           <label>
@@ -133,15 +187,18 @@ export default function NovoLivroPage() {
             </select>
           </label>
 
-          {erro && (
-            <div className={styles.errorBox}>
-              <span>⚠️ {erro}</span>
-            </div>
-          )}
-
-          <button type="submit" className={styles.submitBtn} disabled={carregando}>
-            {carregando ? 'SALVANDO...' : 'SALVAR LIVRO'}
-          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button type="submit" className={styles.submitBtn} disabled={carregando}>
+              {carregando ? 'SALVANDO...' : 'SALVAR ALTERAÇÕES'}
+            </button>
+            <button 
+              type="button" 
+              className={styles.cancelBtn} 
+              onClick={() => navigate(`/livro/${id}`)}
+            >
+              CANCELAR
+            </button>
+          </div>
         </form>
       </main>
       <div className={styles.footerWrap}>

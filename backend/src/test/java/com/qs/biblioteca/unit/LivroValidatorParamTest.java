@@ -1,6 +1,7 @@
 package com.qs.biblioteca.unit;
 
 import com.qs.biblioteca.model.Livro;
+import com.qs.biblioteca.validator.LivroValidator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -9,7 +10,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
-
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -18,21 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Testes unitários de caixa branca para {@link LivroValidator}.
- *
- * <p><strong>Regras respeitadas:</strong></p>
- * <ul>
- *   <li>Sem {@code @SpringBootTest} – teste puro de lógica de negócio.</li>
- *   <li>Sem Mockito / {@code @Mock} / {@code @MockBean} – instâncias reais.</li>
- *   <li>Usa exclusivamente JUnit 5 ({@code org.junit.jupiter.api}).</li>
- *   <li>Todos os cenários exercitados com {@code @ParameterizedTest}.</li>
- * </ul>
  */
 @DisplayName("LivroValidator – testes parametrizados de validação de negócio")
 class LivroValidatorParamTest {
-
-    // ══════════════════════════════════════════════════════════════════════
-    // Título
-    // ══════════════════════════════════════════════════════════════════════
 
     @Nested
     @DisplayName("isTituloValido()")
@@ -60,10 +48,6 @@ class LivroValidatorParamTest {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // Autor
-    // ══════════════════════════════════════════════════════════════════════
-
     @Nested
     @DisplayName("isAutorValido()")
     class AutorTests {
@@ -89,19 +73,15 @@ class LivroValidatorParamTest {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // Status
-    // ══════════════════════════════════════════════════════════════════════
-
     @Nested
     @DisplayName("isStatusValido()")
     class StatusTests {
 
         @ParameterizedTest(name = "[{index}] status={0} → válido")
         @ValueSource(strings = {
-                "QUERO LER", "LENDO", "LIDO", "RECOMENDADO",   // maiúsculo
-                "quero ler", "lendo", "lido", "recomendado",   // minúsculo
-                "Lendo", "Lido", "Recomendado"                 // mixed-case
+                "QUERO LER", "LENDO", "LIDO", "RECOMENDADO",
+                "quero ler", "lendo", "lido", "recomendado",
+                "Lendo", "Lido", "Recomendado"
         })
         @DisplayName("Status pertencente ao domínio (case-insensitive) deve ser válido")
         void statusDoDominio_deveSerValido(String status) {
@@ -119,10 +99,6 @@ class LivroValidatorParamTest {
             assertFalse(LivroValidator.isStatusValido(status));
         }
     }
-
-    // ══════════════════════════════════════════════════════════════════════
-    // Páginas
-    // ══════════════════════════════════════════════════════════════════════
 
     @Nested
     @DisplayName("isPaginasValido()")
@@ -149,10 +125,6 @@ class LivroValidatorParamTest {
             assertTrue(LivroValidator.isPaginasValido(paginas));
         }
     }
-
-    // ══════════════════════════════════════════════════════════════════════
-    // Cover (URL da capa)
-    // ══════════════════════════════════════════════════════════════════════
 
     @Nested
     @DisplayName("isCoverValido()")
@@ -183,17 +155,12 @@ class LivroValidatorParamTest {
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════════
-    // Livro completo – via @MethodSource
-    // ══════════════════════════════════════════════════════════════════════
-
     @Nested
     @DisplayName("isLivroValido() – validação completa do objeto")
     class LivroCompletoTests {
 
         static Stream<Object[]> livrosParaTestar() {
             return Stream.of(
-                    // ── casos válidos ──────────────────────────────────────────────────
                     new Object[]{
                             livro("Dom Casmurro", "Machado de Assis", "LIDO", 256),
                             true,
@@ -210,7 +177,6 @@ class LivroValidatorParamTest {
                             "Status em minúsculo deve ser aceito"
                     },
 
-                    // ── título inválido ────────────────────────────────────────────────
                     new Object[]{
                             livro(null, "Machado de Assis", "LIDO", 256),
                             false,
@@ -227,7 +193,6 @@ class LivroValidatorParamTest {
                             "Título vazio deve tornar o livro inválido"
                     },
 
-                    // ── autor inválido ─────────────────────────────────────────────────
                     new Object[]{
                             livro("Dom Casmurro", null, "LIDO", 256),
                             false,
@@ -239,7 +204,6 @@ class LivroValidatorParamTest {
                             "Autor em branco deve tornar o livro inválido"
                     },
 
-                    // ── status inválido ────────────────────────────────────────────────
                     new Object[]{
                             livro("Dom Casmurro", "Machado de Assis", "ABANDONADO", 256),
                             false,
@@ -251,7 +215,6 @@ class LivroValidatorParamTest {
                             "Status nulo deve tornar o livro inválido"
                     },
 
-                    // ── páginas inválidas ──────────────────────────────────────────────
                     new Object[]{
                             livro("Dom Casmurro", "Machado de Assis", "LIDO", 0),
                             false,
@@ -263,7 +226,6 @@ class LivroValidatorParamTest {
                             "Páginas negativas devem tornar o livro inválido"
                     },
 
-                    // ── objeto null ────────────────────────────────────────────────────
                     new Object[]{
                             null,
                             false,
@@ -280,8 +242,6 @@ class LivroValidatorParamTest {
                     "Falhou no cenário: " + descricao);
         }
     }
-
-    // ── factory auxiliar ──────────────────────────────────────────────────
 
     private static Livro livro(String titulo, String autor, String status, Integer paginas) {
         Livro l = new Livro();

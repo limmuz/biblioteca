@@ -21,6 +21,7 @@ export default function CadastroPage() {
   const [cepLoading, setCepLoading] = useState(false);
   const [cepError, setCepError] = useState('');
   const [error, setError] = useState('');
+  const [senhaErro, setSenhaErro] = useState('');
   const [loading, setLoading] = useState(false);
 
   const normalizeCep = (value) => value.replace(/\D/g, '').slice(0, 8);
@@ -68,12 +69,27 @@ export default function CadastroPage() {
     fetchAddress();
   }, [cep]);
 
+  const validarSenha = (s) => {
+    if (!s || s.length < 6) return 'A senha deve ter no mínimo 6 caracteres';
+    if (/^\d+$/.test(s)) return 'A senha não pode conter apenas números. Use letras e números';
+    if (/^[a-zA-Z]+$/.test(s)) return 'A senha não pode conter apenas letras. Use letras e números';
+    if (!/[a-zA-Z]/.test(s) || !/\d/.test(s)) return 'A senha deve conter pelo menos uma letra e um número';
+    return '';
+  };
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+    setSenhaErro('');
+
+    const erroSenha = validarSenha(password);
+    if (erroSenha) {
+      setSenhaErro(erroSenha);
+      return;
+    }
 
     if (password !== confirmPassword) {
-      setError('As senhas nao coincidem.');
+      setSenhaErro('As senhas não coincidem.');
       return;
     }
 
@@ -95,7 +111,18 @@ export default function CadastroPage() {
       saveSession(response.data);
       navigate('/home');
     } catch (err) {
-      setError(err.response?.data?.message || 'Falha ao cadastrar usuario.');
+      let mensagemErro = 'Erro ao cadastrar usuário. Tente novamente.';
+      
+      if (err.response?.status === 409) {
+        mensagemErro = 'Este email já está cadastrado. Tente fazer login ou use outro email.';
+      } else if (err.response?.data?.message) {
+        mensagemErro = err.response.data.message;
+      } else if (err.message === 'Network Error') {
+        mensagemErro = 'Erro de conexão. Verifique se o backend está rodando.';
+      }
+      
+      setError(mensagemErro);
+      console.error('Erro no cadastro:', err);
     } finally {
       setLoading(false);
     }
@@ -116,9 +143,9 @@ export default function CadastroPage() {
           id="cadastro-password"
           label="Senha"
           type="password"
-          placeholder="Digite sua senha"
+          placeholder="Mínimo 6 caracteres, letras e números"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => { setPassword(e.target.value); setSenhaErro(''); }}
         />
         <FormInput
           id="cadastro-confirm"
@@ -126,8 +153,9 @@ export default function CadastroPage() {
           type="password"
           placeholder="Digite novamente a senha"
           value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
+          onChange={(e) => { setConfirmPassword(e.target.value); setSenhaErro(''); }}
         />
+        {senhaErro && <p className={styles.errorMsg}>{senhaErro}</p>}
 
         <div className={styles.group}>
           <label className={styles.fieldLabel} htmlFor="cadastro-cep">CEP</label>
