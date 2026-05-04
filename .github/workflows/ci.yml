@@ -26,6 +26,14 @@ jobs:
       - name: Dar permissão ao mvnw
         run: chmod +x mvnw
 
+      - name: Criar application.properties para os testes
+        run: |
+          cat > src/main/resources/application.properties << 'EOF'
+          spring.data.mongodb.uri=mongodb://localhost:27017/biblioteca_test
+          jwt.secret=ci-test-secret-key-do-not-use-in-production-2026
+          jwt.expiration-ms=3600000
+          EOF
+
       - name: Run backend tests
         run: ./mvnw -B clean test jacoco:report
 
@@ -37,7 +45,7 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
-    needs: backend 
+    needs: backend
     defaults:
       run:
         working-directory: frontend
@@ -88,6 +96,14 @@ jobs:
 
       - name: Dar permissão ao mvnw
         run: chmod +x mvnw
+
+      - name: Criar application.properties para análise
+        run: |
+          cat > src/main/resources/application.properties << 'EOF'
+          spring.data.mongodb.uri=mongodb://localhost:27017/biblioteca_test
+          jwt.secret=ci-test-secret-key-do-not-use-in-production-2026
+          jwt.expiration-ms=3600000
+          EOF
 
       - name: Run tests with coverage
         run: ./mvnw -B clean verify jacoco:report
