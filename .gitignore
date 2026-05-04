@@ -1,40 +1,50 @@
-node_modules
-# Java / Maven
-**/target/
-**/*.class
-**/*.jar
-
-# Node / Frontend
-**/node_modules/
-**/dist/
-.vite/
-.eslintcache
-
-# Environment and secrets
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-*.p12
-*.jks
-
-# Logs and temp
+# ── Java / Maven ──────────────────────────────────────────────
+target/
+*.class
+*.jar
+*.war
+*.ear
 *.log
-*.tmp
-*.temp
+.mvn/wrapper/maven-wrapper.jar
 
-# OS files
+# ── Spring Boot ───────────────────────────────────────────────
+# Nunca subir application.properties com senhas reais
+backend/src/main/resources/application.properties
+backend/src/main/resources/application-prod.properties
+backend/src/main/resources/application-local.properties
+
+# ── Node / Frontend ───────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# ── Variáveis de ambiente ─────────────────────────────────────
+.env
+.env.local
+.env.production
+.env.*.local
+*.env
+
+# ── IDEs ──────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/settings.json
+.vscode/launch.json
+.classpath
+.project
+.settings/
+
+# ── OS ────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# IDE
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-*.iws
-*.iml
-*.ipr
-*.swp
+# ── Sonar ─────────────────────────────────────────────────────
+.sonar/
+.scannerwork/
 
-.idea/
+# ── Seed scripts (não subir scripts com dados sensíveis) ──────
+seed_livros.ps1
