@@ -13,13 +13,11 @@ public class UsuarioResponse {
     private String nickname;
     private String email;
     private Role role;
-    // Endereço legado
     private String cep;
     private String logradouro;
     private String bairro;
     private String cidade;
     private String uf;
-    // Novos campos
     private List<Usuario.Endereco> enderecos;
     private List<String> telefones;
     private List<String> redesSociais;
