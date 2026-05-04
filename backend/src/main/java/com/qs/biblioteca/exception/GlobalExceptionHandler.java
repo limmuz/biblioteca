@@ -11,7 +11,6 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // 🔴 NOT FOUND
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException ex) {
 
@@ -24,7 +23,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
-    // 🔴 BAD REQUEST (validação)
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex) {
 
@@ -37,7 +35,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
-    // 🔴 ERRO GENÉRICO
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
 
@@ -48,5 +45,18 @@ public class GlobalExceptionHandler {
         error.put("message", "Algo deu errado");
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleResponseStatus(
+            org.springframework.web.server.ResponseStatusException ex) {
+
+        Map<String, Object> error = new HashMap<>();
+        error.put("timestamp", LocalDateTime.now());
+        error.put("status", ex.getStatusCode().value());
+        error.put("error", ex.getReason() != null ? ex.getReason() : "Erro");
+        error.put("message", ex.getReason() != null ? ex.getReason() : "Erro na requisição");
+
+        return ResponseEntity.status(ex.getStatusCode()).body(error);
     }
 }

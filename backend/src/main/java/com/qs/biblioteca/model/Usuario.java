@@ -27,20 +27,16 @@ public class Usuario {
 
     private Role role = Role.USER;
 
-    // Endereço único (legado)
     private String cep;
     private String logradouro;
     private String bairro;
     private String cidade;
     private String uf;
 
-    // Múltiplos endereços
     private List<Endereco> enderecos;
 
-    // Múltiplos telefones
     private List<String> telefones;
 
-    // Redes sociais
     private List<String> redesSociais;
 
     @Getter
