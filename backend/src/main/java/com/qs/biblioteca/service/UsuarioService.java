@@ -118,7 +118,6 @@ public class UsuarioService {
                 usuario.setEnderecos(enderecos);
             }
         }
-        // Endereço legado
         if (dados.containsKey("cep")) usuario.setCep((String) dados.get("cep"));
         if (dados.containsKey("logradouro")) usuario.setLogradouro((String) dados.get("logradouro"));
         if (dados.containsKey("bairro")) usuario.setBairro((String) dados.get("bairro"));
