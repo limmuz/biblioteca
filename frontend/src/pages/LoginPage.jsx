@@ -26,7 +26,10 @@ export default function LoginPage() {
       saveSession(response.data);
       navigate('/home');
     } catch (err) {
-      setError(err.response?.data?.message || 'Falha no login. Verifique seu email e senha.');
+      const mensagemErro = err.response?.data?.message || 
+        'Erro ao fazer login. Verifique se o email e senha estão corretos e tente novamente.';
+      setError(mensagemErro);
+      console.error('Erro no login:', err);
     } finally {
       setLoading(false);
     }
