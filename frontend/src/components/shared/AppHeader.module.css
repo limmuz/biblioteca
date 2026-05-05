@@ -125,6 +125,18 @@
   gap: 12px;
 }
 
+.avatarBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.avatarBtn:hover {
+  transform: scale(1.05);
+}
+
 .avatar {
   width: 32px;
   height: 32px;
@@ -139,8 +151,15 @@
   justify-content: center;
   flex-shrink: 0;
   letter-spacing: 0.03em;
-  cursor: default;
   user-select: none;
+}
+
+.avatarImg {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .exitIcon {

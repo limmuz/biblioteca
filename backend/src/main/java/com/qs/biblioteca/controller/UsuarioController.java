@@ -4,9 +4,9 @@ import com.qs.biblioteca.dto.UsuarioResponse;
 import com.qs.biblioteca.service.UsuarioService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -20,10 +20,21 @@ public class UsuarioController {
 
 	@GetMapping("/me")
 	public ResponseEntity<UsuarioResponse> me(Authentication authentication) {
-		if (authentication == null || authentication.getName() == null) {
-			return ResponseEntity.status(401).build();
-		}
+		return ResponseEntity.ok(
+				usuarioService.buscarPorEmail(authentication.getName()));
+	}
 
-		return ResponseEntity.ok(usuarioService.buscarPorEmail(authentication.getName()));
+	@PutMapping("/me")
+	public ResponseEntity<UsuarioResponse> atualizar(
+			Authentication authentication,
+			@RequestBody Map<String, Object> dados) {
+		return ResponseEntity.ok(
+				usuarioService.atualizarPorEmail(authentication.getName(), dados));
+	}
+
+	@DeleteMapping("/me")
+	public ResponseEntity<Void> excluir(Authentication authentication) {
+		usuarioService.excluirPorEmail(authentication.getName());
+		return ResponseEntity.noContent().build();
 	}
 }

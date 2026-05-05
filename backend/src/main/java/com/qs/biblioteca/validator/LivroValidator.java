@@ -1,13 +1,8 @@
-package com.qs.biblioteca.unit;
+package com.qs.biblioteca.validator;
 
 import com.qs.biblioteca.model.Livro;
 import java.util.Set;
 
-/**
- * Classe auxiliar de validação de negócio usada pelos testes parametrizados.
- * Fica no mesmo pacote (com.qs.biblioteca.unit) que LivroValidatorParamTest,
- * então NÃO precisa de import no arquivo de teste.
- */
 public final class LivroValidator {
 
     private static final Set<String> STATUS_VALIDOS = Set.of(
@@ -43,6 +38,7 @@ public final class LivroValidator {
         return isTituloValido(livro.getTitle())
                 && isAutorValido(livro.getAuthor())
                 && isStatusValido(livro.getStatus())
-                && isPaginasValido(livro.getPages());
+                && isPaginasValido(livro.getPages())
+                && (livro.getCover() == null || isCoverValido(livro.getCover()));
     }
 }

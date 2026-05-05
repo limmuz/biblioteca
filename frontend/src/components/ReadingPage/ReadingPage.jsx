@@ -1,43 +1,119 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import api from '../../services/api';
-import styles from './ReadingPage.module.css';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import AppHeader from "../shared/AppHeader";
+import Footer from "../Footer/Footer";
+import api from "../../services/api";
+import styles from "./ReadingPage.module.css";
 
 export default function ReadingPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const [book, setBook] = useState(location.state?.bookData || null);
+  const [showFinishModal, setShowFinishModal] = useState(false);
 
   useEffect(() => {
-    // Limpa o ID de barras e prefixos
-    const cleanId = id.replace('works', '').replace(/\//g, '');
-    
-    // Se não temos os dados do livro, buscamos no banco
+    const cleanId = id.replaceAll('works', '').replaceAll('/', '');
     if (!book) {
-      api.get(`/livros/${cleanId}`)
-        .then(res => setBook(res.data))
+      api
+        .get(`/livros/${cleanId}`)
+        .then((res) => setBook(res.data))
         .catch(() => {
           console.error("Livro não encontrado para leitura.");
-          navigate('/home');
+          navigate("/home");
         });
     }
   }, [id, book, navigate]);
 
-  if (!book) return <div className={styles.canvas} style={{color: 'white', padding: '100px'}}>Iniciando leitor...</div>;
+  const handleFinishClick = () => setShowFinishModal(true);
+
+  const handleConfirmFinish = async () => {
+    try {
+      await api.put(`/livros/${book.id}`, { ...book, status: 'LIDO' });
+    } catch (err) {
+      console.error(err);
+    }
+    navigate(-1);
+  };
+
+  const handleCancelFinish = () => setShowFinishModal(false);
+
+  if (!book) {
+    return (
+      <div className={styles.page}>
+        <AppHeader />
+        <main className={styles.main}>
+          <p className={styles.loading}>Iniciando leitor...</p>
+        </main>
+      </div>
+    );
+  }
+
+  const paragraphs = (book.excerpt || book.summary || "O conteúdo integral deste livro não está disponível para leitura offline no momento.")
+    .split(/\n+/)
+    .filter((p) => p.trim().length > 0);
 
   return (
-    <div className={styles.readingContainer}>
-      <header className={styles.readingHeader} style={{display: 'flex', alignItems: 'center', padding: '20px', gap: '20px', borderBottom: '1px solid var(--color-sage)'}}>
-        <button onClick={() => navigate(-1)} style={{cursor: 'pointer', background: 'none', border: '1px solid var(--color-sage)', color: 'white', padding: '5px 15px', borderRadius: '20px'}}>Sair</button>
-        <h1 style={{color: 'var(--color-forest)', fontSize: '22px'}}>{book.title}</h1>
-      </header>
+    <div className={styles.page}>
+      <AppHeader />
 
-      <main className={styles.canvas}>
-        <div className={styles.textWrapper} style={{maxWidth: '800px', margin: '40px auto', padding: '0 20px', color: 'var(--color-forest)', lineHeight: '1.8', fontSize: '19px', fontFamily: 'serif'}}>
-          <p>{book.excerpt || book.summary || "O conteúdo integral deste livro não está disponível para leitura offline no momento."}</p>
+      <main className={styles.main}>
+        <div className={styles.bookHeader}>
+          <h1 className={styles.bookTitle}>{book.title}</h1>
+          <p className={styles.bookAuthor}>por {book.author}</p>
+        </div>
+
+        {/* Card de leitura com fundo amarelo/bege */}
+        <div className={styles.contentCard}>
+          {paragraphs.map((para, idx) => (
+            <p key={idx} className={styles.paragraph}>
+              {para}
+            </p>
+          ))}
+        </div>
+
+        <button
+          className={styles.finishBtn}
+          onClick={handleFinishClick}
+          type="button"
+        >
+          Concluir leitura
+        </button>
+
+        <p className={styles.footerNote}>Histórias sem limites, cada a leitura é livre!</p>
+
+        <div className={styles.footerWrap}>
+          <Footer />
         </div>
       </main>
+
+      {/* Modal de confirmação */}
+      {showFinishModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <h2 className={styles.modalTitle}>Atenção!</h2>
+            <p className={styles.modalText}>
+              Ao terminar a leitura o livro sairá da sua lista de leituras
+            </p>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.btnModalConfirm}
+                onClick={handleConfirmFinish}
+                type="button"
+              >
+                Terminar leitura
+              </button>
+              <button
+                className={styles.btnModalCancel}
+                onClick={handleCancelFinish}
+                type="button"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

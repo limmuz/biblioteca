@@ -1,0 +1,657 @@
+.page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding-top: calc(var(--header-height) + 32px);
+  padding-bottom: 60px;
+}
+
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Cabeçalho do Perfil ─────────────────────────────────────── */
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background-color: var(--color-warm-beige);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.avatarWrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatarLarge {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: var(--color-forest);
+  color: var(--color-cream-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 36px;
+  font-weight: 600;
+}
+
+.avatarImg {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatarEditBtn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--color-warm-beige);
+  border: 1.5px solid var(--color-sage);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  transition: background-color 0.2s;
+}
+
+.avatarEditBtn:hover {
+  background-color: #e8e3d4;
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.userName {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.userEmail {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--color-sage);
+  margin: 0;
+}
+
+/* ── Section Header ──────────────────────────────────────────── */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.sectionTitle {
+  font-family: var(--font-serif);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.btnEdit {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-forest);
+  background: transparent;
+  border: 1.5px solid var(--color-forest);
+  border-radius: 20px;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btnEdit:hover {
+  background-color: var(--color-forest);
+  color: var(--color-cream-text);
+}
+
+/* ── Estatísticas ────────────────────────────────────────────── */
+.statsCard {
+  background-color: var(--color-warm-beige);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 20px;
+  background-color: #f7f4e8;
+  border-radius: 8px;
+}
+
+.statNumber {
+  font-family: var(--font-serif);
+  font-size: 42px;
+  font-weight: 600;
+  color: var(--color-forest);
+  line-height: 1;
+}
+
+.statLabel {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-sage);
+  text-align: center;
+}
+
+/* ── Endereço ────────────────────────────────────────────────── */
+.addressCard {
+  background-color: var(--color-warm-beige);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.addressInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.addressInfo p {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.addressInfo strong {
+  color: var(--color-forest);
+  font-weight: 600;
+}
+
+/* ── Address Form ────────────────────────────────────────────── */
+.addressForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 480px;
+}
+
+.formRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.formRowDouble {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+.formLabel {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-sage);
+}
+
+.formInput {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-ink);
+  background-color: #f7f4e8;
+  border: 1.5px solid rgba(17, 26, 25, 0.15);
+  border-radius: 8px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.formInput:focus {
+  border-color: var(--color-forest);
+}
+
+.cepHint {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--color-sage);
+}
+
+/* ── Favoritos ───────────────────────────────────────────────── */
+.favoritesSection {
+  background-color: var(--color-warm-beige);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.bookGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 20px;
+}
+
+.bookCardWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bookCover {
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(17, 26, 25, 0.12);
+}
+
+.bookCover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(17, 26, 25, 0.18);
+}
+
+.bookInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bookTitle {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.bookAuthor {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--color-sage);
+  margin: 0;
+}
+
+.bookActions {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.btnSmallEdit {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--color-forest);
+  background: transparent;
+  border: 1px solid var(--color-forest);
+  border-radius: 12px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btnSmallEdit:hover {
+  background-color: var(--color-forest);
+  color: var(--color-cream-text);
+}
+
+.btnSmallRemove {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--color-sage);
+  background: transparent;
+  border: 1px solid var(--color-sage);
+  border-radius: 12px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btnSmallRemove:hover {
+  background-color: var(--color-sage);
+  color: white;
+}
+
+.btnSmallDelete {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: #d14343;
+  background: transparent;
+  border: 1px solid #d14343;
+  border-radius: 12px;
+  padding: 3px 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btnSmallDelete:hover {
+  background-color: #d14343;
+  color: white;
+}
+
+.emptyMessage {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--color-sage);
+  text-align: center;
+  padding: 32px 20px;
+  margin: 0;
+}
+
+/* ── Toast ───────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  min-width: 260px;
+  max-width: 480px;
+  animation: toastIn 0.3s ease;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.toast_success {
+  background-color: #1a2e2a;
+  color: #f5f0e8;
+}
+
+.toast_error {
+  background-color: #d14343;
+  color: white;
+}
+
+.toastClose {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.7;
+  padding: 0;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.toastClose:hover {
+  opacity: 1;
+}
+
+/* ── Multi-input rows ────────────────────────────────────────── */
+.multiInputRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.btnRemoveItem {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: #d14343;
+  background: transparent;
+  border: 1px solid #d14343;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btnRemoveItem:hover {
+  background-color: #d14343;
+  color: white;
+}
+
+.btnAddItem {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--color-forest);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  text-align: left;
+  transition: opacity 0.2s;
+}
+
+.btnAddItem:hover {
+  opacity: 0.7;
+}
+
+/* ── Address item separator ──────────────────────────────────── */
+.addressItem {
+  border-top: 1px solid rgba(17, 26, 25, 0.08);
+  padding-top: 16px;
+  margin-top: 8px;
+}
+
+.addressItem:first-of-type {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+/* ── User info extras ────────────────────────────────────────── */
+.userNickname {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-forest);
+  margin: 0;
+  font-weight: 500;
+}
+
+.userPhone {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.userSocial {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-sage);
+  margin: 0;
+}
+
+/* ── Modal ───────────────────────────────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  background-color: var(--color-warm-beige);
+  border-radius: 16px;
+  padding: 32px 28px;
+  max-width: 360px;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.modalTitle {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.modalText {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-ink);
+  line-height: 1.6;
+  margin: 0;
+  opacity: 0.85;
+}
+
+.modalActions {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ── Ações ───────────────────────────────────────────────────── */
+.actionsCard {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.btnPrimary {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-cream-text);
+  background-color: var(--color-forest);
+  border: none;
+  border-radius: 10px;
+  padding: 12px 32px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+  letter-spacing: 0.02em;
+}
+
+.btnPrimary:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.btnDanger {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-cream-text);
+  background-color: #d14343;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 32px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+  letter-spacing: 0.02em;
+}
+
+.btnDanger:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.btnDangerOutline {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: #d14343;
+  background-color: transparent;
+  border: 2px solid #d14343;
+  border-radius: 10px;
+  padding: 12px 32px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  letter-spacing: 0.02em;
+}
+
+.btnDangerOutline:hover {
+  background-color: #d14343;
+  color: white;
+}
+
+.footerWrap {
+  margin-top: 20px;
+}
+
+/* ── Responsivo ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .main {
+    padding: 0 20px;
+  }
+
+  .profileHeader {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .userName {
+    font-size: 24px;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .actionsCard {
+    flex-direction: column;
+  }
+
+  .btnPrimary,
+  .btnDanger {
+    width: 100%;
+  }
+
+  .formRowDouble {
+    flex-direction: column;
+  }
+}

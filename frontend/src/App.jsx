@@ -7,6 +7,8 @@ import ListagemPage from './pages/ListagemPage';
 import DetalhesLivroPage from './pages/DetalhesLivroPage';
 import ReadingPage from './components/ReadingPage/ReadingPage';
 import NovoLivroPage from './pages/NovoLivroPage';
+import EditarLivroPage from './pages/EditarLivroPage';
+import PerfilPage from './pages/PerfilPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { isAuthenticated } from './services/auth';
 import './index.css';
@@ -58,6 +60,22 @@ export default function App() {
           }
         />
         <Route
+          path="/editar-livro/:id"
+          element={
+            <ProtectedRoute>
+              <EditarLivroPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/perfil"
+          element={
+            <ProtectedRoute>
+              <PerfilPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/leitura/:id"
           element={
             <ProtectedRoute>
@@ -66,7 +84,6 @@ export default function App() {
           }
         />
 
-        {/* Se digitar rota errada, volta pro login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
