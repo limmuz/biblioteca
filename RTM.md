@@ -111,20 +111,7 @@ Usuário → CadastroPage → api.post('/api/auth/register')
 
 ### Resultado do JaCoCo (96% de cobertura — gerado pelo Miguel):
 
-```
-Pacote                          | Cobertura | Branches
-com.qs.biblioteca.integration  |    91%    |   83%
-com.qs.biblioteca.security     |    95%    |   57%
-com.qs.biblioteca.service      |    96%    |  100%
-com.qs.biblioteca               |    37%    |   n/a
-com.qs.biblioteca.controller   |    97%    |   71%
-com.qs.biblioteca.config       |   100%    |   n/a
-com.qs.biblioteca.unit         |   100%    |  100%
-com.qs.biblioteca.model        |   100%    |   n/a
-─────────────────────────────────────────────────
-Total                          |    96%    |   84%
-(34 de 954 instruções perdidas, 11 de 72 branches)
-```
+![Relatório JaCoCo](./img/Jacoco.png)
 
 > Para gerar o relatório HTML completo localmente, execute com Docker rodando:
 > - Windows: `cd backend && mvnw.cmd clean test`
