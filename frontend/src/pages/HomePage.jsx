@@ -24,6 +24,23 @@ export default function HomePage() {
   const autoScrollRef = useRef(null);
   const isPausedRef = useRef(false);
 
+  const handleAdicionarLivroNaLista = async (bookToAdd) => {
+    try {
+      await api.put(`/livros/${bookToAdd.id}`, { ...bookToAdd, status: "QUERO LER" });
+      // Refresh lists after adding
+      const res = await api.get("/livros");
+      const todosOsLivros = res.data;
+      setRecentlyRead(todosOsLivros.filter((b) => b.status === "LIDO"));
+      setReadingList(todosOsLivros.filter((b) => b.status === "LENDO" || b.status === "QUERO LER"));
+      const recs = todosOsLivros.filter((b) => b.status === "RECOMENDADO");
+      const naLista = new Set(["LIDO", "LENDO", "QUERO LER"]);
+      setRecommendations(recs.length > 0 ? recs : todosOsLivros.filter((b) => !naLista.has(b.status)).slice(0, 4));
+    } catch (err) {
+      console.error("Erro ao adicionar livro à lista de leitura:", err);
+      alert("Erro ao adicionar livro à lista de leitura.");
+    }
+  };
+
   useEffect(() => {
     const el = carouselRef.current;
     if (!el || recentlyRead.length === 0) return;
@@ -62,7 +79,8 @@ export default function HomePage() {
         );
 
         const recs = todosOsLivros.filter((b) => b.status === "RECOMENDADO");
-        setRecommendations(recs.length > 0 ? recs : todosOsLivros.slice(0, 4));
+        const naLista = new Set(["LIDO", "LENDO", "QUERO LER"]);
+        setRecommendations(recs.length > 0 ? recs : todosOsLivros.filter((b) => !naLista.has(b.status)).slice(0, 4));
 
       } catch (err) {
         console.error("Erro ao carregar dados do MongoDB:", err);
@@ -143,7 +161,7 @@ export default function HomePage() {
             <h2 className={styles.sectionTitle}>Recomendações</h2>
             <div className={styles.bookGrid}>
               {recommendations.slice(0, 4).map((book) => (
-                <BookCardMini key={book.id + "-rec"} book={book} />
+                <BookCardMini key={book.id + "-rec"} book={book} onAddToList={handleAdicionarLivroNaLista} />
               ))}
             </div>
           </>
