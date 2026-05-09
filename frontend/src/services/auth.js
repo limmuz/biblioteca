@@ -21,4 +21,5 @@ export function saveSession(authResponse) {
 export function clearSession() {
   localStorage.removeItem('lybre_token');
   localStorage.removeItem('lybre_user');
+  localStorage.removeItem('lybre_avatar');
 }

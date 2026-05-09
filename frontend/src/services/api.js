@@ -18,6 +18,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('lybre_token');
       localStorage.removeItem('lybre_user');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }
