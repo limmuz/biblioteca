@@ -65,6 +65,118 @@
   text-align: justify;
 }
 
+/* ── Separador entre seções ─────────────────────────────────── */
+.separator {
+  text-align: center;
+  color: var(--color-sage);
+  font-size: 18px;
+  letter-spacing: 0.3em;
+  opacity: 0.5;
+  margin: 8px 0;
+}
+
+/* ── Barra de progresso ──────────────────────────────────────── */
+.progressWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progressBar {
+  width: 100%;
+  height: 4px;
+  background-color: rgba(40, 66, 57, 0.12);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background-color: var(--color-forest);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.progressLabel {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--color-sage);
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+
+/* ── Navegação de páginas ────────────────────────────────────── */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.navBtn {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-forest);
+  background: transparent;
+  border: 1.5px solid var(--color-forest);
+  border-radius: var(--radius-pill);
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  white-space: nowrap;
+  min-width: 96px;
+}
+
+.navBtn:hover:not(:disabled) {
+  background: var(--color-forest);
+  color: var(--color-cream-text);
+}
+
+.navBtn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.pageNumbers {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pageNum {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-sage);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pageNum:hover {
+  background: rgba(40, 66, 57, 0.1);
+  color: var(--color-forest);
+}
+
+.pageNumActive {
+  background: var(--color-forest);
+  color: var(--color-cream-text);
+}
+
+.pageNumActive:hover {
+  background: var(--color-forest);
+  color: var(--color-cream-text);
+}
+
 /* ── Finish Button ───────────────────────────────────────────── */
 .finishBtn {
   font-family: var(--font-sans);
