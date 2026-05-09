@@ -21,6 +21,7 @@ public class UsuarioResponse {
     private List<Usuario.Endereco> enderecos;
     private List<String> telefones;
     private List<String> redesSociais;
+    private String avatarBase64;
 
     public UsuarioResponse(Usuario u) {
         this.id = u.getId();
@@ -36,5 +37,6 @@ public class UsuarioResponse {
         this.enderecos = u.getEnderecos();
         this.telefones = u.getTelefones();
         this.redesSociais = u.getRedesSociais();
+        this.avatarBase64 = u.getAvatarBase64();
     }
 }
