@@ -58,6 +58,7 @@ class LivroRepositoryIntegrationTest {
 
     private static Livro novoLivro(String titulo, String autor) {
         Livro l = new Livro();
+        l.setUserEmail("teste@integracao.com");
         l.setTitle(titulo);
         l.setAuthor(autor);
         l.setStatus("QUERO LER");

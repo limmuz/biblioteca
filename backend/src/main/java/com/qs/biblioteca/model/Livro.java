@@ -15,6 +15,7 @@ public class Livro {
     @Id
     private String id;
 
+    private String userEmail;
     private String title;
     private String author;
     private String cover;

@@ -58,8 +58,8 @@ class LivroE2ETest {
     class CriarLivroTests {
 
         @Test
-        @DisplayName("Deve criar livro e retornar 200 com o livro salvo")
-        void criar_comDadosValidos_deveRetornar200() {
+        @DisplayName("Deve criar livro e retornar 201 com o livro salvo")
+        void criar_comDadosValidos_deveRetornar201() {
             Livro novoLivro = novoLivro("Dom Casmurro", "Machado de Assis");
 
             ResponseEntity<Livro> response = restTemplate.exchange(
@@ -68,7 +68,7 @@ class LivroE2ETest {
                     new HttpEntity<>(novoLivro, headersComJwt()),
                     Livro.class);
 
-            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertEquals(HttpStatus.CREATED, response.getStatusCode());
             assertNotNull(response.getBody());
             assertNotNull(response.getBody().getId(), "ID deve ser gerado automaticamente");
             assertEquals("Dom Casmurro",      response.getBody().getTitle());
@@ -416,6 +416,7 @@ class LivroE2ETest {
 
     private Livro salvarLivroNoBanco(String titulo, String autor) {
         Livro l = novoLivro(titulo, autor);
+        l.setUserEmail("teste@email.com");
         return livroRepository.save(l);
     }
 
