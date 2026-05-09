@@ -387,6 +387,86 @@ class LivroE2ETest extends BaseMongoTest {
         }
     }
 
+    @Nested
+    @DisplayName("PUT /api/usuarios/me")
+    class AtualizarUsuarioTests {
+
+        @Test
+        @DisplayName("Deve atualizar nome e retornar 200 com dados atualizados")
+        void atualizar_nome_deveRetornar200() {
+            var payload = java.util.Map.of("nome", "Nome Atualizado");
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    baseUrl + "/api/usuarios/me",
+                    HttpMethod.PUT,
+                    new HttpEntity<>(payload, headersComJwt()),
+                    String.class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertTrue(response.getBody().contains("Nome Atualizado"));
+        }
+
+        @Test
+        @DisplayName("Deve atualizar avatar e retornar 200")
+        void atualizar_avatar_deveRetornar200() {
+            var payload = java.util.Map.of("avatarBase64", "data:image/png;base64,abc123");
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    baseUrl + "/api/usuarios/me",
+                    HttpMethod.PUT,
+                    new HttpEntity<>(payload, headersComJwt()),
+                    String.class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 401 ao atualizar sem JWT")
+        void atualizar_semJwt_deveRetornar401() {
+            var payload = java.util.Map.of("nome", "Qualquer");
+
+            try {
+                restTemplate.exchange(baseUrl + "/api/usuarios/me", HttpMethod.PUT,
+                        new HttpEntity<>(payload), String.class);
+                fail("Deveria retornar 401");
+            } catch (HttpClientErrorException e) {
+                assertEquals(HttpStatus.FORBIDDEN, e.getStatusCode());
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("DELETE /api/usuarios/me")
+    class ExcluirUsuarioTests {
+
+        @Test
+        @DisplayName("Deve excluir usuario autenticado e retornar 204")
+        void excluir_comJwtValido_deveRetornar204() {
+            ResponseEntity<Void> response = restTemplate.exchange(
+                    baseUrl + "/api/usuarios/me",
+                    HttpMethod.DELETE,
+                    new HttpEntity<>(headersComJwt()),
+                    Void.class);
+
+            assertTrue(response.getStatusCode().is2xxSuccessful());
+            assertFalse(usuarioRepository.existsByEmail("teste@email.com"),
+                    "Usuario deve ter sido removido do banco");
+        }
+
+        @Test
+        @DisplayName("Deve retornar 401 ao excluir sem JWT")
+        void excluir_semJwt_deveRetornar401() {
+            try {
+                restTemplate.exchange(baseUrl + "/api/usuarios/me", HttpMethod.DELETE,
+                        HttpEntity.EMPTY, String.class);
+                fail("Deveria retornar 401");
+            } catch (HttpClientErrorException e) {
+                assertEquals(HttpStatus.FORBIDDEN, e.getStatusCode());
+            }
+        }
+    }
+
     private String registrarEObterToken(String email, String senha) {
         RegisterRequest reg = new RegisterRequest();
         reg.setNome("Usuario Teste E2E");

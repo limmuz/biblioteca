@@ -46,5 +46,6 @@ desktop.ini
 .sonar/
 .scannerwork/
 
-# ── Seed scripts (não subir scripts com dados sensíveis) ──────
+# ── Scripts locais com dados sensíveis (não subir) ───────────
 seed_livros.ps1
+*.mjs
