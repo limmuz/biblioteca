@@ -1,6 +1,6 @@
 package com.qs.biblioteca.e2e;
 
-import com.qs.biblioteca.TestcontainersConfiguration;
+import com.qs.biblioteca.BaseMongoTest;
 import com.qs.biblioteca.dto.AuthRequest;
 import com.qs.biblioteca.dto.AuthResponse;
 import com.qs.biblioteca.dto.RegisterRequest;
@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
@@ -22,10 +21,9 @@ import org.springframework.web.client.HttpClientErrorException;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestcontainersConfiguration.class)
 @ActiveProfiles("test")
 @DisplayName("E2E – Fluxo de Autenticacao (Auth API)")
-class AuthE2ETest {
+class AuthE2ETest extends BaseMongoTest {
 
     @LocalServerPort
     private int port;

@@ -1,6 +1,6 @@
 package com.qs.biblioteca.e2e;
 
-import com.qs.biblioteca.TestcontainersConfiguration;
+import com.qs.biblioteca.BaseMongoTest;
 import com.qs.biblioteca.dto.AuthResponse;
 import com.qs.biblioteca.dto.RegisterRequest;
 import com.qs.biblioteca.model.Livro;
@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.client.RestTemplate;
@@ -22,10 +21,9 @@ import org.springframework.web.client.HttpClientErrorException;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestcontainersConfiguration.class)
 @ActiveProfiles("test")
 @DisplayName("E2E – LivroController (CRUD completo com JWT)")
-class LivroE2ETest {
+class LivroE2ETest extends BaseMongoTest {
 
     @LocalServerPort
     private int port;
