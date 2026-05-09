@@ -5,6 +5,7 @@ import AppHeader from '../components/shared/AppHeader';
 import Footer from '../components/Footer/Footer';
 import api from '../services/api';
 import { getUser, clearSession } from '../services/auth';
+import AdBanner from '../components/shared/AdBanner';
 import styles from './PerfilPage.module.css';
 
 // ── Toast component ──────────────────────────────────────────────
@@ -642,6 +643,7 @@ export default function PerfilPage() {
           <button className={styles.btnDangerOutline} onClick={() => setShowDeleteModal(true)} type="button">Excluir Conta</button>
         </div>
 
+        <AdBanner variant="banner" />
         <div className={styles.footerWrap}><Footer /></div>
       </main>
 

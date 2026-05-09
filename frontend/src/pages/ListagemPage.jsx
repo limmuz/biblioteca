@@ -5,6 +5,7 @@ import Footer from '../components/Footer/Footer';
 import BookCardMini from '../components/shared/BookCardMini';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import api from '../services/api';
+import AdBanner from '../components/shared/AdBanner';
 import styles from './ListagemPage.module.css';
 
 export default function ListagemPage() {
@@ -67,6 +68,7 @@ export default function ListagemPage() {
           </div>
         )}
       </main>
+      <AdBanner variant="banner" />
       <div className={styles.footerWrap}>
         <Footer />
       </div>

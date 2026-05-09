@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import AppHeader from '../components/shared/AppHeader';
 import Footer from '../components/Footer/Footer';
 import api from '../services/api';
+import AdBanner from '../components/shared/AdBanner';
 import styles from './NovoLivroPage.module.css';
 
 export default function EditarLivroPage() {
@@ -201,6 +202,7 @@ export default function EditarLivroPage() {
           </div>
         </form>
       </main>
+      <AdBanner variant="banner" />
       <div className={styles.footerWrap}>
         <Footer />
       </div>
