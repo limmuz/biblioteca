@@ -15,6 +15,7 @@ function validarSenha(s) {
 export default function RedefinirSenhaPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -26,43 +27,40 @@ export default function RedefinirSenhaPage() {
     setError('');
     setSuccess('');
 
-    if (!email.trim()) {
-      setError('Informe o email da sua conta.');
-      return;
-    }
+    if (!email.trim()) { setError('Informe o email da sua conta.'); return; }
+    if (!currentPassword) { setError('Informe sua senha atual.'); return; }
 
     const erroSenha = validarSenha(newPassword);
-    if (erroSenha) {
-      setError(erroSenha);
-      return;
-    }
+    if (erroSenha) { setError(erroSenha); return; }
 
-    if (newPassword !== confirmPassword) {
-      setError('As senhas não coincidem.');
-      return;
-    }
+    if (newPassword !== confirmPassword) { setError('As senhas não coincidem.'); return; }
 
     setLoading(true);
     try {
-      await api.post('/auth/redefinir-senha', { email: email.trim(), novaSenha: newPassword });
-      setSuccess('Senha redefinida com sucesso! Redirecionando para o login...');
+      await api.post('/auth/redefinir-senha', {
+        email: email.trim(),
+        senhaAtual: currentPassword,
+        novaSenha: newPassword,
+      });
+      setSuccess('Senha alterada com sucesso! Redirecionando para o login...');
       setTimeout(() => navigate('/login'), 2500);
     } catch (err) {
       if (err.response?.status === 404) {
         setError('Email não encontrado. Verifique e tente novamente.');
+      } else if (err.response?.status === 401) {
+        setError('Senha atual incorreta.');
       } else if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
-        setError('Erro ao redefinir senha. Tente novamente.');
+        setError('Erro ao alterar senha. Tente novamente.');
       }
-      console.error('Erro ao redefinir senha:', err);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <AuthCard title="Redefinir senha">
+    <AuthCard title="Alterar senha">
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
         <FormInput
           id="reset-email"
@@ -71,6 +69,14 @@ export default function RedefinirSenhaPage() {
           placeholder="Digite seu email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+        />
+        <FormInput
+          id="reset-current-password"
+          label="Senha atual"
+          type="password"
+          placeholder="Digite sua senha atual"
+          value={currentPassword}
+          onChange={(e) => { setCurrentPassword(e.target.value); setError(''); }}
         />
         <FormInput
           id="reset-new-password"
@@ -91,7 +97,7 @@ export default function RedefinirSenhaPage() {
         {error && <p className={styles.errorMsg}>{error}</p>}
         {success && <p className={styles.successMsg}>{success}</p>}
         <button type="submit" className={styles.submitBtn} disabled={loading}>
-          {loading ? 'Redefinindo...' : 'Redefinir senha'}
+          {loading ? 'Alterando...' : 'Alterar senha'}
         </button>
       </form>
       <hr className={styles.divider} />

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import styles from "./AppHeader.module.css";
 
-import { 
+import {
   BsHouse,
   BsBookmark,
   BsJournalPlus,
@@ -12,6 +12,7 @@ import {
 
 import LogoIcon from "../../assets/icon-logo.svg?react";
 import { clearSession, getUser } from "../../services/auth";
+import api from "../../services/api";
 
 export default function AppHeader() {
   const navigate = useNavigate();
@@ -22,6 +23,15 @@ export default function AppHeader() {
   useEffect(() => {
     const saved = localStorage.getItem('lybre_avatar');
     if (saved) setAvatarUrl(saved);
+
+    api.get('/usuarios/me')
+      .then(res => {
+        if (res.data.avatarBase64) {
+          setAvatarUrl(res.data.avatarBase64);
+          localStorage.setItem('lybre_avatar', res.data.avatarBase64);
+        }
+      })
+      .catch(() => {});
 
     const onStorage = (e) => {
       if (e.key === 'lybre_avatar') setAvatarUrl(e.newValue);
