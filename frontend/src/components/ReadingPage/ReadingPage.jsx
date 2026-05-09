@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import AppHeader from "../shared/AppHeader";
 import Footer from "../Footer/Footer";
+import LoadingSpinner from "../shared/LoadingSpinner";
 import api from "../../services/api";
+import { gerarTextoLivro, paginar } from "../../utils/gerarTextoLivro";
 import styles from "./ReadingPage.module.css";
 
 export default function ReadingPage() {
@@ -10,48 +12,66 @@ export default function ReadingPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [book, setBook] = useState(location.state?.bookData || null);
-  const [showFinishModal, setShowFinishModal] = useState(false);
+  const [paginas, setPaginas] = useState([]);
+  const [paginaAtual, setPaginaAtual] = useState(0);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    const cleanId = id.replaceAll('works', '').replaceAll('/', '');
+    const cleanId = id.replaceAll("works", "").replaceAll("/", "");
     if (!book) {
       api
         .get(`/livros/${cleanId}`)
         .then((res) => setBook(res.data))
-        .catch(() => {
-          console.error("Livro não encontrado para leitura.");
-          navigate("/home");
-        });
+        .catch(() => navigate("/home"));
     }
   }, [id, book, navigate]);
 
-  const handleFinishClick = () => setShowFinishModal(true);
+  useEffect(() => {
+    if (book) {
+      const paragrafos = gerarTextoLivro(book);
+      setPaginas(paginar(paragrafos, 300));
+      setPaginaAtual(0);
+    }
+  }, [book]);
+
+  const irParaPagina = useCallback((n) => {
+    setPaginaAtual(n);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "ArrowRight" && paginaAtual < paginas.length - 1)
+        irParaPagina(paginaAtual + 1);
+      if (e.key === "ArrowLeft" && paginaAtual > 0)
+        irParaPagina(paginaAtual - 1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [paginaAtual, paginas.length, irParaPagina]);
 
   const handleConfirmFinish = async () => {
     try {
-      await api.put(`/livros/${book.id}`, { ...book, status: 'LIDO' });
+      await api.put(`/livros/${book.id}`, { ...book, status: "LIDO" });
     } catch (err) {
       console.error(err);
     }
     navigate(-1);
   };
 
-  const handleCancelFinish = () => setShowFinishModal(false);
-
-  if (!book) {
+  if (!book || paginas.length === 0) {
     return (
       <div className={styles.page}>
         <AppHeader />
-        <main className={styles.main}>
-          <p className={styles.loading}>Iniciando leitor...</p>
-        </main>
+        <LoadingSpinner />
       </div>
     );
   }
 
-  const paragraphs = (book.excerpt || book.summary || "O conteúdo integral deste livro não está disponível para leitura offline no momento.")
-    .split(/\n+/)
-    .filter((p) => p.trim().length > 0);
+  const total = paginas.length;
+  const progresso = Math.round(((paginaAtual + 1) / total) * 100);
+  const pagAtual = paginas[paginaAtual] || [];
+  const isUltima = paginaAtual === total - 1;
 
   return (
     <div className={styles.page}>
@@ -63,51 +83,92 @@ export default function ReadingPage() {
           <p className={styles.bookAuthor}>por {book.author}</p>
         </div>
 
-        {/* Card de leitura com fundo amarelo/bege */}
-        <div className={styles.contentCard}>
-          {paragraphs.map((para, idx) => (
-            <p key={idx} className={styles.paragraph}>
-              {para}
-            </p>
-          ))}
+        <div className={styles.progressWrap}>
+          <div className={styles.progressBar}>
+            <div className={styles.progressFill} style={{ width: `${progresso}%` }} />
+          </div>
+          <span className={styles.progressLabel}>
+            Página {paginaAtual + 1} de {total} · {progresso}% lido
+          </span>
         </div>
 
-        <button
-          className={styles.finishBtn}
-          onClick={handleFinishClick}
-          type="button"
-        >
-          Concluir leitura
-        </button>
+        <div className={styles.contentCard}>
+          {pagAtual.map((par, i) => {
+            if (par === "—" || par === "* * *") {
+              return <div key={i} className={styles.separator}>{par}</div>;
+            }
+            return (
+              <p key={i} className={styles.paragraph}>
+                {par}
+              </p>
+            );
+          })}
+        </div>
 
-        <p className={styles.footerNote}>Histórias sem limites, cada a leitura é livre!</p>
+        <div className={styles.nav}>
+          <button
+            className={styles.navBtn}
+            onClick={() => irParaPagina(paginaAtual - 1)}
+            disabled={paginaAtual === 0}
+          >
+            ‹ Anterior
+          </button>
+
+          <div className={styles.pageNumbers}>
+            {(() => {
+              const range = [];
+              const half = 3;
+              let start = Math.max(0, paginaAtual - half);
+              let end = Math.min(total - 1, start + 6);
+              start = Math.max(0, end - 6);
+              for (let i = start; i <= end; i++) range.push(i);
+              return range.map((pg) => (
+                <button
+                  key={pg}
+                  className={`${styles.pageNum} ${pg === paginaAtual ? styles.pageNumActive : ""}`}
+                  onClick={() => irParaPagina(pg)}
+                >
+                  {pg + 1}
+                </button>
+              ));
+            })()}
+          </div>
+
+          {isUltima ? (
+            <button className={styles.finishBtn} onClick={() => setShowModal(true)}>
+              Concluir ✓
+            </button>
+          ) : (
+            <button
+              className={styles.navBtn}
+              onClick={() => irParaPagina(paginaAtual + 1)}
+            >
+              Próxima ›
+            </button>
+          )}
+        </div>
+
+        <p className={styles.footerNote}>
+          Use as setas ← → do teclado para navegar
+        </p>
 
         <div className={styles.footerWrap}>
           <Footer />
         </div>
       </main>
 
-      {/* Modal de confirmação */}
-      {showFinishModal && (
+      {showModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
-            <h2 className={styles.modalTitle}>Atenção!</h2>
+            <h2 className={styles.modalTitle}>Concluir leitura?</h2>
             <p className={styles.modalText}>
-              Ao terminar a leitura o livro sairá da sua lista de leituras
+              O livro será marcado como <strong>Lido</strong> na sua biblioteca.
             </p>
             <div className={styles.modalActions}>
-              <button
-                className={styles.btnModalConfirm}
-                onClick={handleConfirmFinish}
-                type="button"
-              >
-                Terminar leitura
+              <button className={styles.btnModalConfirm} onClick={handleConfirmFinish}>
+                Confirmar
               </button>
-              <button
-                className={styles.btnModalCancel}
-                onClick={handleCancelFinish}
-                type="button"
-              >
+              <button className={styles.btnModalCancel} onClick={() => setShowModal(false)}>
                 Cancelar
               </button>
             </div>
