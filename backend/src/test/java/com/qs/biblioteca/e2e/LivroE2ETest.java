@@ -81,8 +81,10 @@ class LivroE2ETest extends BaseMongoTest {
             livroSemTitulo.setAuthor("Autor Qualquer");
             livroSemTitulo.setStatus("QUERO LER");
 
+            var h400 = headersComJwt();
+            var e400 = new HttpEntity<>(livroSemTitulo, h400);
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl, HttpMethod.POST, new HttpEntity<>(livroSemTitulo, headersComJwt()), String.class));
+                    restTemplate.exchange(livrosUrl, HttpMethod.POST, e400, String.class));
             assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
         }
 
@@ -198,8 +200,10 @@ class LivroE2ETest extends BaseMongoTest {
         @Test
         @DisplayName("Deve retornar 404 Not Found para ID inexistente")
         void buscarPorId_inexistente_deveRetornar404() {
+            var h404b = headersComJwt();
+            var e404b = new HttpEntity<>(h404b);
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/id-que-nao-existe", HttpMethod.GET, new HttpEntity<>(headersComJwt()), String.class));
+                    restTemplate.exchange(livrosUrl + "/id-que-nao-existe", HttpMethod.GET, e404b, String.class));
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
         }
     }
@@ -243,8 +247,10 @@ class LivroE2ETest extends BaseMongoTest {
         void atualizar_inexistente_deveRetornar404() {
             Livro livroAtualizado = novoLivro("Qualquer", "Qualquer");
 
+            var h404p = headersComJwt();
+            var e404p = new HttpEntity<>(livroAtualizado, h404p);
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/id-inexistente", HttpMethod.PUT, new HttpEntity<>(livroAtualizado, headersComJwt()), String.class));
+                    restTemplate.exchange(livrosUrl + "/id-inexistente", HttpMethod.PUT, e404p, String.class));
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
         }
 
@@ -295,8 +301,10 @@ class LivroE2ETest extends BaseMongoTest {
         @Test
         @DisplayName("Deve retornar 404 Not Found ao deletar ID inexistente")
         void deletar_inexistente_deveRetornar404() {
+            var h404d = headersComJwt();
+            var e404d = new HttpEntity<>(h404d);
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/id-inexistente", HttpMethod.DELETE, new HttpEntity<>(headersComJwt()), String.class));
+                    restTemplate.exchange(livrosUrl + "/id-inexistente", HttpMethod.DELETE, e404d, String.class));
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
         }
 
@@ -312,8 +320,10 @@ class LivroE2ETest extends BaseMongoTest {
                     new HttpEntity<>(headersComJwt()),
                     Void.class);
 
+            var hAfterDel = headersComJwt();
+            var eAfterDel = new HttpEntity<>(hAfterDel);
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/" + id, HttpMethod.GET, new HttpEntity<>(headersComJwt()), String.class));
+                    restTemplate.exchange(livrosUrl + "/" + id, HttpMethod.GET, eAfterDel, String.class));
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
 
             assertFalse(livroRepository.existsById(id), "Livro nao deve existir no banco apos delecao");
@@ -324,8 +334,9 @@ class LivroE2ETest extends BaseMongoTest {
         void deletar_semJwt_deveRetornar401() {
             Livro salvo = salvarLivroNoBanco("Qualquer", "Autor");
 
+            String idParaDeletar = salvo.getId();
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/" + salvo.getId(), HttpMethod.DELETE, HttpEntity.EMPTY, String.class));
+                    restTemplate.exchange(livrosUrl + "/" + idParaDeletar, HttpMethod.DELETE, HttpEntity.EMPTY, String.class));
             assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
         }
     }
@@ -393,12 +404,83 @@ class LivroE2ETest extends BaseMongoTest {
         }
 
         @Test
+        @DisplayName("Deve atualizar nickname e campos de endereco e retornar 200")
+        void atualizar_nickname_e_campos_endereco_deveRetornar200() {
+            var payload = java.util.Map.of(
+                    "nickname", "apviana",
+                    "cep", "01310-100",
+                    "logradouro", "Av. Paulista",
+                    "bairro", "Bela Vista",
+                    "cidade", "Sao Paulo",
+                    "uf", "SP");
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    baseUrl + "/api/usuarios/me",
+                    HttpMethod.PUT,
+                    new HttpEntity<>(payload, headersComJwt()),
+                    String.class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Deve atualizar lista de telefones e retornar 200")
+        void atualizar_telefones_deveRetornar200() {
+            var payload = java.util.Map.of("telefones", java.util.List.of("11999999999", "11888888888"));
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    baseUrl + "/api/usuarios/me",
+                    HttpMethod.PUT,
+                    new HttpEntity<>(payload, headersComJwt()),
+                    String.class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Deve atualizar lista de enderecos e retornar 200")
+        void atualizar_enderecos_deveRetornar200() {
+            var endereco = java.util.Map.of(
+                    "cep", "01310-100",
+                    "logradouro", "Av. Paulista",
+                    "numero", "1000",
+                    "complemento", "Apto 42",
+                    "bairro", "Bela Vista",
+                    "cidade", "Sao Paulo",
+                    "uf", "SP");
+            var payload = java.util.Map.of("enderecos", java.util.List.of(endereco));
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    baseUrl + "/api/usuarios/me",
+                    HttpMethod.PUT,
+                    new HttpEntity<>(payload, headersComJwt()),
+                    String.class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Deve atualizar redes sociais e retornar 200")
+        void atualizar_redesSociais_deveRetornar200() {
+            var payload = java.util.Map.of("redesSociais", java.util.List.of("instagram.com/ana", "github.com/ana"));
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    baseUrl + "/api/usuarios/me",
+                    HttpMethod.PUT,
+                    new HttpEntity<>(payload, headersComJwt()),
+                    String.class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+        }
+
+        @Test
         @DisplayName("Deve retornar 401 ao atualizar sem JWT")
         void atualizar_semJwt_deveRetornar401() {
             var payload = java.util.Map.of("nome", "Qualquer");
 
+            var eNoAuth = new HttpEntity<>(payload);
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(baseUrl + "/api/usuarios/me", HttpMethod.PUT, new HttpEntity<>(payload), String.class));
+                    restTemplate.exchange(baseUrl + "/api/usuarios/me", HttpMethod.PUT, eNoAuth, String.class));
             assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
         }
     }
