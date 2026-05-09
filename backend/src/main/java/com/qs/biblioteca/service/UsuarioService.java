@@ -18,6 +18,11 @@ import java.util.Map;
 @Service
 public class UsuarioService {
 
+    private static final String MSG_USUARIO_NAO_ENCONTRADO = "Usuário não encontrado";
+    private static final String CAMPO_LOGRADOURO = "logradouro";
+    private static final String CAMPO_BAIRRO = "bairro";
+    private static final String CAMPO_CIDADE = "cidade";
+
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -72,14 +77,13 @@ public class UsuarioService {
 
     public UsuarioResponse buscarPorEmail(String email) {
         Usuario usuario = usuarioRepository.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, MSG_USUARIO_NAO_ENCONTRADO));
         return new UsuarioResponse(usuario);
     }
 
-    @SuppressWarnings("unchecked")
     public UsuarioResponse atualizarPorEmail(String email, Map<String, Object> dados) {
         Usuario usuario = usuarioRepository.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, MSG_USUARIO_NAO_ENCONTRADO));
 
         if (dados.containsKey("nome")) {
             usuario.setNome((String) dados.get("nome"));
@@ -87,42 +91,13 @@ public class UsuarioService {
         if (dados.containsKey("nickname")) {
             usuario.setNickname((String) dados.get("nickname"));
         }
-        if (dados.containsKey("telefones")) {
-            Object t = dados.get("telefones");
-            if (t instanceof List) {
-                usuario.setTelefones((List<String>) t);
-            }
-        }
-        if (dados.containsKey("redesSociais")) {
-            Object r = dados.get("redesSociais");
-            if (r instanceof List) {
-                usuario.setRedesSociais((List<String>) r);
-            }
-        }
-        if (dados.containsKey("enderecos")) {
-            Object e = dados.get("enderecos");
-            if (e instanceof List) {
-                List<Map<String, String>> lista = (List<Map<String, String>>) e;
-                List<Usuario.Endereco> enderecos = new ArrayList<>();
-                for (Map<String, String> m : lista) {
-                    Usuario.Endereco end = new Usuario.Endereco();
-                    end.setCep(m.get("cep"));
-                    end.setLogradouro(m.get("logradouro"));
-                    end.setNumero(m.get("numero"));
-                    end.setComplemento(m.get("complemento"));
-                    end.setBairro(m.get("bairro"));
-                    end.setCidade(m.get("cidade"));
-                    end.setUf(m.get("uf"));
-                    enderecos.add(end);
-                }
-                usuario.setEnderecos(enderecos);
-            }
-        }
+        atualizarListasUsuario(usuario, dados);
+        atualizarEnderecosUsuario(usuario, dados);
         if (dados.containsKey("avatarBase64")) usuario.setAvatarBase64((String) dados.get("avatarBase64"));
         if (dados.containsKey("cep")) usuario.setCep((String) dados.get("cep"));
-        if (dados.containsKey("logradouro")) usuario.setLogradouro((String) dados.get("logradouro"));
-        if (dados.containsKey("bairro")) usuario.setBairro((String) dados.get("bairro"));
-        if (dados.containsKey("cidade")) usuario.setCidade((String) dados.get("cidade"));
+        if (dados.containsKey(CAMPO_LOGRADOURO)) usuario.setLogradouro((String) dados.get(CAMPO_LOGRADOURO));
+        if (dados.containsKey(CAMPO_BAIRRO)) usuario.setBairro((String) dados.get(CAMPO_BAIRRO));
+        if (dados.containsKey(CAMPO_CIDADE)) usuario.setCidade((String) dados.get(CAMPO_CIDADE));
         if (dados.containsKey("uf")) usuario.setUf((String) dados.get("uf"));
 
         usuarioRepository.save(usuario);
@@ -141,8 +116,45 @@ public class UsuarioService {
 
     public void excluirPorEmail(String email) {
         Usuario usuario = usuarioRepository.findByEmail(email.toLowerCase())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, MSG_USUARIO_NAO_ENCONTRADO));
         usuarioRepository.delete(usuario);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void atualizarListasUsuario(Usuario usuario, Map<String, Object> dados) {
+        if (dados.containsKey("telefones")) {
+            Object t = dados.get("telefones");
+            if (t instanceof List) {
+                usuario.setTelefones((List<String>) t);
+            }
+        }
+        if (dados.containsKey("redesSociais")) {
+            Object r = dados.get("redesSociais");
+            if (r instanceof List) {
+                usuario.setRedesSociais((List<String>) r);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void atualizarEnderecosUsuario(Usuario usuario, Map<String, Object> dados) {
+        if (!dados.containsKey("enderecos")) return;
+        Object e = dados.get("enderecos");
+        if (!(e instanceof List)) return;
+        List<Map<String, String>> lista = (List<Map<String, String>>) e;
+        List<Usuario.Endereco> enderecos = new ArrayList<>();
+        for (Map<String, String> m : lista) {
+            Usuario.Endereco end = new Usuario.Endereco();
+            end.setCep(m.get("cep"));
+            end.setLogradouro(m.get(CAMPO_LOGRADOURO));
+            end.setNumero(m.get("numero"));
+            end.setComplemento(m.get("complemento"));
+            end.setBairro(m.get(CAMPO_BAIRRO));
+            end.setCidade(m.get(CAMPO_CIDADE));
+            end.setUf(m.get("uf"));
+            enderecos.add(end);
+        }
+        usuario.setEnderecos(enderecos);
     }
 
     private AuthResponse gerarAuthResponse(Usuario usuario) {
