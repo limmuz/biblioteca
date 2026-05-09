@@ -56,10 +56,11 @@ class ViaCepServiceWireMockTest {
 
             Map<String, Object> resultado = service.buscarEnderecoPorCep("01310-100");
 
-            assertThat(resultado).containsEntry("cep", "01310-100");
-            assertThat(resultado).containsEntry("logradouro", "Avenida Paulista");
-            assertThat(resultado).containsEntry("localidade", "São Paulo");
-            assertThat(resultado).containsEntry("uf", "SP");
+            assertThat(resultado)
+                    .containsEntry("cep", "01310-100")
+                    .containsEntry("logradouro", "Avenida Paulista")
+                    .containsEntry("localidade", "São Paulo")
+                    .containsEntry("uf", "SP");
 
             wireMock.verify(getRequestedFor(urlEqualTo("/ws/01310-100/json/")));
         }

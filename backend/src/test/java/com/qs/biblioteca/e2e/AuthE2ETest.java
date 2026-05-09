@@ -67,15 +67,11 @@ class AuthE2ETest extends BaseMongoTest {
         void register_comEmailDuplicado_deveRetornar409() {
             RegisterRequest request = novoRegisterRequest(
                     "Maria Souza", "maria@email.com", "senha123");
-
             restTemplate.postForEntity(baseUrl + "/register", request, AuthResponse.class);
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/register", request, String.class);
-                fail("Deveria ter jogado uma exceção HTTP 409");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.CONFLICT, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/register", request, String.class));
+            assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
         }
 
         @Test
@@ -84,12 +80,9 @@ class AuthE2ETest extends BaseMongoTest {
             RegisterRequest request = novoRegisterRequest(
                     "Usuario Teste", "email-invalido-sem-arroba", "senha123");
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/register", request, String.class);
-                fail("Deveria ter jogado uma exceção HTTP 400");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/register", request, String.class));
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
         }
 
         @Test
@@ -98,12 +91,9 @@ class AuthE2ETest extends BaseMongoTest {
             RegisterRequest request = novoRegisterRequest(
                     "Usuario Teste", "usuario@email.com", "12345");
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/register", request, String.class);
-                fail("Deveria ter jogado uma exceção HTTP 400");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/register", request, String.class));
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
         }
 
         @Test
@@ -152,12 +142,9 @@ class AuthE2ETest extends BaseMongoTest {
                     "senhaAtual", "senhaErrada1",
                     "novaSenha", "novaSenha1");
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/redefinir-senha", body, String.class);
-                fail("Deveria ter lancado excecao HTTP 401");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/redefinir-senha", body, String.class));
+            assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
         }
 
         @Test
@@ -168,12 +155,9 @@ class AuthE2ETest extends BaseMongoTest {
                     "senhaAtual", "senha123",
                     "novaSenha", "novaSenha1");
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/redefinir-senha", body, String.class);
-                fail("Deveria ter lancado excecao HTTP 404");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/redefinir-senha", body, String.class));
+            assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
         }
 
         @Test
@@ -181,12 +165,9 @@ class AuthE2ETest extends BaseMongoTest {
         void redefinirSenha_semCamposObrigatorios_deveRetornar400() {
             var body = java.util.Map.of("email", "redefinir@email.com");
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/redefinir-senha", body, String.class);
-                fail("Deveria ter lancado excecao HTTP 400");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/redefinir-senha", body, String.class));
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
         }
     }
 
@@ -226,12 +207,9 @@ class AuthE2ETest extends BaseMongoTest {
             request.setEmail("ana@email.com");
             request.setSenha("senhaerrada");
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/login", request, String.class);
-                fail("Deveria ter jogado uma exceção HTTP 401");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/login", request, String.class));
+            assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
         }
 
         @Test
@@ -241,12 +219,9 @@ class AuthE2ETest extends BaseMongoTest {
             request.setEmail("naoexiste@email.com");
             request.setSenha("qualquersenha");
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/login", request, String.class);
-                fail("Deveria ter jogado uma exceção HTTP 401");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/login", request, String.class));
+            assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
         }
 
         @Test
@@ -271,12 +246,9 @@ class AuthE2ETest extends BaseMongoTest {
             request.setEmail("nao-e-um-email");
             request.setSenha("senha123");
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/login", request, String.class);
-                fail("Deveria ter jogado uma exceção HTTP 400");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/login", request, String.class));
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
         }
     }
 
