@@ -2,8 +2,8 @@ package com.qs.biblioteca.controller;
 
 import com.qs.biblioteca.model.Livro;
 import com.qs.biblioteca.service.LivroService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,12 +13,15 @@ import java.util.List;
 @RequestMapping("/api/livros")
 public class LivroController {
 
-    @Autowired
-    private LivroService livroService;
+    private final LivroService livroService;
+
+    public LivroController(LivroService livroService) {
+        this.livroService = livroService;
+    }
 
     @GetMapping
-    public List<Livro> listarTodos(@RequestParam(required = false) String search) {
-        return livroService.listarTodos(search);
+    public List<Livro> listarTodos(@RequestParam(required = false) String search, Authentication authentication) {
+        return livroService.listarTodos(search, authentication.getName());
     }
 
     @GetMapping("/{id}")
@@ -27,19 +30,19 @@ public class LivroController {
     }
 
     @PostMapping
-    public ResponseEntity<Livro> salvarLivro(@RequestBody Livro livro) {
-        Livro salvo = livroService.salvar(livro);
+    public ResponseEntity<Livro> salvarLivro(@RequestBody Livro livro, Authentication authentication) {
+        Livro salvo = livroService.salvar(livro, authentication.getName());
         return ResponseEntity.status(201).body(salvo);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Livro> atualizarLivro(@PathVariable String id, @RequestBody Livro livro) {
-        return ResponseEntity.ok(livroService.atualizar(id, livro));
+    public ResponseEntity<Livro> atualizarLivro(@PathVariable String id, @RequestBody Livro livro, Authentication authentication) {
+        return ResponseEntity.ok(livroService.atualizar(id, livro, authentication.getName()));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> removerLivro(@PathVariable String id) {
-        livroService.deletar(id);
+    public ResponseEntity<Void> removerLivro(@PathVariable String id, Authentication authentication) {
+        livroService.deletar(id, authentication.getName());
         return ResponseEntity.noContent().build();
     }
 }

@@ -111,11 +111,20 @@
   color: var(--color-sage);
 }
 
+.searchIconBtn {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .searchIcon {
   width: 18px;
   height: 18px;
   color: var(--color-ink);
-  flex-shrink: 0;
 }
 
 /* ── User area (avatar + exit) ───────────────────────────────── */

@@ -128,6 +128,13 @@ public class UsuarioService {
         return new UsuarioResponse(usuario);
     }
 
+    public void redefinirSenha(String email, String novaSenha) {
+        Usuario usuario = usuarioRepository.findByEmail(email.toLowerCase())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Email não encontrado"));
+        usuario.setSenhaHash(passwordEncoder.encode(novaSenha));
+        usuarioRepository.save(usuario);
+    }
+
     public void excluirPorEmail(String email) {
         Usuario usuario = usuarioRepository.findByEmail(email.toLowerCase())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));

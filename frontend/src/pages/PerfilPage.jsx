@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import AppHeader from '../components/shared/AppHeader';
 import Footer from '../components/Footer/Footer';
@@ -7,21 +8,32 @@ import { getUser, clearSession } from '../services/auth';
 import styles from './PerfilPage.module.css';
 
 // ── Toast component ──────────────────────────────────────────────
-function Toast({ message, type = 'success', onClose }) {
+function Toast({ message, type, onClose }) {
   useEffect(() => {
     const t = setTimeout(onClose, 3000);
     return () => clearTimeout(t);
   }, [onClose]);
+  const toastClass = [styles.toast, styles[`toast_${type}`]].filter(Boolean).join(' ');
   return (
-    <div className={`${styles.toast} ${styles[`toast_${type}`]}`}>
+    <div className={toastClass}>
       <span>{message}</span>
       <button className={styles.toastClose} onClick={onClose} type="button">✕</button>
     </div>
   );
 }
 
+Toast.propTypes = {
+  message: PropTypes.string.isRequired,
+  type: PropTypes.string,
+  onClose: PropTypes.func.isRequired,
+};
+
+Toast.defaultProps = {
+  type: 'success',
+};
+
 // ── Confirm Modal ────────────────────────────────────────────────
-function ConfirmModal({ title, message, onConfirm, onCancel, confirmLabel = 'Confirmar', cancelLabel = 'Cancelar', danger = false }) {
+function ConfirmModal({ title, message, onConfirm, onCancel, confirmLabel, cancelLabel, danger }) {
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modal}>
@@ -35,6 +47,22 @@ function ConfirmModal({ title, message, onConfirm, onCancel, confirmLabel = 'Con
     </div>
   );
 }
+
+ConfirmModal.propTypes = {
+  title: PropTypes.string.isRequired,
+  message: PropTypes.string.isRequired,
+  onConfirm: PropTypes.func.isRequired,
+  onCancel: PropTypes.func.isRequired,
+  confirmLabel: PropTypes.string,
+  cancelLabel: PropTypes.string,
+  danger: PropTypes.bool,
+};
+
+ConfirmModal.defaultProps = {
+  confirmLabel: 'Confirmar',
+  cancelLabel: 'Cancelar',
+  danger: false,
+};
 
 export default function PerfilPage() {
   const navigate = useNavigate();
@@ -116,6 +144,10 @@ export default function PerfilPage() {
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('A imagem deve ter no máximo 2MB.', 'error');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (ev) => {
       const dataUrl = ev.target.result;

@@ -19,23 +19,23 @@ public class LivroService {
         this.livroRepository = livroRepository;
     }
 
-    public Livro salvar(Livro livro) {
+    public Livro salvar(Livro livro, String userEmail) {
+        livro.setUserEmail(userEmail);
         validarLivro(livro);
         if (livro.getTitle() != null && livro.getAuthor() != null
-                && livroRepository.existsByTitleIgnoreCaseAndAuthorIgnoreCase(
-                        livro.getTitle().trim(), livro.getAuthor().trim())) {
+                && livroRepository.existsByUserEmailAndTitleIgnoreCaseAndAuthorIgnoreCase(
+                        userEmail, livro.getTitle().trim(), livro.getAuthor().trim())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Livro já cadastrado: \"" + livro.getTitle() + "\" de " + livro.getAuthor());
         }
         return livroRepository.save(livro);
     }
 
-    public List<Livro> listarTodos(String search) {
+    public List<Livro> listarTodos(String search, String userEmail) {
         if (search != null && !search.isBlank()) {
-            return livroRepository
-                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(search, search);
+            return livroRepository.findByUserEmailAndSearch(userEmail, search);
         }
-        return livroRepository.findAll();
+        return livroRepository.findByUserEmail(userEmail);
     }
 
     public Livro buscarPorId(String id) {
@@ -43,9 +43,14 @@ public class LivroService {
                 .orElseThrow(() -> new ResourceNotFoundException("Livro não encontrado"));
     }
 
-    public Livro atualizar(String id, Livro livroAtualizado) {
+    public Livro atualizar(String id, Livro livroAtualizado, String userEmail) {
         Livro livro = buscarPorId(id);
 
+        if (livro.getUserEmail() != null && !userEmail.equals(livro.getUserEmail())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado");
+        }
+
+        livro.setUserEmail(userEmail);
         livro.setTitle(livroAtualizado.getTitle());
         livro.setAuthor(livroAtualizado.getAuthor());
         livro.setStatus(livroAtualizado.getStatus());
@@ -62,9 +67,10 @@ public class LivroService {
         return livroRepository.save(livro);
     }
 
-    public void deletar(String id) {
-        if (!livroRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Livro não encontrado");
+    public void deletar(String id, String userEmail) {
+        Livro livro = buscarPorId(id);
+        if (livro.getUserEmail() != null && !userEmail.equals(livro.getUserEmail())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado");
         }
         livroRepository.deleteById(id);
     }

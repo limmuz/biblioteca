@@ -26,8 +26,8 @@ export default function AppHeader() {
     const onStorage = (e) => {
       if (e.key === 'lybre_avatar') setAvatarUrl(e.newValue);
     };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    globalThis.addEventListener('storage', onStorage);
+    return () => globalThis.removeEventListener('storage', onStorage);
   }, []);
 
   const initials = user.nome
@@ -43,11 +43,15 @@ export default function AppHeader() {
     navigate("/login");
   };
 
-  const handleSearch = (e) => {
-    if (e.key === "Enter" && termo.trim()) {
+  const executarBusca = () => {
+    if (termo.trim()) {
       navigate("/listagem", { state: { query: termo } });
       setTermo("");
     }
+  };
+
+  const handleSearch = (e) => {
+    if (e.key === "Enter") executarBusca();
   };
 
   return (
@@ -95,7 +99,15 @@ export default function AppHeader() {
             onKeyDown={handleSearch}
           />
 
-          <BsSearch className={styles.searchIcon} />
+          <button
+            type="button"
+            className={styles.searchIconBtn}
+            onClick={executarBusca}
+            title="Buscar"
+            aria-label="Buscar"
+          >
+            <BsSearch className={styles.searchIcon} />
+          </button>
         </div>
 
         <div className={styles.userArea}>
