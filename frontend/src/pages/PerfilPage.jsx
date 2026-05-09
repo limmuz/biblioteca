@@ -105,6 +105,10 @@ export default function PerfilPage() {
         const resUsuario = await api.get('/usuarios/me');
         const u = resUsuario.data;
         setUsuario(u);
+        if (u.avatarBase64) {
+          setAvatarUrl(u.avatarBase64);
+          localStorage.setItem('lybre_avatar', u.avatarBase64);
+        }
         setPerfilForm({
           nome: u.nome || '',
           email: u.email || '',
@@ -157,11 +161,17 @@ export default function PerfilPage() {
       return;
     }
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
       const dataUrl = ev.target.result;
       setAvatarUrl(dataUrl);
       localStorage.setItem('lybre_avatar', dataUrl);
-      showToast('Foto atualizada com sucesso!');
+      try {
+        await api.put('/usuarios/me', { avatarBase64: dataUrl });
+        showToast('Foto atualizada com sucesso!');
+      } catch (err) {
+        console.error('Erro ao salvar avatar:', err);
+        showToast('Foto salva localmente, mas falhou no servidor.', 'error');
+      }
     };
     reader.readAsDataURL(file);
   };

@@ -39,6 +39,8 @@ public class Usuario {
 
     private List<String> redesSociais;
 
+    private String avatarBase64;
+
     @Getter
     @Setter
     public static class Endereco {
