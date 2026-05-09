@@ -30,7 +30,7 @@ public final class LivroValidator {
 
     public static boolean isCoverValido(String cover) {
         if (cover == null || cover.isBlank()) return false;
-        return cover.startsWith("http://") || cover.startsWith("https://");
+        return cover.startsWith("http://") || cover.startsWith("https://") || cover.startsWith("/");
     }
 
     public static boolean isLivroValido(Livro livro) {
