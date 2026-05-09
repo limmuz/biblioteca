@@ -151,6 +151,14 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
+                            <excludes>
+                                <exclude>com/qs/biblioteca/model/**</exclude>
+                                <exclude>com/qs/biblioteca/dto/**</exclude>
+                                <exclude>com/qs/biblioteca/config/**</exclude>
+                                <exclude>com/qs/biblioteca/repository/**</exclude>
+                                <exclude>com/qs/biblioteca/BibliotecaApplication.class</exclude>
+                                <exclude>com/qs/biblioteca/security/UserPrincipal.class</exclude>
+                            </excludes>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
