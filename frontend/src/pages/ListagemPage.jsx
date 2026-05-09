@@ -21,7 +21,7 @@ export default function ListagemPage() {
         setLoading(true);
         try {
           const res = await api.get('/livros');
-          setLivros(res.data);
+          setLivros(res.data.filter(b => b.status !== 'RECOMENDADO'));
         } catch (err) {
           console.error(err);
         } finally {
