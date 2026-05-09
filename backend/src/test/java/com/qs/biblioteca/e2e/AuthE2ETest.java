@@ -130,7 +130,7 @@ class AuthE2ETest {
         @BeforeEach
         void registrarUsuarioPadrao() {
             RegisterRequest reg = novoRegisterRequest(
-                    "Ana Pereira", "ana@email.com", "minhasenha");
+                    "Ana Pereira", "ana@email.com", "minhasenha1");
             restTemplate.postForEntity(baseUrl + "/register", reg, AuthResponse.class);
         }
 
@@ -139,7 +139,7 @@ class AuthE2ETest {
         void login_comCredenciaisCorretas_deveRetornarJwt() {
             AuthRequest request = new AuthRequest();
             request.setEmail("ana@email.com");
-            request.setSenha("minhasenha");
+            request.setSenha("minhasenha1");
 
             ResponseEntity<AuthResponse> response = restTemplate.postForEntity(
                     baseUrl + "/login", request, AuthResponse.class);
@@ -187,7 +187,7 @@ class AuthE2ETest {
         void login_comEmailEmMaiusculo_deveAutenticar() {
             AuthRequest request = new AuthRequest();
             request.setEmail("ANA@EMAIL.COM");
-            request.setSenha("minhasenha");
+            request.setSenha("minhasenha1");
 
             ResponseEntity<AuthResponse> response = restTemplate.postForEntity(
                     baseUrl + "/login", request, AuthResponse.class);

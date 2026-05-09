@@ -129,9 +129,12 @@ public class UsuarioService {
         return new UsuarioResponse(usuario);
     }
 
-    public void redefinirSenha(String email, String novaSenha) {
+    public void redefinirSenha(String email, String senhaAtual, String novaSenha) {
         Usuario usuario = usuarioRepository.findByEmail(email.toLowerCase())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Email não encontrado"));
+        if (!passwordEncoder.matches(senhaAtual, usuario.getSenhaHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Senha atual incorreta");
+        }
         usuario.setSenhaHash(passwordEncoder.encode(novaSenha));
         usuarioRepository.save(usuario);
     }

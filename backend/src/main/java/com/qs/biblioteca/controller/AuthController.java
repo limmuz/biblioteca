@@ -38,11 +38,15 @@ public class AuthController {
 	@PostMapping("/redefinir-senha")
 	public ResponseEntity<Void> redefinirSenha(@RequestBody Map<String, String> body) {
 		String email = body.get("email");
+		String senhaAtual = body.get("senhaAtual");
 		String novaSenha = body.get("novaSenha");
 		if (email == null || email.isBlank() || novaSenha == null || novaSenha.isBlank()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email e nova senha são obrigatórios");
 		}
-		usuarioService.redefinirSenha(email, novaSenha);
+		if (senhaAtual == null || senhaAtual.isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Senha atual é obrigatória");
+		}
+		usuarioService.redefinirSenha(email, senhaAtual, novaSenha);
 		return ResponseEntity.noContent().build();
 	}
 }

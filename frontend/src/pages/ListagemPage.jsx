@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import AppHeader from '../components/shared/AppHeader';
 import Footer from '../components/Footer/Footer';
 import BookCardMini from '../components/shared/BookCardMini';
+import LoadingSpinner from '../components/shared/LoadingSpinner';
 import api from '../services/api';
 import styles from './ListagemPage.module.css';
 
@@ -53,7 +54,7 @@ export default function ListagemPage() {
         </h1>
 
         {loading ? (
-          <p style={{ color: 'white', textAlign: 'center', marginTop: '2rem' }}>Buscando livros...</p>
+          <LoadingSpinner />
         ) : (
           <div className={styles.bookGrid}>
             {livros.length > 0 ? (
