@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import AppHeader from '../components/shared/AppHeader';
 import Footer from '../components/Footer/Footer';
+import Modal from '../components/shared/Modal';
 import api from '../services/api';
 import AdBanner from '../components/shared/AdBanner';
 import styles from './NovoLivroPage.module.css';
@@ -22,10 +23,11 @@ export default function EditarLivroPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const [carregando, setCarregando] = useState(false);
   const [loading, setLoading] = useState(!location.state?.bookData);
-  
+  const [modal, setModal] = useState(null);
+
   const [livro, setLivro] = useState({
     title: '',
     author: '',
@@ -75,8 +77,13 @@ export default function EditarLivroPage() {
         })
         .catch((err) => {
           console.error(err);
-          alert('Erro ao carregar livro');
-          navigate('/home');
+          setModal({
+            title: 'Erro',
+            message: 'Não foi possível carregar o livro.',
+            onConfirm: () => navigate('/home'),
+            confirmLabel: 'Voltar',
+            singleButton: true,
+          });
         });
     }
   }, [id, location.state, navigate]);
@@ -105,12 +112,17 @@ export default function EditarLivroPage() {
       };
 
       await api.put(`/livros/${id}`, payload);
-      alert('Livro atualizado com sucesso!');
-      navigate(`/livro/${id}`);
+      setModal({
+        title: 'Livro atualizado!',
+        message: 'As alterações foram salvas com sucesso.',
+        onConfirm: () => navigate(`/livro/${id}`),
+        confirmLabel: 'Ver livro',
+        singleButton: true,
+      });
     } catch (error) {
       console.error("Erro ao atualizar:", error);
       let mensagemErro = 'Erro ao atualizar o livro. ';
-      
+
       if (error.response?.status === 400) {
         mensagemErro += 'Verifique se todos os campos obrigatórios estão preenchidos corretamente.';
       } else if (error.response?.status === 404) {
@@ -120,8 +132,14 @@ export default function EditarLivroPage() {
       } else {
         mensagemErro += 'Tente novamente.';
       }
-      
-      alert(mensagemErro);
+
+      setModal({
+        title: 'Ops!',
+        message: mensagemErro,
+        onConfirm: () => setModal(null),
+        confirmLabel: 'Entendi',
+        singleButton: true,
+      });
     } finally {
       setCarregando(false);
     }
@@ -148,83 +166,93 @@ export default function EditarLivroPage() {
       <AppHeader />
       <main className={styles.main}>
         <div className={styles.formCard}>
-        <h2 className={styles.title}>Editar Livro</h2>
+          <h2 className={styles.title}>Editar Livro</h2>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <label>
-            Título
-            <input className={styles.input} type="text" name="title" value={livro.title} onChange={handleChange} required />
-          </label>
+          <form onSubmit={handleSubmit} className={styles.form}>
+            <label>
+              Título
+              <input className={styles.input} type="text" name="title" value={livro.title} onChange={handleChange} required />
+            </label>
 
-          <label>
-            Autor
-            <input className={styles.input} type="text" name="author" value={livro.author} onChange={handleChange} required />
-          </label>
+            <label>
+              Autor
+              <input className={styles.input} type="text" name="author" value={livro.author} onChange={handleChange} required />
+            </label>
 
-          <label>
-            URL da Capa
-            <input className={styles.input} type="url" name="cover" value={livro.cover} onChange={handleChange} required />
-          </label>
+            <label>
+              URL da Capa
+              <input className={styles.input} type="url" name="cover" value={livro.cover} onChange={handleChange} required />
+            </label>
 
-          <label>
-            Sinopse
-            <textarea className={styles.textarea} name="excerpt" value={livro.excerpt} onChange={handleChange} required />
-          </label>
+            <label>
+              Sinopse
+              <textarea className={styles.textarea} name="excerpt" value={livro.excerpt} onChange={handleChange} required />
+            </label>
 
-          <label>
-            Categorias (separe por virgula)
-            <input className={styles.input} type="text" name="categoriesInput" value={livro.categoriesInput} onChange={handleChange} placeholder="Ficcao, Fantasia, Aventura" />
-          </label>
+            <label>
+              Categorias (separe por virgula)
+              <input className={styles.input} type="text" name="categoriesInput" value={livro.categoriesInput} onChange={handleChange} placeholder="Ficcao, Fantasia, Aventura" />
+            </label>
 
-          <label>
-            Idioma
-            <input className={styles.input} type="text" name="language" value={livro.language} onChange={handleChange} placeholder="Portugues" />
-          </label>
+            <label>
+              Idioma
+              <input className={styles.input} type="text" name="language" value={livro.language} onChange={handleChange} placeholder="Portugues" />
+            </label>
 
-          <label>
-            Paginas
-            <input className={styles.input} type="number" min="0" name="pages" value={livro.pages} onChange={handleChange} />
-          </label>
+            <label>
+              Paginas
+              <input className={styles.input} type="number" min="0" name="pages" value={livro.pages} onChange={handleChange} />
+            </label>
 
-          <label>
-            Editora
-            <input className={styles.input} type="text" name="publisher" value={livro.publisher} onChange={handleChange} />
-          </label>
+            <label>
+              Editora
+              <input className={styles.input} type="text" name="publisher" value={livro.publisher} onChange={handleChange} />
+            </label>
 
-          <label>
-            Publicacao
-            <input className={styles.input} type="text" name="publishedDate" value={livro.publishedDate} onChange={handleChange} placeholder="7 fevereiro 2014" />
-          </label>
+            <label>
+              Publicacao
+              <input className={styles.input} type="text" name="publishedDate" value={livro.publishedDate} onChange={handleChange} placeholder="7 fevereiro 2014" />
+            </label>
 
-          <label>
-            Status
-            <select className={styles.select} name="status" value={livro.status} onChange={handleChange}>
-              <option value="QUERO LER">Quero Ler</option>
-              <option value="LENDO">Lendo</option>
-              <option value="LIDO">Lido</option>
-              <option value="RECOMENDADO">Recomendação</option>
-            </select>
-          </label>
+            <label>
+              Status
+              <select className={styles.select} name="status" value={livro.status} onChange={handleChange}>
+                <option value="QUERO LER">Quero Ler</option>
+                <option value="LENDO">Lendo</option>
+                <option value="LIDO">Lido</option>
+                <option value="RECOMENDADO">Recomendação</option>
+              </select>
+            </label>
 
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button type="submit" className={styles.submitBtn} disabled={carregando}>
-              {carregando ? 'SALVANDO...' : 'SALVAR ALTERAÇÕES'}
-            </button>
-            <button 
-              type="button" 
-              className={styles.cancelBtn} 
-              onClick={() => navigate(`/livro/${id}`)}
-            >
-              CANCELAR
-            </button>
-          </div>
-        </form>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button type="submit" className={styles.submitBtn} disabled={carregando}>
+                {carregando ? 'SALVANDO...' : 'SALVAR ALTERAÇÕES'}
+              </button>
+              <button
+                type="button"
+                className={styles.cancelBtn}
+                onClick={() => navigate(`/livro/${id}`)}
+              >
+                CANCELAR
+              </button>
+            </div>
+          </form>
         </div>
       </main>
       <AdBanner variant="banner" />
       <div className={styles.footerWrap}>
         <Footer />
       </div>
+
+      {modal && (
+        <Modal
+          title={modal.title}
+          message={modal.message}
+          onConfirm={modal.onConfirm}
+          confirmLabel={modal.confirmLabel}
+          singleButton={modal.singleButton}
+        />
+      )}
     </div>
   );
 }
