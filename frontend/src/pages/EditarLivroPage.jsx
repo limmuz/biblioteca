@@ -6,6 +6,18 @@ import api from '../services/api';
 import AdBanner from '../components/shared/AdBanner';
 import styles from './NovoLivroPage.module.css';
 
+const BG_COVERS = [
+  '/books/book-cabeca-santo.png',
+  '/books/book-persepolis.png',
+  '/books/book-maus.png',
+  '/books/book-diario-zlata.png',
+  '/books/book-diferenca.png',
+  '/books/book-batalhas.png',
+  '/books/book-noiva.png',
+  '/books/book-sherlock.png',
+];
+const bgTiles = Array.from({ length: 64 }, (_, i) => BG_COVERS[i % BG_COVERS.length]);
+
 export default function EditarLivroPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -128,10 +140,16 @@ export default function EditarLivroPage() {
 
   return (
     <div className={styles.page}>
+      <div className={styles.bgCovers} aria-hidden="true">
+        {bgTiles.map((src, i) => (
+          <img key={i} src={src} alt="" className={styles.bgCover} />
+        ))}
+      </div>
       <AppHeader />
       <main className={styles.main}>
+        <div className={styles.formCard}>
         <h2 className={styles.title}>Editar Livro</h2>
-        
+
         <form onSubmit={handleSubmit} className={styles.form}>
           <label>
             Título
@@ -201,6 +219,7 @@ export default function EditarLivroPage() {
             </button>
           </div>
         </form>
+        </div>
       </main>
       <AdBanner variant="banner" />
       <div className={styles.footerWrap}>
