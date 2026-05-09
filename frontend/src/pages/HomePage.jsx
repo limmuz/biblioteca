@@ -16,6 +16,7 @@ export default function HomePage() {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorModal, setErrorModal] = useState(null);
+  const [showAllRecs, setShowAllRecs] = useState(false);
   const carouselRef = useRef(null);
   const autoScrollRef = useRef(null);
   const isPausedRef = useRef(false);
@@ -145,7 +146,7 @@ export default function HomePage() {
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Recomendações</h2>
             <div className={styles.bookGrid}>
-              {recommendations.slice(0, 4).map((book) => (
+              {(showAllRecs ? recommendations : recommendations.slice(0, 4)).map((book) => (
                 <BookCardMini
                   key={book.id + "-rec"}
                   book={book}
@@ -153,15 +154,25 @@ export default function HomePage() {
                 />
               ))}
             </div>
+            {recommendations.length > 4 && (
+              <button
+                className={styles.moreBtn}
+                onClick={() => setShowAllRecs((v) => !v)}
+              >
+                {showAllRecs ? "Ver menos" : "Mais recomendações"}
+              </button>
+            )}
           </section>
         )}
 
-        <button
-          className={styles.moreBtn}
-          onClick={() => navigate(isLibraryEmpty ? "/novo-livro" : "/listagem")}
-        >
-          {isLibraryEmpty ? "Cadastrar meu primeiro livro" : "Mais recomendações"}
-        </button>
+        {isLibraryEmpty && (
+          <button
+            className={styles.moreBtn}
+            onClick={() => navigate("/novo-livro")}
+          >
+            Cadastrar meu primeiro livro
+          </button>
+        )}
 
         <div className={styles.footerWrap}>
           <Footer />
