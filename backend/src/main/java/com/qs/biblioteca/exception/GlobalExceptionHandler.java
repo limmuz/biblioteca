@@ -13,16 +13,14 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final String TIMESTAMP = "timestamp";
+    private static final String STATUS = "status";
+    private static final String ERROR = "error";
+    private static final String MESSAGE = "message";
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException ex) {
-
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", 404);
-        error.put("error", "Not Found");
-        error.put("message", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        return buildResponse(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -30,50 +28,37 @@ public class GlobalExceptionHandler {
         String message = ex.getBindingResult().getFieldErrors().stream()
                 .map(e -> e.getDefaultMessage())
                 .collect(Collectors.joining("; "));
-
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", 400);
-        error.put("error", "Bad Request");
-        error.put("message", message.isBlank() ? "Dados inválidos" : message);
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        return buildResponse(HttpStatus.BAD_REQUEST, "Bad Request", message.isBlank() ? "Dados inválidos" : message);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException ex) {
-
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", 400);
-        error.put("error", "Bad Request");
-        error.put("message", ex.getMessage());
-
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
-
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", 500);
-        error.put("error", "Internal Server Error");
-        error.put("message", "Algo deu errado");
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        return buildResponse(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage());
     }
 
     @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
     public ResponseEntity<Map<String, Object>> handleResponseStatus(
             org.springframework.web.server.ResponseStatusException ex) {
+        String reason = ex.getReason() != null ? ex.getReason() : "Erro na requisição";
+        Map<String, Object> body = new HashMap<>();
+        body.put(TIMESTAMP, LocalDateTime.now());
+        body.put(STATUS, ex.getStatusCode().value());
+        body.put(ERROR, ex.getReason() != null ? ex.getReason() : "Erro");
+        body.put(MESSAGE, reason);
+        return ResponseEntity.status(ex.getStatusCode()).body(body);
+    }
 
-        Map<String, Object> error = new HashMap<>();
-        error.put("timestamp", LocalDateTime.now());
-        error.put("status", ex.getStatusCode().value());
-        error.put("error", ex.getReason() != null ? ex.getReason() : "Erro");
-        error.put("message", ex.getReason() != null ? ex.getReason() : "Erro na requisição");
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {  // NOSONAR
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "Algo deu errado");
+    }
 
-        return ResponseEntity.status(ex.getStatusCode()).body(error);
+    private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String error, String message) {
+        Map<String, Object> body = new HashMap<>();
+        body.put(TIMESTAMP, LocalDateTime.now());
+        body.put(STATUS, status.value());
+        body.put(ERROR, error);
+        body.put(MESSAGE, message);
+        return ResponseEntity.status(status).body(body);
     }
 }
