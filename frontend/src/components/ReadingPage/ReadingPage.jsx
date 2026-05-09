@@ -5,6 +5,7 @@ import Footer from "../Footer/Footer";
 import LoadingSpinner from "../shared/LoadingSpinner";
 import api from "../../services/api";
 import { gerarTextoLivro, paginar } from "../../utils/gerarTextoLivro";
+import AdBanner from "../shared/AdBanner";
 import styles from "./ReadingPage.module.css";
 
 export default function ReadingPage() {
@@ -152,6 +153,7 @@ export default function ReadingPage() {
           Use as setas ← → do teclado para navegar
         </p>
 
+        <AdBanner variant="banner" />
         <div className={styles.footerWrap}>
           <Footer />
         </div>

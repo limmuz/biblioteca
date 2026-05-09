@@ -23,6 +23,13 @@
   border: 1.5px solid color-mix(in srgb, var(--ad-accent) 20%, transparent);
   animation: adSlideIn 0.4s ease;
   flex-wrap: wrap;
+  margin: 24px 40px 0;
+}
+
+@media (max-width: 768px) {
+  .banner {
+    margin: 16px 20px 0;
+  }
 }
 
 .dismiss {

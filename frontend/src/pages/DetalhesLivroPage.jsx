@@ -5,6 +5,7 @@ import Footer from '../components/Footer/Footer';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import Modal from '../components/shared/Modal';
 import api from '../services/api';
+import AdBanner from '../components/shared/AdBanner';
 import styles from './DetalhesLivroPage.module.css';
 
 export default function DetalhesLivroPage() {
@@ -189,6 +190,7 @@ export default function DetalhesLivroPage() {
           </div>
         </div>
 
+        <AdBanner variant="banner" />
         <div className={styles.footerWrap}>
           <Footer />
         </div>
