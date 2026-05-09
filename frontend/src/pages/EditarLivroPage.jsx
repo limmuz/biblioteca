@@ -17,7 +17,7 @@ const BG_COVERS = [
   '/books/book-noiva.png',
   '/books/book-sherlock.png',
 ];
-const bgTiles = Array.from({ length: 64 }, (_, i) => BG_COVERS[i % BG_COVERS.length]);
+const bgTiles = Array.from({ length: 300 }, (_, i) => BG_COVERS[i % BG_COVERS.length]);
 
 export default function EditarLivroPage() {
   const { id } = useParams();
