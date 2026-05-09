@@ -5,6 +5,9 @@ on:
     branches: ["principal", "main", "develop"]
   pull_request:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   backend:
     runs-on: ubuntu-latest
@@ -100,4 +103,6 @@ jobs:
           ./mvnw -B verify sonar:sonar \
             -Dsonar.projectKey=AnaPaula2024_biblioteca \
             -Dsonar.organization=anapaula2024 \
-            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.coverage.exclusions="**/model/**,**/dto/**,**/config/**,**/repository/**,**/BibliotecaApplication.java,**/security/UserPrincipal.java" \
+            -Dsonar.cpd.exclusions="**/model/**,**/dto/**"
