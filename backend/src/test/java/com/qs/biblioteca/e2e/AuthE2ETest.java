@@ -121,7 +121,76 @@ class AuthE2ETest {
         }
     }
 
+    @Nested
+    @DisplayName("POST /api/auth/redefinir-senha")
+    class RedefinirSenhaTests {
 
+        @BeforeEach
+        void registrarUsuario() {
+            RegisterRequest reg = novoRegisterRequest(
+                    "Teste Redefinir", "redefinir@email.com", "senha123");
+            restTemplate.postForEntity(baseUrl + "/register", reg, AuthResponse.class);
+        }
+
+        @Test
+        @DisplayName("Deve redefinir senha com credenciais corretas e retornar 204")
+        void redefinirSenha_comCredenciaisCorretas_deveRetornar204() {
+            var body = java.util.Map.of(
+                    "email", "redefinir@email.com",
+                    "senhaAtual", "senha123",
+                    "novaSenha", "novaSenha1");
+
+            ResponseEntity<Void> response = restTemplate.postForEntity(
+                    baseUrl + "/redefinir-senha", body, Void.class);
+
+            assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 401 quando senha atual estiver incorreta")
+        void redefinirSenha_comSenhaAtualErrada_deveRetornar401() {
+            var body = java.util.Map.of(
+                    "email", "redefinir@email.com",
+                    "senhaAtual", "senhaErrada1",
+                    "novaSenha", "novaSenha1");
+
+            try {
+                restTemplate.postForEntity(baseUrl + "/redefinir-senha", body, String.class);
+                fail("Deveria ter lancado excecao HTTP 401");
+            } catch (HttpClientErrorException e) {
+                assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
+            }
+        }
+
+        @Test
+        @DisplayName("Deve retornar 404 quando email nao existir")
+        void redefinirSenha_comEmailInexistente_deveRetornar404() {
+            var body = java.util.Map.of(
+                    "email", "naoexiste@email.com",
+                    "senhaAtual", "senha123",
+                    "novaSenha", "novaSenha1");
+
+            try {
+                restTemplate.postForEntity(baseUrl + "/redefinir-senha", body, String.class);
+                fail("Deveria ter lancado excecao HTTP 404");
+            } catch (HttpClientErrorException e) {
+                assertEquals(HttpStatus.NOT_FOUND, e.getStatusCode());
+            }
+        }
+
+        @Test
+        @DisplayName("Deve retornar 400 quando campos obrigatorios estiverem ausentes")
+        void redefinirSenha_semCamposObrigatorios_deveRetornar400() {
+            var body = java.util.Map.of("email", "redefinir@email.com");
+
+            try {
+                restTemplate.postForEntity(baseUrl + "/redefinir-senha", body, String.class);
+                fail("Deveria ter lancado excecao HTTP 400");
+            } catch (HttpClientErrorException e) {
+                assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
+            }
+        }
+    }
 
     @Nested
     @DisplayName("POST /api/auth/login")
