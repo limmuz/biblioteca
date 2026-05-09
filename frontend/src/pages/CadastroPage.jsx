@@ -8,6 +8,7 @@ import styles from './LoginPage.module.css';
 
 export default function CadastroPage() {
   const navigate = useNavigate();
+  const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -24,7 +25,7 @@ export default function CadastroPage() {
   const [senhaErro, setSenhaErro] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const normalizeCep = (value) => value.replace(/\D/g, '').slice(0, 8);
+  const normalizeCep = (value) => value.replaceAll(/\D/g, '').slice(0, 8);
 
   const formatCep = (value) => {
     const digits = normalizeCep(value);
@@ -59,6 +60,7 @@ export default function CadastroPage() {
             document.getElementById('cadastro-numero')?.focus();
           }
         } catch (err) {
+          console.error('Erro ao consultar CEP:', err);
           setCepError('Falha ao consultar CEP.');
         } finally {
           setCepLoading(false);
@@ -95,9 +97,8 @@ export default function CadastroPage() {
 
     setLoading(true);
     try {
-      const nomePadrao = email.split('@')[0] || 'Leitor';
       const response = await api.post('/auth/register', {
-        nome: nomePadrao,
+        nome: nome.trim() || email.split('@')[0] || 'Leitor',
         email,
         senha: password,
         cep: normalizeCep(cep),
@@ -131,6 +132,14 @@ export default function CadastroPage() {
   return (
     <AuthCard title="Sejam bem vindos a Lybre!">
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
+        <FormInput
+          id="cadastro-nome"
+          label="Nome completo"
+          type="text"
+          placeholder="Como quer ser chamado?"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+        />
         <FormInput
           id="cadastro-email"
           label="Email"

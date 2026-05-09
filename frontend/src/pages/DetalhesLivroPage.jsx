@@ -127,17 +127,33 @@ export default function DetalhesLivroPage() {
       <main className={styles.main}>
 
         <div className={styles.hero}>
-          <img src={book.cover} alt={book.title} className={styles.bookCover} />
+          <img
+            src={book.cover}
+            alt={book.title}
+            className={styles.bookCover}
+            onError={(e) => { e.target.src = 'https://via.placeholder.com/200x300?text=Sem+Capa'; }}
+          />
           <div className={styles.heroInfo}>
             <h1 className={styles.bookTitle}>{book.title}</h1>
             <p className={styles.bookAuthor}>por {book.author}</p>
             <div className={styles.heroButtons}>
-              <button className={styles.btnLer} onClick={() => navigate(`/leitura/${book.id}`)}>
+              <button className={styles.btnLer} onClick={handleComecarLer}>
                 Ler
               </button>
-              <button className={styles.btnAdicionar} onClick={handleAdicionarFavoritos} disabled={adicionando}>
-                {adicionando ? 'Adicionando...' : 'Adicionar a lista de leitura'}
-              </button>
+              {!['QUERO LER', 'LENDO', 'LIDO'].includes(book.status) && (
+                <button className={styles.btnAdicionar} onClick={handleAdicionarFavoritos} disabled={adicionando}>
+                  {adicionando ? 'Adicionando...' : 'Adicionar a lista de leitura'}
+                </button>
+              )}
+              {book.status === 'QUERO LER' && (
+                <span className={styles.statusBadge}>📚 Na sua lista</span>
+              )}
+              {book.status === 'LENDO' && (
+                <span className={styles.statusBadge}>📖 Lendo agora</span>
+              )}
+              {book.status === 'LIDO' && (
+                <span className={styles.statusBadge}>✅ Já lido</span>
+              )}
             </div>
           </div>
         </div>
