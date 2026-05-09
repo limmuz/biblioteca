@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import AppHeader from '../components/shared/AppHeader';
 import Footer from '../components/Footer/Footer';
+import LoadingSpinner from '../components/shared/LoadingSpinner';
+import Modal from '../components/shared/Modal';
 import api from '../services/api';
 import styles from './DetalhesLivroPage.module.css';
 
@@ -15,6 +17,7 @@ export default function DetalhesLivroPage() {
   const [error, setError] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (book) { setLoading(false); return; }
@@ -28,22 +31,15 @@ export default function DetalhesLivroPage() {
     setAdicionando(true);
     try {
       await api.put(`/livros/${book.id}`, {
-        title: book.title,
-        author: book.author,
-        cover: book.cover,
-        excerpt: book.excerpt || 'Sinopse não disponível',
-        status: 'QUERO LER',
-        pages: book.pages,
-        language: book.language,
-        categories: book.categories,
-        publisher: book.publisher,
-        publishedDate: book.publishedDate,
+        title: book.title, author: book.author, cover: book.cover,
+        excerpt: book.excerpt || 'Sinopse não disponível', status: 'QUERO LER',
+        pages: book.pages, language: book.language, categories: book.categories,
+        publisher: book.publisher, publishedDate: book.publishedDate,
       });
       setBook({ ...book, status: 'QUERO LER' });
       setToastVisible(true);
     } catch (err) {
       console.error(err);
-      alert('Erro ao adicionar aos favoritos');
     } finally {
       setAdicionando(false);
     }
@@ -66,7 +62,6 @@ export default function DetalhesLivroPage() {
       navigate('/home');
     } catch (err) {
       console.error(err);
-      alert('Erro ao remover dos favoritos');
     }
   };
 
@@ -75,27 +70,21 @@ export default function DetalhesLivroPage() {
   };
 
   const handleExcluirPermanente = async () => {
-    const confirmar = window.confirm(
-      'Tem certeza que deseja excluir este livro permanentemente? Esta ação não pode ser desfeita.'
-    );
-    if (!confirmar) return;
-
     try {
       await api.delete(`/livros/${book.id}`);
-      alert('Livro excluído com sucesso!');
       navigate('/home');
     } catch (err) {
       console.error(err);
-      alert('Erro ao excluir o livro');
     }
+    setConfirmDelete(false);
   };
 
   if (loading) {
     return (
       <div className={styles.page}>
         <AppHeader />
-        <main className={styles.main} style={{ display: 'flex', justifyContent: 'center', color: 'white', paddingTop: '150px' }}>
-          <h2>Carregando detalhes...</h2>
+        <main className={styles.main}>
+          <LoadingSpinner message="Carregando livro..." />
         </main>
       </div>
     );
@@ -105,8 +94,8 @@ export default function DetalhesLivroPage() {
     return (
       <div className={styles.page}>
         <AppHeader />
-        <main className={styles.main} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', paddingTop: '150px' }}>
-          <h2>Livro não encontrado</h2>
+        <main className={styles.main} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '60px' }}>
+          <h2 style={{ fontFamily: 'var(--font-serif)', color: 'var(--color-ink)' }}>Livro não encontrado</h2>
           <button onClick={() => navigate('/home')} className={styles.btnLer} style={{ marginTop: '20px' }}>Voltar para Home</button>
         </main>
       </div>
@@ -114,12 +103,19 @@ export default function DetalhesLivroPage() {
   }
 
   const categorias = Array.isArray(book.categories) && book.categories.length > 0
-    ? book.categories
-    : ['Nao informado'];
-  const idioma = book.language || 'Nao informado';
-  const editora = book.publisher || 'Nao informado';
-  const publicacao = book.publishedDate || 'Nao informado';
+    ? book.categories : ['Não informado'];
+  const idioma = book.language || 'Não informado';
+  const editora = book.publisher || 'Não informado';
+  const publicacao = book.publishedDate || 'Não informado';
   const paginas = book.pages || '--';
+
+  const statusConfig = {
+    'QUERO LER': { label: 'Na sua lista', icon: '📚', cls: styles.badgeList },
+    'LENDO':     { label: 'Lendo agora',  icon: '📖', cls: styles.badgeLendo },
+    'LIDO':      { label: 'Já lido',      icon: '✅', cls: styles.badgeLido },
+    'RECOMENDADO': { label: 'Recomendado', icon: '⭐', cls: styles.badgeRec },
+  };
+  const statusInfo = statusConfig[book.status];
 
   return (
     <div className={styles.page}>
@@ -142,24 +138,19 @@ export default function DetalhesLivroPage() {
               </button>
               {!['QUERO LER', 'LENDO', 'LIDO'].includes(book.status) && (
                 <button className={styles.btnAdicionar} onClick={handleAdicionarFavoritos} disabled={adicionando}>
-                  {adicionando ? 'Adicionando...' : 'Adicionar a lista de leitura'}
+                  {adicionando ? 'Adicionando...' : 'Adicionar à lista'}
                 </button>
               )}
-              {book.status === 'QUERO LER' && (
-                <span className={styles.statusBadge}>📚 Na sua lista</span>
-              )}
-              {book.status === 'LENDO' && (
-                <span className={styles.statusBadge}>📖 Lendo agora</span>
-              )}
-              {book.status === 'LIDO' && (
-                <span className={styles.statusBadge}>✅ Já lido</span>
+              {statusInfo && (
+                <span className={`${styles.statusBadge} ${statusInfo.cls}`}>
+                  {statusInfo.icon} {statusInfo.label}
+                </span>
               )}
             </div>
           </div>
         </div>
 
         <div className={styles.detailsCard}>
-
           <div className={styles.sinopseCol}>
             <h2 className={styles.sinopseTitle}>Sinopse</h2>
             <hr className={styles.sinopseDivider} />
@@ -175,34 +166,25 @@ export default function DetalhesLivroPage() {
                 ))}
               </div>
             </div>
-
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Idioma</span>
               <span className={styles.metaValue}>{idioma}</span>
             </div>
-
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Editora</span>
               <span className={styles.metaValue}>{editora}</span>
             </div>
-
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Publicação</span>
               <span className={styles.metaValue}>{publicacao}</span>
             </div>
-
             <div className={styles.metaRow}>
               <span className={styles.metaLabel}>Páginas</span>
               <span className={styles.metaValue}>{paginas}</span>
             </div>
-
             <div className={styles.metaButtons}>
-              <button className={styles.btnEditar} onClick={handleEditar}>
-                Editar
-              </button>
-              <button className={styles.btnExcluir} onClick={handleExcluirPermanente}>
-                Excluir
-              </button>
+              <button className={styles.btnEditar} onClick={handleEditar}>Editar</button>
+              <button className={styles.btnExcluir} onClick={() => setConfirmDelete(true)}>Excluir</button>
             </div>
           </div>
         </div>
@@ -219,14 +201,22 @@ export default function DetalhesLivroPage() {
             <p className={styles.toastMsg}>O livro foi adicionado à sua lista de leituras</p>
           </div>
           <div className={styles.toastActions}>
-            <button className={styles.btnToastPrimary} onClick={handleComecarLer}>
-              Começar a ler
-            </button>
-            <button className={styles.btnToastSecondary} onClick={handleRemoverFavoritos}>
-              Remover da lista
-            </button>
+            <button className={styles.btnToastPrimary} onClick={handleComecarLer}>Começar a ler</button>
+            <button className={styles.btnToastSecondary} onClick={handleRemoverFavoritos}>Remover da lista</button>
           </div>
         </div>
+      )}
+
+      {confirmDelete && (
+        <Modal
+          title="Excluir livro"
+          message={`Tem certeza que deseja excluir "${book.title}" permanentemente? Esta ação não pode ser desfeita.`}
+          onConfirm={handleExcluirPermanente}
+          onCancel={() => setConfirmDelete(false)}
+          confirmLabel="Excluir"
+          cancelLabel="Cancelar"
+          danger
+        />
       )}
     </div>
   );

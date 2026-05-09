@@ -70,7 +70,9 @@ export default function PerfilPage() {
 
   const [usuario, setUsuario] = useState(null);
   const [livrosFavoritos, setLivrosFavoritos] = useState([]);
+  const [todosPorStatus, setTodosPorStatus] = useState({ LIDO: [], LENDO: [], 'QUERO LER': [], RECOMENDADO: [] });
   const [estatisticas, setEstatisticas] = useState({ total: 0, lidos: 0, lendo: 0, queroLer: 0 });
+  const [statExpandida, setStatExpandida] = useState(null);
   const [loading, setLoading] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState(null);
 
@@ -122,6 +124,12 @@ export default function PerfilPage() {
         const todosLivros = resLivros.data;
         const favoritos = todosLivros.filter(l => l.status === 'QUERO LER');
         setLivrosFavoritos(favoritos);
+        setTodosPorStatus({
+          'LIDO': todosLivros.filter(l => l.status === 'LIDO'),
+          'LENDO': todosLivros.filter(l => l.status === 'LENDO'),
+          'QUERO LER': favoritos,
+          'RECOMENDADO': todosLivros.filter(l => l.status === 'RECOMENDADO'),
+        });
         setEstatisticas({
           total: todosLivros.length,
           lidos: todosLivros.filter(l => l.status === 'LIDO').length,
@@ -414,12 +422,64 @@ export default function PerfilPage() {
         {/* Estatísticas */}
         <div className={styles.statsCard}>
           <h2 className={styles.sectionTitle}>Estatísticas de Leitura</h2>
-          <div className={styles.statsGrid}>
-            <div className={styles.statItem}><span className={styles.statNumber}>{estatisticas.total}</span><span className={styles.statLabel}>Total de Livros</span></div>
-            <div className={styles.statItem}><span className={styles.statNumber}>{estatisticas.lidos}</span><span className={styles.statLabel}>Livros Lidos</span></div>
-            <div className={styles.statItem}><span className={styles.statNumber}>{estatisticas.lendo}</span><span className={styles.statLabel}>Lendo Agora</span></div>
-            <div className={styles.statItem}><span className={styles.statNumber}>{estatisticas.queroLer}</span><span className={styles.statLabel}>Quero Ler</span></div>
+          <div className={styles.statsPills}>
+            {[
+              { key: 'LIDO',      label: 'Lidos',      icon: '✅', count: estatisticas.lidos,   color: styles.pillLido },
+              { key: 'LENDO',     label: 'Lendo agora', icon: '📖', count: estatisticas.lendo,   color: styles.pillLendo },
+              { key: 'QUERO LER', label: 'Quero Ler',  icon: '📚', count: estatisticas.queroLer, color: styles.pillQuero },
+              { key: 'total',     label: 'Total',       icon: '📕', count: estatisticas.total,   color: styles.pillTotal },
+            ].map(({ key, label, icon, count, color }) => (
+              <button
+                key={key}
+                className={`${styles.statPill} ${color} ${statExpandida === key ? styles.statPillActive : ''}`}
+                onClick={() => setStatExpandida(statExpandida === key ? null : key)}
+                type="button"
+              >
+                <span className={styles.statPillIcon}>{icon}</span>
+                <span className={styles.statPillCount}>{count}</span>
+                <span className={styles.statPillLabel}>{label}</span>
+                <span className={styles.statPillArrow}>{statExpandida === key ? '▲' : '▼'}</span>
+              </button>
+            ))}
           </div>
+
+          {statExpandida && statExpandida !== 'total' && (
+            <div className={styles.statBooks}>
+              {(todosPorStatus[statExpandida] || []).length === 0 ? (
+                <p className={styles.emptyMessage}>Nenhum livro nesta categoria ainda.</p>
+              ) : (
+                <div className={styles.statBookGrid}>
+                  {(todosPorStatus[statExpandida] || []).map(livro => (
+                    <div key={livro.id} className={styles.statBookCard} onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro } })}>
+                      <img src={livro.cover} alt={livro.title} className={styles.statBookCover}
+                        onError={(e) => { e.target.src = 'https://via.placeholder.com/60x90?text=Capa'; }} />
+                      <div className={styles.statBookInfo}>
+                        <p className={styles.statBookTitle}>{livro.title}</p>
+                        <p className={styles.statBookAuthor}>{livro.author}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {statExpandida === 'total' && (
+            <div className={styles.statBooks}>
+              <div className={styles.statBookGrid}>
+                {[...todosPorStatus['LIDO'], ...todosPorStatus['LENDO'], ...todosPorStatus['QUERO LER'], ...todosPorStatus['RECOMENDADO']].map(livro => (
+                  <div key={livro.id} className={styles.statBookCard} onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro } })}>
+                    <img src={livro.cover} alt={livro.title} className={styles.statBookCover}
+                      onError={(e) => { e.target.src = 'https://via.placeholder.com/60x90?text=Capa'; }} />
+                    <div className={styles.statBookInfo}>
+                      <p className={styles.statBookTitle}>{livro.title}</p>
+                      <p className={styles.statBookAuthor}>{livro.author}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Endereços */}
