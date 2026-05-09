@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import confetti from 'canvas-confetti';
 import AuthCard from '../components/auth/AuthCard';
 import FormInput from '../components/auth/FormInput';
 import api from '../services/api';
@@ -24,6 +25,7 @@ export default function CadastroPage() {
   const [error, setError] = useState('');
   const [senhaErro, setSenhaErro] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sucesso, setSucesso] = useState(false);
 
   const normalizeCep = (value) => value.replaceAll(/\D/g, '').slice(0, 8);
 
@@ -110,7 +112,14 @@ export default function CadastroPage() {
         uf,
       });
       saveSession(response.data);
-      navigate('/home');
+      setSucesso(true);
+      confetti({
+        particleCount: 160,
+        spread: 80,
+        origin: { y: 0.55 },
+        colors: ['#284239', '#809076', '#ba6830', '#ede8d0', '#fffff0'],
+      });
+      setTimeout(() => navigate('/home'), 2000);
     } catch (err) {
       let mensagemErro = 'Erro ao cadastrar usuário. Tente novamente.';
       
@@ -259,9 +268,10 @@ export default function CadastroPage() {
           </div>
         </div>
 
-        <button type="submit" className={styles.submitBtn} disabled={loading}>
-          {loading ? 'Cadastrando...' : 'Cadastrar'}
+        <button type="submit" className={styles.submitBtn} disabled={loading || sucesso}>
+          {loading ? 'Cadastrando...' : sucesso ? '🎉 Bem-vinda!' : 'Cadastrar'}
         </button>
+        {sucesso && <p className={styles.successMsg}>Cadastro realizado com sucesso!</p>}
         {error ? <p className={styles.errorMsg}>{error}</p> : null}
       </form>
       <hr className={styles.divider} />
