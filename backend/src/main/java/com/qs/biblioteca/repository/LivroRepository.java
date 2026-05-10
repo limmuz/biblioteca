@@ -16,4 +16,7 @@ public interface LivroRepository extends MongoRepository<Livro, String> {
     List<Livro> findByUserEmailAndSearch(String userEmail, String search);
 
     boolean existsByUserEmailAndTitleIgnoreCaseAndAuthorIgnoreCase(String userEmail, String title, String author);
+
+    @Query("{ 'title': { '$regex': ?0, '$options': 'i' }, 'author': { '$regex': ?1, '$options': 'i' }, 'userEmail': { '$ne': ?2 } }")
+    List<Livro> findOutrosLeitoresPorTituloEAutor(String titulo, String autor, String emailAtual);
 }
