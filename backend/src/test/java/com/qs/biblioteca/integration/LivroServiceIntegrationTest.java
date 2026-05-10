@@ -1,6 +1,6 @@
 package com.qs.biblioteca.integration;
 
-import com.qs.biblioteca.TestcontainersConfiguration;
+import com.qs.biblioteca.BaseMongoTest;
 import com.qs.biblioteca.model.Livro;
 import com.qs.biblioteca.repository.LivroRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -8,17 +8,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 
 @SpringBootTest
-@Import(TestcontainersConfiguration.class)
 @ActiveProfiles("test")
 @DisplayName("Integração – LivroRepository com MongoDB real (Testcontainers)")
-class LivroRepositoryIntegrationTest {
+class LivroRepositoryIntegrationTest extends BaseMongoTest {
 
     @Autowired
     private LivroRepository livroRepository;
@@ -58,6 +56,7 @@ class LivroRepositoryIntegrationTest {
 
     private static Livro novoLivro(String titulo, String autor) {
         Livro l = new Livro();
+        l.setUserEmail("teste@integracao.com");
         l.setTitle(titulo);
         l.setAuthor(autor);
         l.setStatus("QUERO LER");

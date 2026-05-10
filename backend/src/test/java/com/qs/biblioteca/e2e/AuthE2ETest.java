@@ -1,6 +1,6 @@
 package com.qs.biblioteca.e2e;
 
-import com.qs.biblioteca.TestcontainersConfiguration;
+import com.qs.biblioteca.BaseMongoTest;
 import com.qs.biblioteca.dto.AuthRequest;
 import com.qs.biblioteca.dto.AuthResponse;
 import com.qs.biblioteca.dto.RegisterRequest;
@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
@@ -22,10 +21,9 @@ import org.springframework.web.client.HttpClientErrorException;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestcontainersConfiguration.class)
 @ActiveProfiles("test")
 @DisplayName("E2E – Fluxo de Autenticacao (Auth API)")
-class AuthE2ETest {
+class AuthE2ETest extends BaseMongoTest {
 
     @LocalServerPort
     private int port;
@@ -69,15 +67,11 @@ class AuthE2ETest {
         void register_comEmailDuplicado_deveRetornar409() {
             RegisterRequest request = novoRegisterRequest(
                     "Maria Souza", "maria@email.com", "senha123");
-
             restTemplate.postForEntity(baseUrl + "/register", request, AuthResponse.class);
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/register", request, String.class);
-                fail("Deveria ter jogado uma exceção HTTP 409");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.CONFLICT, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/register", request, String.class));
+            assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
         }
 
         @Test
@@ -86,12 +80,9 @@ class AuthE2ETest {
             RegisterRequest request = novoRegisterRequest(
                     "Usuario Teste", "email-invalido-sem-arroba", "senha123");
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/register", request, String.class);
-                fail("Deveria ter jogado uma exceção HTTP 400");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/register", request, String.class));
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
         }
 
         @Test
@@ -100,12 +91,9 @@ class AuthE2ETest {
             RegisterRequest request = novoRegisterRequest(
                     "Usuario Teste", "usuario@email.com", "12345");
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/register", request, String.class);
-                fail("Deveria ter jogado uma exceção HTTP 400");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/register", request, String.class));
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
         }
 
         @Test
@@ -121,7 +109,67 @@ class AuthE2ETest {
         }
     }
 
+    @Nested
+    @DisplayName("POST /api/auth/redefinir-senha")
+    class RedefinirSenhaTests {
 
+        @BeforeEach
+        void registrarUsuario() {
+            RegisterRequest reg = novoRegisterRequest(
+                    "Teste Redefinir", "redefinir@email.com", "senha123");
+            restTemplate.postForEntity(baseUrl + "/register", reg, AuthResponse.class);
+        }
+
+        @Test
+        @DisplayName("Deve redefinir senha com credenciais corretas e retornar 204")
+        void redefinirSenha_comCredenciaisCorretas_deveRetornar204() {
+            var body = java.util.Map.of(
+                    "email", "redefinir@email.com",
+                    "senhaAtual", "senha123",
+                    "novaSenha", "novaSenha1");
+
+            ResponseEntity<Void> response = restTemplate.postForEntity(
+                    baseUrl + "/redefinir-senha", body, Void.class);
+
+            assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 401 quando senha atual estiver incorreta")
+        void redefinirSenha_comSenhaAtualErrada_deveRetornar401() {
+            var body = java.util.Map.of(
+                    "email", "redefinir@email.com",
+                    "senhaAtual", "senhaErrada1",
+                    "novaSenha", "novaSenha1");
+
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/redefinir-senha", body, String.class));
+            assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 404 quando email nao existir")
+        void redefinirSenha_comEmailInexistente_deveRetornar404() {
+            var body = java.util.Map.of(
+                    "email", "naoexiste@email.com",
+                    "senhaAtual", "senha123",
+                    "novaSenha", "novaSenha1");
+
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/redefinir-senha", body, String.class));
+            assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 400 quando campos obrigatorios estiverem ausentes")
+        void redefinirSenha_semCamposObrigatorios_deveRetornar400() {
+            var body = java.util.Map.of("email", "redefinir@email.com");
+
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/redefinir-senha", body, String.class));
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        }
+    }
 
     @Nested
     @DisplayName("POST /api/auth/login")
@@ -130,7 +178,7 @@ class AuthE2ETest {
         @BeforeEach
         void registrarUsuarioPadrao() {
             RegisterRequest reg = novoRegisterRequest(
-                    "Ana Pereira", "ana@email.com", "minhasenha");
+                    "Ana Pereira", "ana@email.com", "minhasenha1");
             restTemplate.postForEntity(baseUrl + "/register", reg, AuthResponse.class);
         }
 
@@ -139,7 +187,7 @@ class AuthE2ETest {
         void login_comCredenciaisCorretas_deveRetornarJwt() {
             AuthRequest request = new AuthRequest();
             request.setEmail("ana@email.com");
-            request.setSenha("minhasenha");
+            request.setSenha("minhasenha1");
 
             ResponseEntity<AuthResponse> response = restTemplate.postForEntity(
                     baseUrl + "/login", request, AuthResponse.class);
@@ -159,12 +207,9 @@ class AuthE2ETest {
             request.setEmail("ana@email.com");
             request.setSenha("senhaerrada");
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/login", request, String.class);
-                fail("Deveria ter jogado uma exceção HTTP 401");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/login", request, String.class));
+            assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
         }
 
         @Test
@@ -174,12 +219,9 @@ class AuthE2ETest {
             request.setEmail("naoexiste@email.com");
             request.setSenha("qualquersenha");
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/login", request, String.class);
-                fail("Deveria ter jogado uma exceção HTTP 401");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/login", request, String.class));
+            assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
         }
 
         @Test
@@ -187,7 +229,7 @@ class AuthE2ETest {
         void login_comEmailEmMaiusculo_deveAutenticar() {
             AuthRequest request = new AuthRequest();
             request.setEmail("ANA@EMAIL.COM");
-            request.setSenha("minhasenha");
+            request.setSenha("minhasenha1");
 
             ResponseEntity<AuthResponse> response = restTemplate.postForEntity(
                     baseUrl + "/login", request, AuthResponse.class);
@@ -204,12 +246,9 @@ class AuthE2ETest {
             request.setEmail("nao-e-um-email");
             request.setSenha("senha123");
 
-            try {
-                restTemplate.postForEntity(baseUrl + "/login", request, String.class);
-                fail("Deveria ter jogado uma exceção HTTP 400");
-            } catch (HttpClientErrorException e) {
-                assertEquals(HttpStatus.BAD_REQUEST, e.getStatusCode());
-            }
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.postForEntity(baseUrl + "/login", request, String.class));
+            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
         }
     }
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import confetti from 'canvas-confetti';
 import AuthCard from '../components/auth/AuthCard';
 import FormInput from '../components/auth/FormInput';
 import api from '../services/api';
@@ -8,6 +9,7 @@ import styles from './LoginPage.module.css';
 
 export default function CadastroPage() {
   const navigate = useNavigate();
+  const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -23,8 +25,9 @@ export default function CadastroPage() {
   const [error, setError] = useState('');
   const [senhaErro, setSenhaErro] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sucesso, setSucesso] = useState(false);
 
-  const normalizeCep = (value) => value.replace(/\D/g, '').slice(0, 8);
+  const normalizeCep = (value) => value.replaceAll(/\D/g, '').slice(0, 8);
 
   const formatCep = (value) => {
     const digits = normalizeCep(value);
@@ -59,6 +62,7 @@ export default function CadastroPage() {
             document.getElementById('cadastro-numero')?.focus();
           }
         } catch (err) {
+          console.error('Erro ao consultar CEP:', err);
           setCepError('Falha ao consultar CEP.');
         } finally {
           setCepLoading(false);
@@ -95,9 +99,8 @@ export default function CadastroPage() {
 
     setLoading(true);
     try {
-      const nomePadrao = email.split('@')[0] || 'Leitor';
       const response = await api.post('/auth/register', {
-        nome: nomePadrao,
+        nome: nome.trim() || email.split('@')[0] || 'Leitor',
         email,
         senha: password,
         cep: normalizeCep(cep),
@@ -109,7 +112,14 @@ export default function CadastroPage() {
         uf,
       });
       saveSession(response.data);
-      navigate('/home');
+      setSucesso(true);
+      confetti({
+        particleCount: 160,
+        spread: 80,
+        origin: { y: 0.55 },
+        colors: ['#284239', '#809076', '#ba6830', '#ede8d0', '#fffff0'],
+      });
+      setTimeout(() => navigate('/home'), 2000);
     } catch (err) {
       let mensagemErro = 'Erro ao cadastrar usuário. Tente novamente.';
       
@@ -131,6 +141,14 @@ export default function CadastroPage() {
   return (
     <AuthCard title="Sejam bem vindos a Lybre!">
       <form className={styles.form} onSubmit={handleSubmit} noValidate>
+        <FormInput
+          id="cadastro-nome"
+          label="Nome completo"
+          type="text"
+          placeholder="Como quer ser chamado?"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+        />
         <FormInput
           id="cadastro-email"
           label="Email"
@@ -250,9 +268,10 @@ export default function CadastroPage() {
           </div>
         </div>
 
-        <button type="submit" className={styles.submitBtn} disabled={loading}>
-          {loading ? 'Cadastrando...' : 'Cadastrar'}
+        <button type="submit" className={styles.submitBtn} disabled={loading || sucesso}>
+          {loading ? 'Cadastrando...' : sucesso ? '🎉 Bem-vinda!' : 'Cadastrar'}
         </button>
+        {sucesso && <p className={styles.successMsg}>Cadastro realizado com sucesso!</p>}
         {error ? <p className={styles.errorMsg}>{error}</p> : null}
       </form>
       <hr className={styles.divider} />

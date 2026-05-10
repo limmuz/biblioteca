@@ -3,39 +3,43 @@ import { useLocation } from 'react-router-dom';
 import AppHeader from '../components/shared/AppHeader';
 import Footer from '../components/Footer/Footer';
 import BookCardMini from '../components/shared/BookCardMini';
+import LoadingSpinner from '../components/shared/LoadingSpinner';
 import api from '../services/api';
+import AdBanner from '../components/shared/AdBanner';
 import styles from './ListagemPage.module.css';
 
 export default function ListagemPage() {
   const location = useLocation();
   const [livros, setLivros] = useState([]);
+  const [medias, setMedias] = useState({});
   const [loading, setLoading] = useState(false);
-  
+
   const queryBusca = location.state?.query || "";
 
   useEffect(() => {
     const carregarResultados = async () => {
-      if (!queryBusca) {
-        
-        setLoading(true);
-        try {
-          const res = await api.get('/livros');
-          setLivros(res.data);
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setLoading(false);
-        }
-        return;
-      }
-
       setLoading(true);
       try {
-       
-        const response = await api.get('/livros?search=' + queryBusca);
-        setLivros(response.data);
+        const [resLivros, resMedias] = await Promise.all([
+          queryBusca
+            ? api.get('/livros?search=' + queryBusca)
+            : api.get('/livros'),
+          api.get('/avaliacoes/medias').catch(() => ({ data: [] })),
+        ]);
+
+        const livrosFiltrados = queryBusca
+          ? resLivros.data
+          : resLivros.data.filter(b => b.status !== 'RECOMENDADO');
+        setLivros(livrosFiltrados);
+
+        const map = {};
+        resMedias.data.forEach(m => {
+          const key = `${m.livroTitulo.toLowerCase()}||${m.livroAutor.toLowerCase()}`;
+          map[key] = m;
+        });
+        setMedias(map);
       } catch (err) {
-        console.error("Erro na busca:", err);
+        console.error("Erro ao carregar:", err);
       } finally {
         setLoading(false);
       }
@@ -43,6 +47,11 @@ export default function ListagemPage() {
 
     carregarResultados();
   }, [queryBusca]);
+
+  const getRating = (book) => {
+    const key = `${book.title.toLowerCase()}||${book.author.toLowerCase()}`;
+    return medias[key] || { media: 0, total: 0 };
+  };
 
   return (
     <div className={styles.page}>
@@ -53,11 +62,21 @@ export default function ListagemPage() {
         </h1>
 
         {loading ? (
-          <p style={{ color: 'white', textAlign: 'center', marginTop: '2rem' }}>Buscando livros...</p>
+          <LoadingSpinner />
         ) : (
           <div className={styles.bookGrid}>
             {livros.length > 0 ? (
-              livros.map(book => <BookCardMini key={book.id} book={book} />)
+              livros.map(book => {
+                const r = getRating(book);
+                return (
+                  <BookCardMini
+                    key={book.id}
+                    book={book}
+                    rating={r.media}
+                    totalRatings={r.total}
+                  />
+                );
+              })
             ) : (
               <p style={{ color: 'var(--color-sage)', textAlign: 'center', width: '100%' }}>
                 Nenhum livro encontrado para esta busca.
@@ -66,6 +85,7 @@ export default function ListagemPage() {
           </div>
         )}
       </main>
+      <AdBanner variant="banner" />
       <div className={styles.footerWrap}>
         <Footer />
       </div>

@@ -40,6 +40,13 @@
   text-align: center;
 }
 
+.successMsg {
+  color: #2e7d32;
+  font-size: 13px;
+  margin-top: 6px;
+  text-align: center;
+}
+
 .infoMsg {
   color: var(--color-sage);
   font-size: 13px;
@@ -121,7 +128,7 @@
 }
 
 .group {
-  flex: 1; 
+  flex: 1;
 }
 
 .groupNumero {
@@ -130,11 +137,6 @@
 
 .groupComplemento {
   flex: 2;
-}
-
-.row {
-  display: flex;
-  gap: 12px;
 }
 
 .groupCidade {

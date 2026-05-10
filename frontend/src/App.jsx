@@ -9,6 +9,7 @@ import ReadingPage from './components/ReadingPage/ReadingPage';
 import NovoLivroPage from './pages/NovoLivroPage';
 import EditarLivroPage from './pages/EditarLivroPage';
 import PerfilPage from './pages/PerfilPage';
+import PerfilPublicoPage from './pages/PerfilPublicoPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { isAuthenticated } from './services/auth';
 import './index.css';
@@ -80,6 +81,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ReadingPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/leitor/:nickname"
+          element={
+            <ProtectedRoute>
+              <PerfilPublicoPage />
             </ProtectedRoute>
           }
         />
