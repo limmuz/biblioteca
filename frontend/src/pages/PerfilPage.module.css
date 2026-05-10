@@ -3,6 +3,27 @@
   background-color: var(--color-bg);
   padding-top: calc(var(--header-height) + 32px);
   padding-bottom: 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Mosaico de capas no fundo ───────────────────────────────── */
+.bgCovers {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  align-content: flex-start;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.10;
+  overflow: hidden;
+}
+
+.bgCover {
+  width: 100%;
+  height: 165px;
+  object-fit: cover;
 }
 
 .main {
@@ -12,6 +33,8 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  position: relative;
+  z-index: 1;
 }
 
 /* ── Cabeçalho do Perfil ─────────────────────────────────────── */

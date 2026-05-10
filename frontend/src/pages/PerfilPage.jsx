@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import AppHeader from '../components/shared/AppHeader';
@@ -64,6 +64,17 @@ ConfirmModal.defaultProps = {
   cancelLabel: 'Cancelar',
   danger: false,
 };
+
+const BG_FALLBACK = [
+  '/books/book-cabeca-santo.png',
+  '/books/book-persepolis.png',
+  '/books/book-maus.png',
+  '/books/book-diario-zlata.png',
+  '/books/book-diferenca.png',
+  '/books/book-batalhas.png',
+  '/books/book-noiva.png',
+  '/books/book-sherlock.png',
+];
 
 export default function PerfilPage() {
   const navigate = useNavigate();
@@ -341,6 +352,18 @@ export default function PerfilPage() {
     );
   }
 
+  const bgTiles = useMemo(() => {
+    const todos = [
+      ...todosPorStatus['LIDO'],
+      ...todosPorStatus['LENDO'],
+      ...todosPorStatus['QUERO LER'],
+      ...todosPorStatus['RECOMENDADO'],
+    ];
+    const covers = todos.map(l => l.cover).filter(Boolean);
+    const source = covers.length >= 4 ? covers : BG_FALLBACK;
+    return Array.from({ length: 300 }, (_, i) => source[i % source.length]);
+  }, [todosPorStatus]);
+
   const userLocal = getUser();
   const iniciais = userLocal.nome
     ? userLocal.nome.split(' ').slice(0, 2).map(n => n[0].toUpperCase()).join('')
@@ -348,6 +371,12 @@ export default function PerfilPage() {
 
   return (
     <div className={styles.page}>
+      <div className={styles.bgCovers} aria-hidden="true">
+        {bgTiles.map((src, i) => (
+          <img key={i} src={src} alt="" className={styles.bgCover}
+            onError={(e) => { e.target.style.visibility = 'hidden'; }} />
+        ))}
+      </div>
       <AppHeader />
       <main className={styles.main}>
 
