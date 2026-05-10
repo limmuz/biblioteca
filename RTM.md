@@ -1,6 +1,6 @@
 # RTM - Matriz de Rastreabilidade de Requisitos
 
-Atualizado em 10/05/2026 — cobertura SonarCloud 86.6%, CI verde, Testcontainers 1.21.3. Sistema de avaliações (RF-10 a RF-12) e funcionalidades sociais de perfil (RF-13 a RF-16) implementados.
+Atualizado em 10/05/2026 — cobertura SonarCloud 88.3%, CI verde (Pipeline #45), Testcontainers 1.21.3. Sistema de avaliações (RF-10 a RF-12) e funcionalidades sociais de perfil (RF-13 a RF-16) implementados. Security Hotspot S2245 resolvido (SecureRandom).
 
 ---
 
@@ -32,7 +32,7 @@ Atualizado em 10/05/2026 — cobertura SonarCloud 86.6%, CI verde, Testcontainer
 | ID | Eixo | Critério | Evidência | Status |
 |---|---|---|---|---|
 | RNF-01 | Segurança | Rotas protegidas com JWT + Spring Security | Testes E2E com e sem token | ✅ Implementado |
-| RNF-02 | Testabilidade | Cobertura ≥ 80% (JaCoCo) | 86.6% no SonarCloud — check JaCoCo aprovado — `img/Jacoco.png` | ✅ Implementado |
+| RNF-02 | Testabilidade | Cobertura ≥ 80% (JaCoCo) | 88.3% no SonarCloud — check JaCoCo aprovado — `img/Jacoco.png` | ✅ Implementado |
 | RNF-03 | Qualidade | Análise estática com SonarCloud | Pipeline CI verde | ✅ Configurado |
 | RNF-04 | CI/CD | Pipeline GitHub Actions executando testes | GitHub Actions — ver link de evidência | ✅ Configurado |
 | RNF-05 | Portabilidade | Banco em MongoDB Atlas (sem Docker para rodar o app) | README detalhado | ✅ Implementado |
@@ -381,7 +381,7 @@ sequenceDiagram
 
 ## Cobertura de Código (JaCoCo)
 
-- **Cobertura alcançada: 86.6%** no SonarCloud (mínimo exigido: 80%) — check JaCoCo aprovado no CI
+- **Cobertura alcançada: 88.3%** no SonarCloud (mínimo exigido: 80%) — check JaCoCo aprovado no CI
 - Relatório gerado com: `./mvnw clean verify` (ou baixar artefato `test-reports` do GitHub Actions)
 - Abrir: `backend/target/site/jacoco/index.html`
 
@@ -393,23 +393,23 @@ sequenceDiagram
 
 | Item | Evidência | Status |
 |---|---|---|
-| Cobertura JaCoCo ≥ 80% | `img/Jacoco.png` — 86.6% no SonarCloud, check aprovado no CI | ✅ |
-| SonarCloud — Quality Gate | Passed — 0 issues, Security A, Reliability A, Maintainability A | ✅ |
-| SonarCloud — Cobertura | 86.6% (+54.6% vs 30 dias anteriores) | ✅ |
-| GitHub Actions (CI) | Pipeline #35 verde — backend ✅ frontend ✅ sonarcloud ✅ — 2m 25s | ✅ |
-| Testes passando (CI) | Artefato `test-reports` (401 KB) disponível no GitHub Actions | ✅ |
+| Cobertura JaCoCo ≥ 80% | `img/Jacoco.png` — 88.3% no SonarCloud, check aprovado no CI | ✅ |
+| SonarCloud — Quality Gate | Passed — 0 issues, 0 hotspots, Security A, Reliability A, Maintainability A | ✅ |
+| SonarCloud — Cobertura | 88.3% | ✅ |
+| GitHub Actions (CI) | Pipeline #45 verde — backend ✅ frontend ✅ sonarcloud ✅ — 2m 35s | ✅ |
+| Testes passando (CI) | Artefato `test-reports` (491 KB) disponível no GitHub Actions | ✅ |
 | Link SonarCloud | https://sonarcloud.io/project/overview?id=AnaPaula2024_biblioteca | ✅ |
 | Link GitHub Actions | https://github.com/AnaPaula2024/biblioteca/actions | ✅ |
 
 ### GitHub Actions — Pipeline Verde
 
-![GitHub Actions — detalhe do pipeline](./img/Github-Actions.png)
+![GitHub Actions — detalhe do pipeline](./img/Github-3.png)
 
-![GitHub Actions — histórico de execuções](./img/github-actions2.png)
+![GitHub Actions — histórico de execuções](./img/github-.png)
 
 ### SonarCloud — Quality Gate
 
-![SonarCloud Overview](./img/Sonar.png)
+![SonarCloud Overview](./img/Sonar-3.png)
 
 ---
 
@@ -535,4 +535,4 @@ sequenceDiagram
 
 ---
 
-*Revisão final: 10/05/2026*
+*Revisão final: 10/05/2026 — Pipeline #45, cobertura 88.3%, 0 Security Hotspots*
