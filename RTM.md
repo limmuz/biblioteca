@@ -392,6 +392,16 @@ sequenceDiagram
 | Link SonarCloud | https://sonarcloud.io/project/overview?id=AnaPaula2024_biblioteca | ✅ |
 | Link GitHub Actions | https://github.com/AnaPaula2024/biblioteca/actions | ✅ |
 
+### GitHub Actions — Pipeline Verde
+
+![GitHub Actions — detalhe do pipeline](./img/Github-Actions.png)
+
+![GitHub Actions — histórico de execuções](./img/github-actions2.png)
+
+### SonarCloud — Quality Gate
+
+![SonarCloud Overview](./img/Sonar.png)
+
 ---
 
 *Revisão final: 09/05/2026*
