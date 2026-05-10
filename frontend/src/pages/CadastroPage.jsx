@@ -272,7 +272,12 @@ export default function CadastroPage() {
           {loading ? 'Cadastrando...' : sucesso ? '🎉 Bem-vinda!' : 'Cadastrar'}
         </button>
         {sucesso && <p className={styles.successMsg}>Cadastro realizado com sucesso!</p>}
-        {error ? <p className={styles.errorMsg}>{error}</p> : null}
+        {error && (
+          <div className={styles.errorBox}>
+            <span className={styles.errorIcon}>⚠️</span>
+            <p className={styles.errorText}>{error}</p>
+          </div>
+        )}
       </form>
       <hr className={styles.divider} />
       <p className={styles.bottomLink}>
