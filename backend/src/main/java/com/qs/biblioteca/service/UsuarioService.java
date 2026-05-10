@@ -93,6 +93,11 @@ public class UsuarioService {
         }
         atualizarListasUsuario(usuario, dados);
         atualizarEnderecosUsuario(usuario, dados);
+        if (dados.containsKey("bio")) usuario.setBio((String) dados.get("bio"));
+        if (dados.containsKey("metaLeitura")) {
+            Object m = dados.get("metaLeitura");
+            if (m instanceof Number) usuario.setMetaLeitura(((Number) m).intValue());
+        }
         if (dados.containsKey("avatarBase64")) usuario.setAvatarBase64((String) dados.get("avatarBase64"));
         if (dados.containsKey("cep")) usuario.setCep((String) dados.get("cep"));
         if (dados.containsKey(CAMPO_LOGRADOURO)) usuario.setLogradouro((String) dados.get(CAMPO_LOGRADOURO));
