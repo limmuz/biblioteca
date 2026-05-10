@@ -802,6 +802,199 @@
   margin-top: 20px;
 }
 
+/* ── Comunidades ─────────────────────────────────────────────── */
+.communitySection {
+  background-color: var(--color-warm-beige);
+  border-radius: 12px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.communitySubtitle {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-sage);
+  margin: -12px 0 0;
+}
+
+.communityGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.communityCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f7f4e8;
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 2px 8px rgba(17,26,25,0.06);
+}
+
+.communityIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.communityInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.communityName {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.communityMembers {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--color-sage);
+  margin: 0;
+}
+
+.communityBadge {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 600;
+  color: #1877f2;
+  background: rgba(24,119,242,0.10);
+  border-radius: 8px;
+  padding: 3px 8px;
+  flex-shrink: 0;
+}
+
+/* ── Busca de leitores ───────────────────────────────────────── */
+.communitySearch {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid rgba(17,26,25,0.08);
+  padding-top: 20px;
+}
+
+.communitySearchTitle {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.searchForm {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.searchInput {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-ink);
+  background: #f7f4e8;
+  border: 1.5px solid rgba(17,26,25,0.15);
+  border-radius: 8px;
+  padding: 10px 14px;
+  outline: none;
+  flex: 1;
+  min-width: 180px;
+  transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+  border-color: var(--color-forest);
+}
+
+.searchError {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: #d14343;
+  margin: 0;
+}
+
+.leitorCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #f0ede2;
+  border-radius: 10px;
+  padding: 14px 16px;
+  animation: expandDown 0.2s ease;
+}
+
+.leitorAvatar {
+  flex-shrink: 0;
+}
+
+.leitorAvatarImg {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.leitorAvatarInitials {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-forest);
+  color: var(--color-cream-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.leitorInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.leitorNome {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.leitorNickname {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-forest);
+  margin: 0;
+}
+
+.leitorBio {
+  font-family: var(--font-serif);
+  font-size: 13px;
+  color: var(--color-sage);
+  font-style: italic;
+  margin: 0;
+}
+
 /* ── Responsivo ──────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .main {

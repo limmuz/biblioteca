@@ -1,5 +1,6 @@
 package com.qs.biblioteca.controller;
 
+import com.qs.biblioteca.dto.PublicUsuarioResponse;
 import com.qs.biblioteca.dto.UsuarioResponse;
 import com.qs.biblioteca.service.UsuarioService;
 import org.springframework.http.ResponseEntity;
@@ -36,5 +37,11 @@ public class UsuarioController {
 	public ResponseEntity<Void> excluir(Authentication authentication) {
 		usuarioService.excluirPorEmail(authentication.getName());
 		return ResponseEntity.noContent().build();
+	}
+
+	@GetMapping("/buscar")
+	public ResponseEntity<PublicUsuarioResponse> buscarPorNickname(
+			@RequestParam String nickname) {
+		return ResponseEntity.ok(usuarioService.buscarPublicoPorNickname(nickname));
 	}
 }
