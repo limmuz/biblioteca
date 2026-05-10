@@ -48,7 +48,6 @@ export default function DetalhesLivroPage() {
   const [toastVisible, setToastVisible] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // Avaliações
   const [avaliacoes, setAvaliacoes] = useState([]);
   const [minhaAvaliacao, setMinhaAvaliacao] = useState(null);
   const [ratingForm, setRatingForm] = useState(0);
@@ -56,7 +55,6 @@ export default function DetalhesLivroPage() {
   const [salvandoAvaliacao, setSalvandoAvaliacao] = useState(false);
   const [editandoAvaliacao, setEditandoAvaliacao] = useState(false);
 
-  // Outros leitores
   const [outrosLeitores, setOutrosLeitores] = useState([]);
 
   useEffect(() => {

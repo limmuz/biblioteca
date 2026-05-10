@@ -8,7 +8,6 @@ import { getUser, clearSession } from '../services/auth';
 import AdBanner from '../components/shared/AdBanner';
 import styles from './PerfilPage.module.css';
 
-// ── Toast component ──────────────────────────────────────────────
 function Toast({ message, type, onClose }) {
   useEffect(() => {
     const t = setTimeout(onClose, 3000);
@@ -33,7 +32,6 @@ Toast.defaultProps = {
   type: 'success',
 };
 
-// ── Confirm Modal ────────────────────────────────────────────────
 function ConfirmModal({ title, message, onConfirm, onCancel, confirmLabel, cancelLabel, danger }) {
   return (
     <div className={styles.modalOverlay}>
@@ -88,52 +86,42 @@ export default function PerfilPage() {
   const [loading, setLoading] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState(null);
 
-  // Toast
   const [toast, setToast] = useState(null);
   const showToast = (message, type = 'success') => setToast({ message, type });
   const hideToast = () => setToast(null);
 
-  // Confirm modal
   const [confirmModal, setConfirmModal] = useState(null);
 
-  // Perfil edit
   const [editandoPerfil, setEditandoPerfil] = useState(false);
   const [perfilForm, setPerfilForm] = useState({ nome: '', email: '', nickname: '', bio: '', metaLeitura: '', perfilPublico: true, telefones: [''], redesSociais: [''] });
   const [salvandoPerfil, setSalvandoPerfil] = useState(false);
 
-  // Outros leitores (carousel)
   const [outrosLeitores, setOutrosLeitores] = useState([]);
   const leitoresCarouselRef = useRef(null);
 
-  // Perfis adicionados (persistidos em localStorage)
   const [perfisAdicionados, setPerfisAdicionados] = useState(() => {
     try { return JSON.parse(localStorage.getItem('lybre_perfis_add') || '[]'); }
     catch { return []; }
   });
 
-  // Busca de leitores
   const [buscaNickname, setBuscaNickname] = useState('');
   const [leitoresEncontrados, setLeitoresEncontrados] = useState([]);
   const [buscandoLeitor, setBuscandoLeitor] = useState(false);
   const [buscaErro, setBuscaErro] = useState('');
 
-  // Médias de avaliações
   const [medias, setMedias] = useState({});
 
-  // Plano de fundo personalizado
   const bgInputRef = useRef(null);
   const [bgImage, setBgImage] = useState(() => localStorage.getItem('lybre_bg') || null);
   const [bgOpacity, setBgOpacity] = useState(() => Number.parseFloat(localStorage.getItem('lybre_bg_opacity') || '0.45'));
   const [perfilFonte, setPerfilFonte] = useState(() => localStorage.getItem('lybre_fonte') || 'serif');
 
-  // Endereços
   const [enderecos, setEnderecos] = useState([]);
   const [editandoEnderecoIdx, setEditandoEnderecoIdx] = useState(null);
   const [enderecoForm, setEnderecoForm] = useState({ cep: '', logradouro: '', bairro: '', cidade: '', uf: '' });
   const [salvandoEndereco, setSalvandoEndereco] = useState(false);
   const [cepLoading, setCepLoading] = useState(false);
 
-  // Excluir conta
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
@@ -235,7 +223,6 @@ export default function PerfilPage() {
     reader.readAsDataURL(file);
   };
 
-  // ── Plano de fundo ──────────────────────────────────────────────
   const handleBgChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -269,7 +256,6 @@ export default function PerfilPage() {
     localStorage.setItem('lybre_bg_opacity', String(val));
   };
 
-  // ── Perfis adicionados ──────────────────────────────────────────
   const handleAdicionarLeitor = (leitor) => {
     if (perfisAdicionados.some(p => p.id === leitor.id)) return;
     const novo = [...perfisAdicionados, leitor];
@@ -284,7 +270,6 @@ export default function PerfilPage() {
     localStorage.setItem('lybre_perfis_add', JSON.stringify(novo));
   };
 
-  // ── Perfil ──────────────────────────────────────────────────────
   const addTelefone = () => setPerfilForm(f => ({ ...f, telefones: [...f.telefones, ''] }));
   const removeTelefone = (i) => setPerfilForm(f => ({ ...f, telefones: f.telefones.filter((_, idx) => idx !== i) }));
   const updateTelefone = (i, v) => setPerfilForm(f => { const t = [...f.telefones]; t[i] = v; return { ...f, telefones: t }; });
@@ -317,7 +302,6 @@ export default function PerfilPage() {
     }
   };
 
-  // ── Endereços ────────────────────────────────────────────────────
   const handleCepChange = async (e) => {
     const raw = e.target.value.replaceAll(/\D/g, '').slice(0, 8);
     const formatted = raw.length > 5 ? `${raw.slice(0, 5)}-${raw.slice(5)}` : raw;
@@ -428,7 +412,6 @@ export default function PerfilPage() {
     });
   };
 
-  // ── Busca de leitores ────────────────────────────────────────────
   const handleBuscarLeitor = async (e) => {
     e.preventDefault();
     const termo = buscaNickname.trim();
@@ -455,7 +438,6 @@ export default function PerfilPage() {
     return medias[key] || { media: 0, total: 0 };
   };
 
-  // ── Excluir conta ────────────────────────────────────────────────
   const handleExcluirConta = async () => {
     setShowDeleteModal(false);
     try {
