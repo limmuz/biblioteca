@@ -12,16 +12,16 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Random;
 
 @Component
 public class DataSeeder implements ApplicationRunner {
 
     private static final String SENHA_PADRAO = "senha123";
     private static final String CATEGORIA_FANTASIA = "Fantasia";
-    private static final Random RANDOM = new Random();
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final UsuarioRepository usuarioRepository;
     private final LivroRepository livroRepository;

@@ -182,6 +182,8 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 |---|---|---|
 | `AuthE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-01 (Cadastro) e RF-02 (Login) |
 | `LivroE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-03 a RF-08 (CRUD de livros + sessão) |
+| `AvaliacaoE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-09 a RF-11 (criar, listar, excluir avaliações e médias) |
+| `UsuarioE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-12 a RF-16 (perfil, endereços, busca de leitores, senha, exclusão de conta) |
 | `LivroServiceIntegrationTest.java` | `backend/src/test/java/com/qs/biblioteca/integration/` | RF-04 a RF-07 (integração com MongoDB) |
 | `LivroValidatorParamTest.java` | `backend/src/test/java/com/qs/biblioteca/unit/` | Validações de negócio (unitário parametrizado) |
 
