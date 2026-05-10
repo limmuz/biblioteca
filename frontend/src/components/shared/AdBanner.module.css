@@ -1,0 +1,107 @@
+.sidebar {
+  background: var(--ad-bg, #f7f4e8);
+  border-radius: 12px;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  border: 1.5px solid color-mix(in srgb, var(--ad-accent) 20%, transparent);
+  animation: adSlideIn 0.4s ease;
+  min-width: 180px;
+  max-width: 220px;
+}
+
+.banner {
+  background: var(--ad-bg, #f7f4e8);
+  border-radius: 12px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  border: 1.5px solid color-mix(in srgb, var(--ad-accent) 20%, transparent);
+  animation: adSlideIn 0.4s ease;
+  flex-wrap: wrap;
+  margin: 24px 40px 0;
+}
+
+@media (max-width: 768px) {
+  .banner {
+    margin: 16px 20px 0;
+  }
+}
+
+.dismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: var(--ad-accent);
+  cursor: pointer;
+  opacity: 0.5;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+.dismiss:hover { opacity: 1; }
+
+.label {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ad-accent);
+  opacity: 0.7;
+}
+
+.brand {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ad-accent);
+  margin: 0;
+}
+
+.headline {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: var(--color-ink);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.sub {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--color-sage);
+  margin: 0;
+}
+
+.cta {
+  margin-top: 4px;
+  background: var(--ad-accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-pill);
+  padding: 7px 14px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  align-self: flex-start;
+}
+
+.cta:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+@keyframes adSlideIn {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}

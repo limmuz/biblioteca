@@ -10,7 +10,7 @@ import java.util.List;
 
 public class UserPrincipal implements UserDetails {
 
-    private final Usuario usuario;
+    private transient Usuario usuario;
 
     public UserPrincipal(Usuario usuario) {
         this.usuario = usuario;

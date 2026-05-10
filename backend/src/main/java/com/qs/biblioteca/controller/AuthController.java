@@ -5,11 +5,15 @@ import com.qs.biblioteca.dto.AuthResponse;
 import com.qs.biblioteca.dto.RegisterRequest;
 import com.qs.biblioteca.service.UsuarioService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -29,5 +33,20 @@ public class AuthController {
 	@PostMapping("/login")
 	public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
 		return ResponseEntity.ok(usuarioService.autenticar(request));
+	}
+
+	@PostMapping("/redefinir-senha")
+	public ResponseEntity<Void> redefinirSenha(@RequestBody Map<String, String> body) {
+		String email = body.get("email");
+		String senhaAtual = body.get("senhaAtual");
+		String novaSenha = body.get("novaSenha");
+		if (email == null || email.isBlank() || novaSenha == null || novaSenha.isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email e nova senha são obrigatórios");
+		}
+		if (senhaAtual == null || senhaAtual.isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Senha atual é obrigatória");
+		}
+		usuarioService.redefinirSenha(email, senhaAtual, novaSenha);
+		return ResponseEntity.noContent().build();
 	}
 }

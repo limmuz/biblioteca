@@ -39,6 +39,16 @@ public class Usuario {
 
     private List<String> redesSociais;
 
+    private String avatarBase64;
+
+    private String bgBase64;
+
+    private String bio;
+
+    private int metaLeitura;
+
+    private boolean perfilPublico = true;
+
     @Getter
     @Setter
     public static class Endereco {
