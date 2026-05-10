@@ -98,16 +98,10 @@ public class UsuarioService {
         atualizarListasUsuario(usuario, dados);
         atualizarEnderecosUsuario(usuario, dados);
         if (dados.containsKey("bio")) usuario.setBio((String) dados.get("bio"));
-        if (dados.containsKey("metaLeitura")) {
-            Object m = dados.get("metaLeitura");
-            if (m instanceof Number number) usuario.setMetaLeitura(number.intValue());
-        }
+        aplicarMetaLeitura(usuario, dados);
         if (dados.containsKey("avatarBase64")) usuario.setAvatarBase64((String) dados.get("avatarBase64"));
         if (dados.containsKey("bgBase64")) usuario.setBgBase64((String) dados.get("bgBase64"));
-        if (dados.containsKey("perfilPublico")) {
-            Object p = dados.get("perfilPublico");
-            if (p instanceof Boolean b) usuario.setPerfilPublico(b);
-        }
+        aplicarPerfilPublico(usuario, dados);
         if (dados.containsKey("cep")) usuario.setCep((String) dados.get("cep"));
         if (dados.containsKey(CAMPO_LOGRADOURO)) usuario.setLogradouro((String) dados.get(CAMPO_LOGRADOURO));
         if (dados.containsKey(CAMPO_BAIRRO)) usuario.setBairro((String) dados.get(CAMPO_BAIRRO));
@@ -116,6 +110,18 @@ public class UsuarioService {
 
         usuarioRepository.save(usuario);
         return new UsuarioResponse(usuario);
+    }
+
+    private void aplicarMetaLeitura(Usuario usuario, Map<String, Object> dados) {
+        if (!dados.containsKey("metaLeitura")) return;
+        Object m = dados.get("metaLeitura");
+        if (m instanceof Number number) usuario.setMetaLeitura(number.intValue());
+    }
+
+    private void aplicarPerfilPublico(Usuario usuario, Map<String, Object> dados) {
+        if (!dados.containsKey("perfilPublico")) return;
+        Object p = dados.get("perfilPublico");
+        if (p instanceof Boolean b) usuario.setPerfilPublico(b);
     }
 
     public List<PublicUsuarioResponse> listarLeitoresPublicos(String emailAtual) {

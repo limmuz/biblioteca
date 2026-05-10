@@ -46,7 +46,6 @@ class UsuarioE2ETest extends BaseMongoTest {
         jwtToken = registrarEObterToken("usuario@email.com", "senha123", "leitora_teste");
     }
 
-    // ── GET /api/usuarios/me ────────────────────────────────────────
 
     @Nested
     @DisplayName("GET /api/usuarios/me")
@@ -76,7 +75,6 @@ class UsuarioE2ETest extends BaseMongoTest {
         }
     }
 
-    // ── PUT /api/usuarios/me ────────────────────────────────────────
 
     @Nested
     @DisplayName("PUT /api/usuarios/me — personalização de perfil (RF-13)")
@@ -127,7 +125,6 @@ class UsuarioE2ETest extends BaseMongoTest {
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertEquals(false, response.getBody().get("perfilPublico"));
 
-            // Verifica persistência no banco
             var usuarioNoBanco = usuarioRepository.findByEmail("usuario@email.com");
             assertTrue(usuarioNoBanco.isPresent());
             assertFalse(usuarioNoBanco.get().isPerfilPublico());
@@ -175,7 +172,6 @@ class UsuarioE2ETest extends BaseMongoTest {
         }
     }
 
-    // ── GET /api/usuarios/perfil/:nickname ──────────────────────────
 
     @Nested
     @DisplayName("GET /api/usuarios/perfil/:nickname — perfil público (RF-14)")
@@ -184,7 +180,6 @@ class UsuarioE2ETest extends BaseMongoTest {
         @Test
         @DisplayName("Deve retornar perfil completo com bgBase64 para usuario publico")
         void perfil_publico_deveRetornar200ComDados() {
-            // Salva bgBase64 no perfil
             restTemplate.exchange(
                     baseUrl + "/api/usuarios/me",
                     HttpMethod.PUT,
@@ -207,7 +202,6 @@ class UsuarioE2ETest extends BaseMongoTest {
         @Test
         @DisplayName("Deve retornar 403 quando perfil e privado")
         void perfil_privado_deveRetornar403() {
-            // Torna o perfil privado
             restTemplate.exchange(
                     baseUrl + "/api/usuarios/me",
                     HttpMethod.PUT,
@@ -247,7 +241,6 @@ class UsuarioE2ETest extends BaseMongoTest {
         }
     }
 
-    // ── GET /api/usuarios/leitores ──────────────────────────────────
 
     @Nested
     @DisplayName("GET /api/usuarios/leitores")
@@ -266,7 +259,6 @@ class UsuarioE2ETest extends BaseMongoTest {
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
-            // Deve retornar apenas o outro usuario (nao o proprio)
             assertEquals(1, response.getBody().length);
         }
 
@@ -279,7 +271,6 @@ class UsuarioE2ETest extends BaseMongoTest {
         }
     }
 
-    // ── GET /api/usuarios/pesquisar ─────────────────────────────────
 
     @Nested
     @DisplayName("GET /api/usuarios/pesquisar")
@@ -329,7 +320,6 @@ class UsuarioE2ETest extends BaseMongoTest {
         }
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────
 
     private String registrarEObterToken(String email, String senha, String nickname) {
         RegisterRequest reg = new RegisterRequest();
@@ -348,7 +338,6 @@ class UsuarioE2ETest extends BaseMongoTest {
         assertNotNull(response.getBody());
         String token = response.getBody().getToken();
 
-        // Define o nickname logo após o registro
         if (nickname != null) {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);

@@ -1,5 +1,3 @@
-// Gerador determinístico de texto literário baseado nos metadados do livro.
-// O mesmo livro sempre gera o mesmo texto; livros diferentes geram textos diferentes.
 
 function hash(str) {
   let h = 5381;
@@ -26,7 +24,6 @@ function tmpl(tpl, vars) {
   return tpl.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? k);
 }
 
-// ─── Pools de conteúdo ───────────────────────────────────────────────────────
 
 const NOMES = ['Ana Luz', 'Carlos', 'Helena', 'Rafael', 'Sofia', 'Miguel',
                'Clara', 'Eduardo', 'Beatriz', 'Rodrigo', 'Isabela', 'Tomás',
@@ -64,7 +61,6 @@ const CENARIOS_HIST = [
   'o Brasil colonial às vésperas da Independência',
 ];
 
-// ─── Blocos narrativos ────────────────────────────────────────────────────────
 
 const ABERTURA = [
   `A história que {autor} nos oferece em {titulo} começa como um sussurro — discreto, quase imperceptível — mas cresce em cada página até se tornar algo impossível de ignorar. Desde as primeiras linhas, há uma promessa implícita de que o mundo que estamos prestes a habitar é mais complexo do que qualquer aparência sugere.`,
@@ -188,7 +184,6 @@ const PASSAGENS_ADICIONAIS = [
   `{autor} escreve sobre o ordinário com reverência. Em {titulo}, um almoço de domingo, uma caminhada no fim do dia, uma ligação que não veio — cada coisa pequena é tratada com a atenção que merece, porque {autor} sabe que é das coisas pequenas que a vida é feita, na maior parte do tempo.`,
 ];
 
-// ─── Montagem do texto ────────────────────────────────────────────────────────
 
 export function gerarTextoLivro(book) {
   const titulo = book.title || 'esta obra';
@@ -219,32 +214,26 @@ export function gerarTextoLivro(book) {
 
   const paragrafos = [];
 
-  // Trecho original do livro (se existir)
   if (book.excerpt && book.excerpt.trim()) {
     const trechos = book.excerpt.trim().split(/\n+/).filter(x => x.trim());
     trechos.forEach(tr => paragrafos.push(tr.trim()));
     paragrafos.push('—');
   }
 
-  // Bloco de abertura
   paragrafos.push(t(p(ABERTURA)));
 
-  // Cenário e personagem
   paragrafos.push(t(p(CENARIO_APRESENTACAO)));
   paragrafos.push(t(p(PERSONAGEM_INTRO)));
   paragrafos.push(t(p(PERSONAGEM_INTRO)));
 
-  // Conflito inicial
   paragrafos.push('* * *');
   paragrafos.push(t(p(CONFLITO)));
   paragrafos.push(t(p(DESENVOLVIMENTO)));
   paragrafos.push(t(p(DESENVOLVIMENTO)));
 
-  // Passagens variadas (garante volume)
   const extras = [...PASSAGENS_ADICIONAIS].sort(() => rng() - 0.5);
   extras.slice(0, 4).forEach(e => paragrafos.push(t(e)));
 
-  // Virada
   paragrafos.push('* * *');
   paragrafos.push(t(p(VIRADA)));
   paragrafos.push(t(p(REFLEXAO)));
@@ -252,14 +241,12 @@ export function gerarTextoLivro(book) {
 
   extras.slice(4, 8).forEach(e => paragrafos.push(t(e)));
 
-  // Clímax
   paragrafos.push('* * *');
   paragrafos.push(t(p(CLIMAX)));
   paragrafos.push(t(p(REFLEXAO)));
 
   extras.slice(8).forEach(e => paragrafos.push(t(e)));
 
-  // Resolução e reflexão final
   paragrafos.push('* * *');
   paragrafos.push(t(p(RESOLUCAO)));
   paragrafos.push(t(p(RESOLUCAO)));
@@ -269,7 +256,6 @@ export function gerarTextoLivro(book) {
   return paragrafos;
 }
 
-// Divide array de parágrafos em páginas por contagem de palavras
 export function paginar(paragrafos, palavrasPorPagina = 300) {
   const paginas = [];
   let atual = [];

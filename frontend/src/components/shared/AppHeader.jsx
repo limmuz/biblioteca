@@ -26,7 +26,6 @@ export default function AppHeader() {
   const debounceRef = useRef(null);
   const user = getUser();
 
-  // avatar
   useEffect(() => {
     const saved = localStorage.getItem('lybre_avatar');
     if (saved) setAvatarUrl(saved);
@@ -43,7 +42,6 @@ export default function AppHeader() {
     return () => globalThis.removeEventListener('storage', onStorage);
   }, []);
 
-  // fecha dropdown ao clicar fora
   useEffect(() => {
     const handler = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
@@ -54,7 +52,6 @@ export default function AppHeader() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // busca com debounce de 300ms
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (termo.trim().length < 2) {
