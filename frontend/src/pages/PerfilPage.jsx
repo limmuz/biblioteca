@@ -98,7 +98,7 @@ export default function PerfilPage() {
 
   // Perfil edit
   const [editandoPerfil, setEditandoPerfil] = useState(false);
-  const [perfilForm, setPerfilForm] = useState({ nome: '', email: '', nickname: '', telefones: [''], redesSociais: [''] });
+  const [perfilForm, setPerfilForm] = useState({ nome: '', email: '', nickname: '', bio: '', metaLeitura: '', telefones: [''], redesSociais: [''] });
   const [salvandoPerfil, setSalvandoPerfil] = useState(false);
 
   // Endereços
@@ -125,6 +125,8 @@ export default function PerfilPage() {
           nome: u.nome || '',
           email: u.email || '',
           nickname: u.nickname || '',
+          bio: u.bio || '',
+          metaLeitura: u.metaLeitura || '',
           telefones: u.telefones?.length ? u.telefones : [''],
           redesSociais: u.redesSociais?.length ? u.redesSociais : [''],
         });
@@ -204,6 +206,8 @@ export default function PerfilPage() {
         nome: perfilForm.nome,
         email: perfilForm.email,
         nickname: perfilForm.nickname,
+        bio: perfilForm.bio,
+        metaLeitura: Number(perfilForm.metaLeitura) || 0,
         telefones: perfilForm.telefones.filter(t => t.trim()),
         redesSociais: perfilForm.redesSociais.filter(r => r.trim()),
       });
@@ -353,6 +357,24 @@ export default function PerfilPage() {
     return Array.from({ length: 300 }, (_, i) => source[i % source.length]);
   }, [todosPorStatus]);
 
+  const generoMaisLido = useMemo(() => {
+    const todos = [
+      ...todosPorStatus['LIDO'],
+      ...todosPorStatus['LENDO'],
+      ...todosPorStatus['QUERO LER'],
+      ...todosPorStatus['RECOMENDADO'],
+    ];
+    const freq = {};
+    todos.forEach(l => {
+      if (Array.isArray(l.categories)) {
+        l.categories.forEach(c => { if (c && c !== 'Nao informado') freq[c] = (freq[c] || 0) + 1; });
+      }
+    });
+    const entries = Object.entries(freq);
+    if (!entries.length) return null;
+    return entries.reduce((a, b) => (b[1] > a[1] ? b : a))[0];
+  }, [todosPorStatus]);
+
   if (loading) {
     return (
       <div className={styles.page}>
@@ -394,6 +416,10 @@ export default function PerfilPage() {
             <h1 className={styles.userName}>{usuario?.nome || userLocal.nome}</h1>
             {usuario?.nickname && <p className={styles.userNickname}>@{usuario.nickname}</p>}
             <p className={styles.userEmail}>{usuario?.email || userLocal.email}</p>
+            {usuario?.bio && <p className={styles.userBio}>"{usuario.bio}"</p>}
+            {generoMaisLido && (
+              <span className={styles.genreBadge}>📖 {generoMaisLido}</span>
+            )}
             {usuario?.telefones?.filter(t => t).map((tel, i) => (
               <p key={i} className={styles.userPhone}>📞 {tel}</p>
             ))}
@@ -425,6 +451,18 @@ export default function PerfilPage() {
                 <label className={styles.formLabel}>E-mail</label>
                 <input className={styles.formInput} type="email" value={perfilForm.email}
                   onChange={e => setPerfilForm(f => ({ ...f, email: e.target.value }))} />
+              </div>
+              <div className={styles.formRow}>
+                <label className={styles.formLabel}>Bio (frase sobre você)</label>
+                <input className={styles.formInput} type="text" value={perfilForm.bio} maxLength={120}
+                  placeholder="Ex: Apaixonada por ficção científica..."
+                  onChange={e => setPerfilForm(f => ({ ...f, bio: e.target.value }))} />
+              </div>
+              <div className={styles.formRow}>
+                <label className={styles.formLabel}>Meta de leitura (livros em 2026)</label>
+                <input className={styles.formInput} type="number" min="1" max="365" value={perfilForm.metaLeitura}
+                  placeholder="Ex: 24"
+                  onChange={e => setPerfilForm(f => ({ ...f, metaLeitura: e.target.value }))} />
               </div>
               <div className={styles.formRow}>
                 <label className={styles.formLabel}>Telefones</label>
@@ -482,6 +520,24 @@ export default function PerfilPage() {
               </button>
             ))}
           </div>
+
+          {usuario?.metaLeitura > 0 && (
+            <div className={styles.metaWrap}>
+              <div className={styles.metaHeader}>
+                <span className={styles.metaLabel}>🎯 Meta de leitura 2026</span>
+                <span className={styles.metaCount}>{estatisticas.lidos} / {usuario.metaLeitura} livros</span>
+              </div>
+              <div className={styles.metaBar}>
+                <div
+                  className={styles.metaFill}
+                  style={{ width: `${Math.min(100, Math.round((estatisticas.lidos / usuario.metaLeitura) * 100))}%` }}
+                />
+              </div>
+              <span className={styles.metaPct}>
+                {Math.min(100, Math.round((estatisticas.lidos / usuario.metaLeitura) * 100))}% concluído
+              </span>
+            </div>
+          )}
 
           {statExpandida && statExpandida !== 'total' && (
             <div className={styles.statBooks}>

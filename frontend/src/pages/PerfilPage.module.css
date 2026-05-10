@@ -597,6 +597,75 @@
   font-weight: 500;
 }
 
+.userBio {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  color: var(--color-sage);
+  margin: 0;
+  font-style: italic;
+}
+
+.genreBadge {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-forest);
+  background: rgba(74, 103, 65, 0.12);
+  border: 1px solid rgba(74, 103, 65, 0.25);
+  border-radius: 20px;
+  padding: 3px 12px;
+}
+
+/* ── Meta de leitura ─────────────────────────────────────────── */
+.metaWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metaHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metaLabel {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.metaCount {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-sage);
+}
+
+.metaBar {
+  width: 100%;
+  height: 10px;
+  background: rgba(17, 26, 25, 0.10);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.metaFill {
+  height: 100%;
+  background: var(--color-forest);
+  border-radius: 99px;
+  transition: width 0.6s ease;
+  min-width: 4px;
+}
+
+.metaPct {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--color-sage);
+  text-align: right;
+}
+
 .userPhone {
   font-family: var(--font-sans);
   font-size: 14px;

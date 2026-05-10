@@ -41,6 +41,10 @@ public class Usuario {
 
     private String avatarBase64;
 
+    private String bio;
+
+    private int metaLeitura;
+
     @Getter
     @Setter
     public static class Endereco {
