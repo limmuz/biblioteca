@@ -1,6 +1,6 @@
 # RTM - Matriz de Rastreabilidade de Requisitos
 
-Atualizado em 07/05/2026 — diagramas UML adicionados, WireMock/VCR implementado.
+Atualizado em 09/05/2026 — cobertura SonarCloud 86.6%, CI verde, Testcontainers 1.21.3, lambdas S5778 corrigidos.
 
 ---
 
@@ -25,7 +25,7 @@ Atualizado em 07/05/2026 — diagramas UML adicionados, WireMock/VCR implementad
 | ID | Eixo | Critério | Evidência | Status |
 |---|---|---|---|---|
 | RNF-01 | Segurança | Rotas protegidas com JWT + Spring Security | Testes E2E com e sem token | ✅ Implementado |
-| RNF-02 | Testabilidade | Cobertura ≥ 80% (JaCoCo) | 96% alcançado — `img/Jacoco.png` | ✅ Implementado |
+| RNF-02 | Testabilidade | Cobertura ≥ 80% (JaCoCo) | 86.6% no SonarCloud — check JaCoCo aprovado — `img/Jacoco.png` | ✅ Implementado |
 | RNF-03 | Qualidade | Análise estática com SonarCloud | Pipeline CI verde | ✅ Configurado |
 | RNF-04 | CI/CD | Pipeline GitHub Actions executando testes | GitHub Actions — ver link de evidência | ✅ Configurado |
 | RNF-05 | Portabilidade | Banco em MongoDB Atlas (sem Docker para rodar o app) | README detalhado | ✅ Implementado |
@@ -372,8 +372,8 @@ sequenceDiagram
 
 ## Cobertura de Código (JaCoCo)
 
-- **Cobertura alcançada: 96%** (mínimo exigido: 80%)
-- Relatório gerado com: `./mvnw clean verify`
+- **Cobertura alcançada: 86.6%** no SonarCloud (mínimo exigido: 80%) — check JaCoCo aprovado no CI
+- Relatório gerado com: `./mvnw clean verify` (ou baixar artefato `test-reports` do GitHub Actions)
 - Abrir: `backend/target/site/jacoco/index.html`
 
 ![Relatório JaCoCo](./img/Jacoco.png)
@@ -382,20 +382,16 @@ sequenceDiagram
 
 ## Evidências de Qualidade
 
-| Item | Link / Evidência | Status |
+| Item | Evidência | Status |
 |---|---|---|
-| Cobertura JaCoCo ≥ 80% | `img/Jacoco.png` (96%) | ✅ |
-| SonarCloud | https://sonarcloud.io/project/overview?id=AnaPaula2024_biblioteca | ✅ Configurado |
-| GitHub Actions (CI) | https://github.com/AnaPaula2024/biblioteca/actions | ⏳ Tirar print após push |
-| Testes passando (CI) | Artefato `test-reports` no GitHub Actions | ⏳ Disponível após push |
-
-> **Como obter o print dos testes:**
-> 1. Faça `git push` para o GitHub
-> 2. Acesse https://github.com/AnaPaula2024/biblioteca/actions
-> 3. Aguarde o pipeline ficar verde (≈ 5 minutos)
-> 4. Tire print da tela mostrando todos os jobs verdes
-> 5. Clique no job `backend` → baixe o artefato `test-reports` para ver o relatório XML dos testes
+| Cobertura JaCoCo ≥ 80% | `img/Jacoco.png` — 86.6% no SonarCloud, check aprovado no CI | ✅ |
+| SonarCloud — Quality Gate | Passed — 0 issues, Security A, Reliability A, Maintainability A | ✅ |
+| SonarCloud — Cobertura | 86.6% (+54.6% vs 30 dias anteriores) | ✅ |
+| GitHub Actions (CI) | Pipeline #35 verde — backend ✅ frontend ✅ sonarcloud ✅ — 2m 25s | ✅ |
+| Testes passando (CI) | Artefato `test-reports` (401 KB) disponível no GitHub Actions | ✅ |
+| Link SonarCloud | https://sonarcloud.io/project/overview?id=AnaPaula2024_biblioteca | ✅ |
+| Link GitHub Actions | https://github.com/AnaPaula2024/biblioteca/actions | ✅ |
 
 ---
 
-*Revisão final: 19/05/2026*
+*Revisão final: 09/05/2026*
