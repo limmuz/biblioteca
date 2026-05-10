@@ -341,17 +341,6 @@ export default function PerfilPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <AppHeader />
-        <main className={styles.main}>
-          <h2 style={{ color: 'white', textAlign: 'center', marginTop: '100px' }}>Carregando perfil...</h2>
-        </main>
-      </div>
-    );
-  }
-
   const bgTiles = useMemo(() => {
     const todos = [
       ...todosPorStatus['LIDO'],
@@ -363,6 +352,17 @@ export default function PerfilPage() {
     const source = covers.length >= 4 ? covers : BG_FALLBACK;
     return Array.from({ length: 300 }, (_, i) => source[i % source.length]);
   }, [todosPorStatus]);
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <AppHeader />
+        <main className={styles.main}>
+          <h2 style={{ color: 'white', textAlign: 'center', marginTop: '100px' }}>Carregando perfil...</h2>
+        </main>
+      </div>
+    );
+  }
 
   const userLocal = getUser();
   const iniciais = userLocal.nome
