@@ -23,7 +23,7 @@ Atualizado em 10/05/2026 — cobertura SonarCloud 88.3%, CI verde (Pipeline #45)
 | RF-13 | Personalizar perfil (foto, fundo, fonte, bio, privacidade, meta de leitura) | E2E / Caixa Preta | `UsuarioE2ETest.java` (`AtualizarPerfilTests`) — testa `PUT /api/usuarios/me` com bio, metaLeitura, perfilPublico, bgBase64, nickname; verifica persistência no MongoDB | ✅ Implementado |
 | RF-14 | Visualizar perfil público de outro leitor | E2E / Caixa Preta | `UsuarioE2ETest.java` (`PerfilPublicoTests`) — testa 200 com bgBase64, 403 para perfil privado, 404 para nickname inexistente, presença de estatísticas | ✅ Implementado |
 | RF-15 | Adicionar perfil de leitor à lista de acompanhados | Frontend (localStorage) | `PerfilPage` — `perfisAdicionados` persistido no `localStorage`; seção "Perfis adicionados" com cards e botão de remover | ✅ Implementado |
-| RF-16 | Adicionar livro bem avaliado de outro leitor à própria biblioteca | E2E / Caixa Preta | `LivroE2ETest.java` (`CriarLivroTests`) — `POST /api/livros` cobre criação com status `QUERO LER`; RF valida regra de negócio no frontend (média ≥ 4) | ✅ Implementado |
+| RF-16 | Adicionar livro bem avaliado de outro leitor à própria biblioteca | E2E / Caixa Preta | `LivroE2ETest.java` (`CriarLivroTests`) — `POST /api/livros` cobre criação com status `QUERO LER`; RF valida regra de negócio no frontend (média >= 4) | ✅ Implementado |
 
 ---
 
@@ -354,64 +354,12 @@ sequenceDiagram
     W-->>T: stub registrado
     T->>S: buscarEnderecoPorCep("01310-100")
     S->>W: GET http://localhost:{porta}/ws/01310-100/json/
-    W->>V: (intercepta — não chama API real)
+    W->>V: (intercepta - não chama API real)
     W-->>S: 200 OK + {cep, logradouro, localidade, uf}
     S-->>T: Map{cep=01310-100, logradouro=Avenida Paulista, ...}
     T->>T: assertThat(resultado).containsEntry(...)
     T->>W: verify(1 chamada para /ws/01310-100/json/)
 ```
-
----
-
-## Estratégia de Testes
-
-| Tipo | Arquivo | Ferramenta | Descrição |
-|---|---|---|---|
-| Unitário parametrizado | `LivroValidatorParamTest.java` | JUnit 5 `@ParameterizedTest` | Valida regras de negócio do `LivroValidator` com 50+ cenários (`@CsvSource`, `@ValueSource`, `@MethodSource`, `@NullAndEmptySource`) |
-| Integração | `LivroServiceIntegrationTest.java` | Testcontainers + MongoDB real | Testa `LivroRepository` com banco real e efêmero |
-| E2E / Caixa Preta | `AuthE2ETest.java` | Testcontainers + RestTemplate | Fluxo completo de registro e login via HTTP |
-| E2E / Caixa Preta | `LivroE2ETest.java` | Testcontainers + RestTemplate | CRUD completo de livros via HTTP com JWT |
-| VCR / WireMock | `ViaCepServiceWireMockTest.java` | WireMock 3.5.2 | Testa integração com API externa (ViaCEP) sem dependência da internet |
-| E2E / Caixa Preta | `AvaliacaoE2ETest.java` | Testcontainers + RestTemplate | 20 cenários: criar/atualizar/excluir avaliação, listar, calcular médias, outros leitores, validação de rating 1-5, JWT |
-| E2E / Caixa Preta | `UsuarioE2ETest.java` | Testcontainers + RestTemplate | 14 cenários: GET /me, PUT /me (bio, metaLeitura, perfilPublico, bgBase64, nickname), perfil público (200/403/404/estatísticas), listar leitores, pesquisar por nome e @nickname |
-
-> ⚠️ **Nenhum Mock (`@Mock`, `@MockBean`, `Mockito.mock()`) foi utilizado.** Todos os testes de persistência usam MongoDB real via Testcontainers, conforme exigido pelo professor.
-
----
-
-## Cobertura de Código (JaCoCo)
-
-- **Cobertura alcançada: 88.3%** no SonarCloud (mínimo exigido: 80%) — check JaCoCo aprovado no CI
-- Relatório gerado com: `./mvnw clean verify` (ou baixar artefato `test-reports` do GitHub Actions)
-- Abrir: `backend/target/site/jacoco/index.html`
-
-![Relatório JaCoCo](./img/Jacoco.png)
-
----
-
-## Evidências de Qualidade
-
-| Item | Evidência | Status |
-|---|---|---|
-| Cobertura JaCoCo ≥ 80% | `img/Jacoco.png` — 88.3% no SonarCloud, check aprovado no CI | ✅ |
-| SonarCloud — Quality Gate | Passed — 0 issues, 0 hotspots, Security A, Reliability A, Maintainability A | ✅ |
-| SonarCloud — Cobertura | 88.3% | ✅ |
-| GitHub Actions (CI) | Pipeline #45 verde — backend ✅ frontend ✅ sonarcloud ✅ — 2m 35s | ✅ |
-| Testes passando (CI) | Artefato `test-reports` (491 KB) disponível no GitHub Actions | ✅ |
-| Link SonarCloud | https://sonarcloud.io/project/overview?id=AnaPaula2024_biblioteca | ✅ |
-| Link GitHub Actions | https://github.com/AnaPaula2024/biblioteca/actions | ✅ |
-
-### GitHub Actions — Pipeline Verde
-
-![GitHub Actions — detalhe do pipeline](./img/Github-3.png)
-
-![GitHub Actions — histórico de execuções](./img/github-.png)
-
-### SonarCloud — Quality Gate
-
-![SonarCloud Overview](./img/Sonar-3.png)
-
----
 
 ---
 
@@ -469,7 +417,7 @@ sequenceDiagram
         S->>S: verificar perfilPublico == false
         S-->>C: 403 Forbidden
         C-->>F: 403
-        F->>U: Exibe tela de perfil privado 🔒
+        F->>U: Exibe tela de perfil privado
     else Perfil público
         S->>R: findByUserEmail(email do leitor)
         R->>M: busca livros do leitor
@@ -515,7 +463,7 @@ sequenceDiagram
     participant R as LivroRepository
     participant M as MongoDB
 
-    U->>F: Clica em "+ Minha biblioteca" em livro com ★ ≥ 4
+    U->>F: Clica em "+ Minha biblioteca" em livro com estrela >= 4
     F->>C: POST /api/livros {title, author, cover, categories, status: "QUERO LER"} + JWT
     C->>S: salvar(livro)
     alt Livro já na biblioteca
@@ -528,10 +476,60 @@ sequenceDiagram
         M-->>R: livro salvo
         S-->>C: 201 Created
         C-->>F: 201
-        F->>F: Marca livro como adicionado; exibe banner "Ver minha biblioteca →"
+        F->>F: Marca livro como adicionado
         F->>U: Toast de confirmação
     end
 ```
+
+---
+
+## Estratégia de Testes
+
+| Tipo | Arquivo | Ferramenta | Descrição |
+|---|---|---|---|
+| Unitário parametrizado | `LivroValidatorParamTest.java` | JUnit 5 `@ParameterizedTest` | Valida regras de negócio do `LivroValidator` com 50+ cenários (`@CsvSource`, `@ValueSource`, `@MethodSource`, `@NullAndEmptySource`) |
+| Integração | `LivroServiceIntegrationTest.java` | Testcontainers + MongoDB real | Testa `LivroRepository` com banco real e efêmero |
+| E2E / Caixa Preta | `AuthE2ETest.java` | Testcontainers + RestTemplate | Fluxo completo de registro e login via HTTP |
+| E2E / Caixa Preta | `LivroE2ETest.java` | Testcontainers + RestTemplate | CRUD completo de livros via HTTP com JWT |
+| VCR / WireMock | `ViaCepServiceWireMockTest.java` | WireMock 3.5.2 | Testa integração com API externa (ViaCEP) sem dependência da internet |
+| E2E / Caixa Preta | `AvaliacaoE2ETest.java` | Testcontainers + RestTemplate | 20 cenários: criar/atualizar/excluir avaliação, listar, calcular médias, outros leitores, validação de rating 1-5, JWT |
+| E2E / Caixa Preta | `UsuarioE2ETest.java` | Testcontainers + RestTemplate | 14 cenários: GET /me, PUT /me (bio, metaLeitura, perfilPublico, bgBase64, nickname), perfil público (200/403/404/estatísticas), listar leitores, pesquisar por nome e @nickname |
+
+> ⚠️ **Nenhum Mock (`@Mock`, `@MockBean`, `Mockito.mock()`) foi utilizado.** Todos os testes de persistência usam MongoDB real via Testcontainers, conforme exigido pelo professor.
+
+---
+
+## Cobertura de Código (JaCoCo)
+
+- **Cobertura alcançada: 88.3%** no SonarCloud (mínimo exigido: 80%) — check JaCoCo aprovado no CI
+- Relatório gerado com: `./mvnw clean verify` (ou baixar artefato `test-reports` do GitHub Actions)
+- Abrir: `backend/target/site/jacoco/index.html`
+
+![Relatório JaCoCo](./img/Jacoco.png)
+
+---
+
+## Evidências de Qualidade
+
+| Item | Evidência | Status |
+|---|---|---|
+| Cobertura JaCoCo ≥ 80% | `img/Jacoco.png` — 88.3% no SonarCloud, check aprovado no CI | ✅ |
+| SonarCloud — Quality Gate | Passed — 0 issues, 0 hotspots, Security A, Reliability A, Maintainability A | ✅ |
+| SonarCloud — Cobertura | 88.3% | ✅ |
+| GitHub Actions (CI) | Pipeline #45 verde — backend ✅ frontend ✅ sonarcloud ✅ — 2m 35s | ✅ |
+| Testes passando (CI) | Artefato `test-reports` (491 KB) disponível no GitHub Actions | ✅ |
+| Link SonarCloud | https://sonarcloud.io/project/overview?id=AnaPaula2024_biblioteca | ✅ |
+| Link GitHub Actions | https://github.com/AnaPaula2024/biblioteca/actions | ✅ |
+
+### GitHub Actions — Pipeline Verde
+
+![GitHub Actions — detalhe do pipeline](./img/Github-3.png)
+
+![GitHub Actions — histórico de execuções](./img/github-.png)
+
+### SonarCloud — Quality Gate
+
+![SonarCloud Overview](./img/Sonar-3.png)
 
 ---
 
