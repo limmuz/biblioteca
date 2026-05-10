@@ -154,7 +154,7 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | Testes de integração | `LivroServiceIntegrationTest.java` |
 | Testes E2E / Caixa Preta | `AuthE2ETest.java` + `LivroE2ETest.java` |
 | VCR para API externa | ViaCEP (busca de CEP no cadastro) com WireMock |
-| Cobertura >= 80% (JaCoCo) | 96% alcançado |
+| Cobertura >= 80% (JaCoCo) | 86.6% no SonarCloud — check JaCoCo aprovado |
 | SonarCloud configurado | Rodando — https://sonarcloud.io/project/overview?id=AnaPaula2024_biblioteca |
 | CI com GitHub Actions | Pipeline configurado |
 | Repositório no GitHub | https://github.com/AnaPaula2024/biblioteca |
@@ -191,7 +191,7 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | React + Vite | 18+ | Frontend |
 | Node.js | 20+ | Runtime do frontend |
 | JUnit 5 | - | Testes automatizados |
-| Testcontainers | 1.19.7 | MongoDB real nos testes |
+| Testcontainers | 1.21.3 | MongoDB real nos testes |
 | JaCoCo | 0.8.12 | Relatório de cobertura de testes |
 | WireMock | 3.5.2 | Simulação de API externa (ViaCEP) nos testes |
 | SonarCloud | - | Análise de qualidade de código |
@@ -206,3 +206,7 @@ O pipeline roda automaticamente a cada push:
 - **Configuração:** `.github/workflows/ci.yml`
 - **O que executa:** compilação, testes, relatório JaCoCo e análise SonarCloud
 - **Histórico:** https://github.com/AnaPaula2024/biblioteca/actions
+
+---
+
+*Última atualização: 09/05/2026*
