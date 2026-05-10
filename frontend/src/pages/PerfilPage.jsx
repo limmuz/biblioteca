@@ -1081,7 +1081,7 @@ export default function PerfilPage() {
                 onChange={e => { setBuscaNickname(e.target.value); setBuscaErro(''); setLeitoresEncontrados([]); }}
                 placeholder="Ex: Sofia ou @sofia_reads"
               />
-              <button className={styles.btnPrimary} type="submit" disabled={buscandoLeitor}>
+              <button className={styles.btnSearch} type="submit" disabled={buscandoLeitor}>
                 {buscandoLeitor ? 'Buscando...' : 'Buscar'}
               </button>
             </form>
