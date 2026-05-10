@@ -84,3 +84,29 @@
   background-color: var(--color-gray);
   cursor: not-allowed;
 }
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.stars {
+  display: flex;
+  gap: 1px;
+}
+
+.star {
+  font-size: 13px;
+  color: #d4c5a9;
+  line-height: 1;
+}
+
+.starFilled { color: #f0a500; }
+
+.ratingCount {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--color-sage);
+}

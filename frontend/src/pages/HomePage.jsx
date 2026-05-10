@@ -14,6 +14,7 @@ export default function HomePage() {
   const [recentlyRead, setRecentlyRead] = useState([]);
   const [readingList, setReadingList] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
+  const [medias, setMedias] = useState({});
   const [loading, setLoading] = useState(true);
   const [errorModal, setErrorModal] = useState(null);
   const [showAllRecs, setShowAllRecs] = useState(false);
@@ -64,6 +65,13 @@ export default function HomePage() {
     const fetchData = async () => {
       try {
         await refreshLists();
+        const res = await api.get("/avaliacoes/medias");
+        const map = {};
+        res.data.forEach(m => {
+          const key = `${m.livroTitulo.toLowerCase()}||${m.livroAutor.toLowerCase()}`;
+          map[key] = m;
+        });
+        setMedias(map);
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
       } finally {
@@ -72,6 +80,11 @@ export default function HomePage() {
     };
     fetchData();
   }, []);
+
+  const getRating = (book) => {
+    const key = `${book.title.toLowerCase()}||${book.author.toLowerCase()}`;
+    return medias[key] || { media: 0, total: 0 };
+  };
 
   if (loading) {
     return (
@@ -96,31 +109,39 @@ export default function HomePage() {
             <div
               className={styles.carouselRect}
               ref={carouselRef}
+              role="region"
               onMouseEnter={() => { isPausedRef.current = true; }}
               onMouseLeave={() => { isPausedRef.current = false; }}
               aria-label="Últimas leituras"
             >
-              {recentlyRead.map((book) => (
-                <div
-                  key={book.id}
-                  className={styles.carouselRectCard}
-                  onClick={() => navigate(`/livro/${book.id}`)}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <img
-                    src={book.cover}
-                    alt={book.title}
-                    className={styles.carouselRectImage}
-                    onError={(e) => { e.target.src = 'https://via.placeholder.com/140x210?text=Sem+Capa'; }}
-                  />
-                  <div className={styles.carouselRectInfo}>
-                    <p className={styles.carouselRectTitle}>{book.title}</p>
-                    <p className={styles.carouselRectAuthor}>por {book.author}</p>
-                    <p className={styles.carouselRectExcerpt}>{book.excerpt}</p>
-                  </div>
-                </div>
-              ))}
+              {recentlyRead.map((book) => {
+                const r = getRating(book);
+                return (
+                  <button
+                    key={book.id}
+                    className={styles.carouselRectCard}
+                    onClick={() => navigate(`/livro/${book.id}`)}
+                    type="button"
+                  >
+                    <img
+                      src={book.cover}
+                      alt={book.title}
+                      className={styles.carouselRectImage}
+                      onError={(e) => { e.target.src = 'https://via.placeholder.com/140x210?text=Sem+Capa'; }}
+                    />
+                    <div className={styles.carouselRectInfo}>
+                      <p className={styles.carouselRectTitle}>{book.title}</p>
+                      <p className={styles.carouselRectAuthor}>por {book.author}</p>
+                      {r.media > 0 && (
+                        <p className={styles.carouselRectRating}>
+                          {'★'.repeat(Math.round(r.media))}{'☆'.repeat(5 - Math.round(r.media))} {r.media.toFixed(1)}
+                        </p>
+                      )}
+                      <p className={styles.carouselRectExcerpt}>{book.excerpt}</p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </section>
         )}
@@ -129,9 +150,10 @@ export default function HomePage() {
           <h2 className={styles.sectionTitle}>Sua lista de leitura</h2>
           <div className={styles.bookGrid}>
             {readingList.length > 0 ? (
-              readingList.map((book) => (
-                <BookCardMini key={book.id} book={book} />
-              ))
+              readingList.map((book) => {
+                const r = getRating(book);
+                return <BookCardMini key={book.id} book={book} rating={r.media} totalRatings={r.total} />;
+              })
             ) : (
               <div className={styles.emptyState}>
                 <span className={styles.emptyIcon}>📖</span>
@@ -146,13 +168,18 @@ export default function HomePage() {
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Recomendações</h2>
             <div className={styles.bookGrid}>
-              {(showAllRecs ? recommendations : recommendations.slice(0, 4)).map((book) => (
-                <BookCardMini
-                  key={book.id + "-rec"}
-                  book={book}
-                  onAddToList={handleAdicionarLivroNaLista}
-                />
-              ))}
+              {(showAllRecs ? recommendations : recommendations.slice(0, 4)).map((book) => {
+                const r = getRating(book);
+                return (
+                  <BookCardMini
+                    key={book.id + "-rec"}
+                    book={book}
+                    onAddToList={handleAdicionarLivroNaLista}
+                    rating={r.media}
+                    totalRatings={r.total}
+                  />
+                );
+              })}
             </div>
             {recommendations.length > 4 && (
               <button

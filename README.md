@@ -152,11 +152,26 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | Testcontainers (sem Mocks) | Todos os testes usam MongoDB real |
 | Testes unitários parametrizados | `LivroValidatorParamTest.java` |
 | Testes de integração | `LivroServiceIntegrationTest.java` |
-| Testes E2E / Caixa Preta | `AuthE2ETest.java` + `LivroE2ETest.java` |
+| Testes E2E / Caixa Preta | `AuthE2ETest.java` + `LivroE2ETest.java` + `AvaliacaoE2ETest.java` |
 | VCR para API externa | ViaCEP (busca de CEP no cadastro) com WireMock |
 | Cobertura >= 80% (JaCoCo) | 86.6% no SonarCloud — check JaCoCo aprovado |
 | SonarCloud configurado | Rodando — https://sonarcloud.io/project/overview?id=AnaPaula2024_biblioteca |
 | CI com GitHub Actions | Pipeline configurado |
+
+## Funcionalidades do sistema
+
+| Funcionalidade | Descrição |
+|---|---|
+| Biblioteca pessoal | Adicionar, editar, excluir e organizar livros por status (Lido, Lendo, Quero Ler) |
+| Avaliações com estrelas | Avaliar livros de 1 a 5 estrelas com comentário; ver média de todos os leitores |
+| Meus Favoritos | Seção automática com livros avaliados com 4 ou 5 estrelas |
+| Personalização de perfil | Foto de perfil, plano de fundo personalizado, fonte da página, bio e meta de leitura |
+| Perfil público/privado | Toggle visível no perfil; perfil privado retorna 403 para outros usuários |
+| Conheça outros leitores | Carousel de perfis públicos com cards com fundo, avatar, bio e botões de ação |
+| Perfis adicionados | Seção para acompanhar leitores favoritados (persistido em localStorage) |
+| Perfil público detalhado | Ver livros, estatísticas e fundo de outro leitor; adicionar livros bem avaliados à própria biblioteca |
+| Busca de leitores | Buscar por nome ou @nickname na seção social do perfil |
+| Estatísticas de leitura | Contadores de lidos, lendo e quero ler com mosaico visual |
 | Repositório no GitHub | https://github.com/AnaPaula2024/biblioteca |
 
 ---

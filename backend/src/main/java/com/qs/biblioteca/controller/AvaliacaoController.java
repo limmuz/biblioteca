@@ -2,6 +2,7 @@ package com.qs.biblioteca.controller;
 
 import com.qs.biblioteca.dto.AvaliacaoRequest;
 import com.qs.biblioteca.dto.AvaliacaoResponse;
+import com.qs.biblioteca.dto.MediaAvaliacaoResponse;
 import com.qs.biblioteca.dto.PublicUsuarioResponse;
 import com.qs.biblioteca.service.AvaliacaoService;
 import jakarta.validation.Valid;
@@ -42,6 +43,11 @@ public class AvaliacaoController {
             Authentication authentication) {
         avaliacaoService.excluir(livroId, authentication.getName());
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/medias")
+    public ResponseEntity<List<MediaAvaliacaoResponse>> medias() {
+        return ResponseEntity.ok(avaliacaoService.calcularMedias());
     }
 
     @GetMapping("/livro/{livroId}/leitores")

@@ -22,8 +22,10 @@ public class UsuarioResponse {
     private List<String> telefones;
     private List<String> redesSociais;
     private String avatarBase64;
+    private String bgBase64;
     private String bio;
     private int metaLeitura;
+    private boolean perfilPublico;
 
     public UsuarioResponse(Usuario u) {
         this.id = u.getId();
@@ -40,7 +42,9 @@ public class UsuarioResponse {
         this.telefones = u.getTelefones();
         this.redesSociais = u.getRedesSociais();
         this.avatarBase64 = u.getAvatarBase64();
+        this.bgBase64 = u.getBgBase64();
         this.bio = u.getBio();
         this.metaLeitura = u.getMetaLeitura();
+        this.perfilPublico = u.isPerfilPublico();
     }
 }

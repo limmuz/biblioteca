@@ -313,23 +313,23 @@ export default function DetalhesLivroPage() {
             )}
           </div>
 
-          {/* Minha avaliação */}
+          {/* Esquerda: minha avaliação */}
           {!minhaAvaliacao || editandoAvaliacao ? (
             <div className={styles.minhaAvaliacaoForm}>
-              <h3 className={styles.formTitle}>{minhaAvaliacao ? 'Editar minha avaliação' : 'Avaliar este livro'}</h3>
+              <h3 className={styles.formTitle}>{minhaAvaliacao ? 'Editar avaliação' : 'Avaliar este livro'}</h3>
               <StarRating value={ratingForm} onChange={setRatingForm} />
               <textarea
                 className={styles.comentarioInput}
-                placeholder="Escreva um comentário (opcional)..."
+                placeholder="Comentário (opcional)..."
                 value={comentarioForm}
                 onChange={e => setComentarioForm(e.target.value)}
                 maxLength={500}
-                rows={3}
+                rows={2}
               />
               <div className={styles.formActions}>
                 <button className={styles.btnAvaliar} onClick={handleSalvarAvaliacao}
                   disabled={!ratingForm || salvandoAvaliacao}>
-                  {salvandoAvaliacao ? 'Salvando...' : 'Publicar avaliação'}
+                  {salvandoAvaliacao ? 'Salvando...' : 'Publicar'}
                 </button>
                 {editandoAvaliacao && (
                   <button className={styles.btnCancelar} onClick={() => setEditandoAvaliacao(false)}>Cancelar</button>
@@ -350,33 +350,34 @@ export default function DetalhesLivroPage() {
             </div>
           )}
 
-          {/* Lista de avaliações de outros */}
+          {/* Direita: lista de avaliações de outros */}
           <div className={styles.avaliacoesList}>
-            {avaliacoes.filter(a => !a.minha).map((av) => {
-              const ini = av.usuarioNome?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
-              const data = new Date(av.criadoEm).toLocaleDateString('pt-BR');
-              return (
-                <div key={av.id} className={styles.avaliacaoItem}>
-                  <div className={styles.avaliacaoAvatar}>
-                    {av.avatarBase64
-                      ? <img src={av.avatarBase64} alt={av.usuarioNome} className={styles.avaliacaoAvatarImg} />
-                      : <div className={styles.avaliacaoAvatarIni}>{ini}</div>
-                    }
-                  </div>
-                  <div className={styles.avaliacaoBody}>
-                    <div className={styles.avaliacaoMeta}>
-                      <span className={styles.avaliacaoNome}>{av.usuarioNome}</span>
-                      {av.usuarioNickname && <span className={styles.avaliacaoNick}>@{av.usuarioNickname}</span>}
-                      <StarRating value={av.rating} readonly />
-                      <span className={styles.avaliacaoData}>{data}</span>
-                    </div>
-                    {av.comentario && <p className={styles.avaliacaoTexto}>{av.comentario}</p>}
-                  </div>
-                </div>
-              );
-            })}
-            {avaliacoes.filter(a => !a.minha).length === 0 && (
+            {avaliacoes.filter(a => !a.minha).length === 0 ? (
               <p className={styles.semAvaliacoes}>Ainda sem avaliações de outros leitores.</p>
+            ) : (
+              avaliacoes.filter(a => !a.minha).map((av) => {
+                const ini = av.usuarioNome?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+                const data = new Date(av.criadoEm).toLocaleDateString('pt-BR');
+                return (
+                  <div key={av.id} className={styles.avaliacaoItem}>
+                    <div className={styles.avaliacaoAvatar}>
+                      {av.avatarBase64
+                        ? <img src={av.avatarBase64} alt={av.usuarioNome} className={styles.avaliacaoAvatarImg} />
+                        : <div className={styles.avaliacaoAvatarIni}>{ini}</div>
+                      }
+                    </div>
+                    <div className={styles.avaliacaoBody}>
+                      <div className={styles.avaliacaoMeta}>
+                        <span className={styles.avaliacaoNome}>{av.usuarioNome}</span>
+                        {av.usuarioNickname && <span className={styles.avaliacaoNick}>@{av.usuarioNickname}</span>}
+                        <StarRating value={av.rating} readonly />
+                        <span className={styles.avaliacaoData}>{data}</span>
+                      </div>
+                      {av.comentario && <p className={styles.avaliacaoTexto}>{av.comentario}</p>}
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
