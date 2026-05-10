@@ -1243,6 +1243,24 @@
   border-radius: 10px;
   padding: 12px 14px;
   box-shadow: 0 2px 8px rgba(17,26,25,0.06);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  cursor: pointer;
+}
+
+.communityCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(17,26,25,0.13);
+}
+
+.communityCard:hover .communityIcon {
+  animation: iconPulse 0.5s ease;
+}
+
+@keyframes iconPulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.25); }
+  70%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
 }
 
 .communityIcon {
