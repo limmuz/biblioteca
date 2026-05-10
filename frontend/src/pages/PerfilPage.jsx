@@ -231,6 +231,7 @@ export default function PerfilPage() {
     reader.onload = async (ev) => {
       const dataUrl = ev.target.result;
       setBgImage(dataUrl);
+      setUsuario(u => ({ ...u, bgBase64: dataUrl }));
       localStorage.setItem('lybre_bg', dataUrl);
       try {
         await api.put('/usuarios/me', { bgBase64: dataUrl });
@@ -244,6 +245,7 @@ export default function PerfilPage() {
 
   const handleRemoverBg = async () => {
     setBgImage(null);
+    setUsuario(u => ({ ...u, bgBase64: null }));
     localStorage.removeItem('lybre_bg');
     try {
       await api.put('/usuarios/me', { bgBase64: null });
