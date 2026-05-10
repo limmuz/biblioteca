@@ -154,7 +154,7 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | Testes de integração | `LivroServiceIntegrationTest.java` |
 | Testes E2E / Caixa Preta | `AuthE2ETest.java` + `LivroE2ETest.java` + `AvaliacaoE2ETest.java` |
 | VCR para API externa | ViaCEP (busca de CEP no cadastro) com WireMock |
-| Cobertura >= 80% (JaCoCo) | 86.6% no SonarCloud — check JaCoCo aprovado |
+| Cobertura >= 80% (JaCoCo) | 88.3% no SonarCloud — check JaCoCo aprovado |
 | SonarCloud configurado | Rodando — https://sonarcloud.io/project/overview?id=AnaPaula2024_biblioteca |
 | CI com GitHub Actions | Pipeline configurado |
 
