@@ -96,7 +96,7 @@ public class UsuarioService {
         if (dados.containsKey("bio")) usuario.setBio((String) dados.get("bio"));
         if (dados.containsKey("metaLeitura")) {
             Object m = dados.get("metaLeitura");
-            if (m instanceof Number) usuario.setMetaLeitura(((Number) m).intValue());
+            if (m instanceof Number number) usuario.setMetaLeitura(number.intValue());
         }
         if (dados.containsKey("avatarBase64")) usuario.setAvatarBase64((String) dados.get("avatarBase64"));
         if (dados.containsKey("cep")) usuario.setCep((String) dados.get("cep"));
@@ -107,6 +107,12 @@ public class UsuarioService {
 
         usuarioRepository.save(usuario);
         return new UsuarioResponse(usuario);
+    }
+
+    public PublicUsuarioResponse buscarPublicoPorNickname(String nickname) {
+        Usuario usuario = usuarioRepository.findByNicknameIgnoreCase(nickname)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
+        return new PublicUsuarioResponse(usuario);
     }
 
     public void redefinirSenha(String email, String senhaAtual, String novaSenha) {

@@ -101,6 +101,12 @@ export default function PerfilPage() {
   const [perfilForm, setPerfilForm] = useState({ nome: '', email: '', nickname: '', bio: '', metaLeitura: '', telefones: [''], redesSociais: [''] });
   const [salvandoPerfil, setSalvandoPerfil] = useState(false);
 
+  // Busca de leitores
+  const [buscaNickname, setBuscaNickname] = useState('');
+  const [leitorEncontrado, setLeitorEncontrado] = useState(null);
+  const [buscandoLeitor, setBuscandoLeitor] = useState(false);
+  const [buscaErro, setBuscaErro] = useState('');
+
   // Endereços
   const [enderecos, setEnderecos] = useState([]);
   const [editandoEnderecoIdx, setEditandoEnderecoIdx] = useState(null);
@@ -330,6 +336,24 @@ export default function PerfilPage() {
       },
       onCancel: () => setConfirmModal(null),
     });
+  };
+
+  // ── Busca de leitores ────────────────────────────────────────────
+  const handleBuscarLeitor = async (e) => {
+    e.preventDefault();
+    const nick = buscaNickname.replace(/^@/, '').trim();
+    if (!nick) return;
+    setBuscandoLeitor(true);
+    setBuscaErro('');
+    setLeitorEncontrado(null);
+    try {
+      const res = await api.get(`/usuarios/buscar?nickname=${encodeURIComponent(nick)}`);
+      setLeitorEncontrado(res.data);
+    } catch {
+      setBuscaErro('Nenhum leitor encontrado com esse @nickname.');
+    } finally {
+      setBuscandoLeitor(false);
+    }
   };
 
   // ── Excluir conta ────────────────────────────────────────────────
@@ -720,6 +744,63 @@ export default function PerfilPage() {
           ) : (
             <p className={styles.emptyMessage}>Você ainda não tem livros favoritos. Adicione livros à sua lista de leitura!</p>
           )}
+        </div>
+
+        {/* Comunidades */}
+        <div className={styles.communitySection}>
+          <h2 className={styles.sectionTitle}>Comunidades de Leitura</h2>
+          <p className={styles.communitySubtitle}>Grupos do Facebook para leitores</p>
+          <div className={styles.communityGrid}>
+            {[
+              { nome: 'Leitores Brasileiros', membros: '1,2M membros', emoji: '📚', cor: '#1877f2' },
+              { nome: 'Ficção Científica Brasil', membros: '450K membros', emoji: '🔮', cor: '#6c5ce7' },
+              { nome: 'Clube do Livro Brasil', membros: '890K membros', emoji: '🏛️', cor: '#00b894' },
+              { nome: 'Romance & Amor em Livros', membros: '320K membros', emoji: '🌹', cor: '#e84393' },
+            ].map((g) => (
+              <div key={g.nome} className={styles.communityCard}>
+                <div className={styles.communityIcon} style={{ background: g.cor }}>{g.emoji}</div>
+                <div className={styles.communityInfo}>
+                  <p className={styles.communityName}>{g.nome}</p>
+                  <p className={styles.communityMembers}>{g.membros}</p>
+                </div>
+                <span className={styles.communityBadge}>Facebook</span>
+              </div>
+            ))}
+          </div>
+
+          <div className={styles.communitySearch}>
+            <h3 className={styles.communitySearchTitle}>Encontrar leitor</h3>
+            <form onSubmit={handleBuscarLeitor} className={styles.searchForm}>
+              <input
+                className={styles.searchInput}
+                type="text"
+                value={buscaNickname}
+                onChange={e => { setBuscaNickname(e.target.value); setBuscaErro(''); setLeitorEncontrado(null); }}
+                placeholder="@nickname do leitor"
+              />
+              <button className={styles.btnPrimary} type="submit" disabled={buscandoLeitor}>
+                {buscandoLeitor ? 'Buscando...' : 'Buscar'}
+              </button>
+            </form>
+            {buscaErro && <p className={styles.searchError}>{buscaErro}</p>}
+            {leitorEncontrado && (
+              <div className={styles.leitorCard}>
+                <div className={styles.leitorAvatar}>
+                  {leitorEncontrado.avatarBase64
+                    ? <img src={leitorEncontrado.avatarBase64} alt="avatar" className={styles.leitorAvatarImg} />
+                    : <div className={styles.leitorAvatarInitials}>
+                        {leitorEncontrado.nome?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()}
+                      </div>
+                  }
+                </div>
+                <div className={styles.leitorInfo}>
+                  <p className={styles.leitorNome}>{leitorEncontrado.nome}</p>
+                  {leitorEncontrado.nickname && <p className={styles.leitorNickname}>@{leitorEncontrado.nickname}</p>}
+                  {leitorEncontrado.bio && <p className={styles.leitorBio}>"{leitorEncontrado.bio}"</p>}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Ações */}
