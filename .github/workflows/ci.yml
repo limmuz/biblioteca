@@ -68,6 +68,7 @@ jobs:
   sonarcloud:
     runs-on: ubuntu-latest
     needs: backend
+    if: github.repository == 'AnaPaula2024/biblioteca'
     defaults:
       run:
         working-directory: backend
