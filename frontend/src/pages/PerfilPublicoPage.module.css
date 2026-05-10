@@ -1,0 +1,477 @@
+.page {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  padding-top: calc(var(--header-height) + 32px);
+  padding-bottom: 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Fundo personalizado ──────────────────────────────────────── */
+.profileBg {
+  position: fixed;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bgOverlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-bg);
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Mosaico de fundo ─────────────────────────────────────────── */
+.bgCovers {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  align-content: flex-start;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.08;
+  overflow: hidden;
+}
+
+.bgCover {
+  width: 100%;
+  height: 165px;
+  object-fit: cover;
+}
+
+/* ── Toast ────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  pointer-events: none;
+}
+
+.toast_success { background: #2e6b3e; color: #fff; }
+.toast_error   { background: #b00020; color: #fff; }
+.toast_info    { background: #2553a6; color: #fff; }
+
+.main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Header do leitor ─────────────────────────────────────────── */
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: var(--color-warm-beige);
+  border-radius: 14px;
+  padding: 28px 32px;
+  box-shadow: 0 2px 12px rgba(17,26,25,0.06);
+  flex-wrap: wrap;
+}
+
+.btnAdicionar {
+  margin-left: auto;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-cream-text);
+  background: var(--color-forest);
+  border: none;
+  border-radius: 20px;
+  padding: 10px 22px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.btnAdicionar:hover { opacity: 0.88; }
+
+.btnAddLivro {
+  margin-top: 6px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-forest);
+  background: rgba(74,103,65,0.1);
+  border: 1.5px solid rgba(74,103,65,0.3);
+  border-radius: 12px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+}
+
+.btnAddLivro:hover:not(:disabled) {
+  background: var(--color-forest);
+  color: var(--color-cream-text);
+}
+
+.btnAddLivro:disabled { opacity: 0.6; cursor: default; }
+
+.avatarWrapper { flex-shrink: 0; }
+
+.avatarImg {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 4px 14px rgba(17,26,25,0.18);
+}
+
+.avatarInitials {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: var(--color-forest);
+  color: var(--color-cream-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(17,26,25,0.18);
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.nome {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.nicknameText {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-forest);
+  margin: 0;
+}
+
+.bio {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  color: var(--color-sage);
+  font-style: italic;
+  margin: 4px 0 0;
+}
+
+.genreBadge {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-forest);
+  background: rgba(74,103,65,0.1);
+  border: 1px solid rgba(74,103,65,0.25);
+  border-radius: 20px;
+  padding: 3px 12px;
+  margin-top: 4px;
+  width: fit-content;
+}
+
+/* ── Stats ────────────────────────────────────────────────────── */
+.statsRow {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.statCard {
+  flex: 1;
+  min-width: 100px;
+  background: var(--color-warm-beige);
+  border-radius: 12px;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 8px rgba(17,26,25,0.05);
+}
+
+.statEmoji { font-size: 24px; }
+
+.statCount {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--color-forest);
+  line-height: 1;
+}
+
+.statLabel {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--color-sage);
+  text-align: center;
+}
+
+/* ── Filtros ──────────────────────────────────────────────────── */
+.filtroRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filtroBtn {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--color-ink);
+  background: var(--color-warm-beige);
+  border: 1.5px solid rgba(17,26,25,0.15);
+  border-radius: 20px;
+  padding: 7px 18px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filtroBtn:hover { border-color: var(--color-forest); color: var(--color-forest); }
+
+.filtroBtnActive {
+  background: var(--color-forest);
+  color: var(--color-cream-text);
+  border-color: var(--color-forest);
+}
+
+/* ── Grid de livros ───────────────────────────────────────────── */
+.booksSection { width: 100%; }
+
+.bookGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 20px 16px;
+}
+
+.bookCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.coverWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.bookCover {
+  width: 100%;
+  aspect-ratio: 2/3;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(17,26,25,0.18);
+  display: block;
+}
+
+.statusBadge {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 2px 8px;
+  letter-spacing: 0.04em;
+}
+
+.badge_lido   { background: #e8f4e8; color: #2e6b3e; }
+.badge_lendo  { background: #e8f0fb; color: #2553a6; }
+.badge_quero  { background: #fef8e7; color: #8a5f00; }
+
+.bookInfo { display: flex; flex-direction: column; gap: 2px; }
+
+.bookTitle {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bookAuthor {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--color-sage);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.starFilled { color: #f0a500; font-size: 11px; }
+.starEmpty  { color: #d4c5a9; font-size: 11px; }
+
+.ratingCount {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  color: var(--color-sage);
+  margin-left: 3px;
+}
+
+/* ── Sem livros ───────────────────────────────────────────────── */
+.semLivros {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-sage);
+  text-align: center;
+  padding: 40px 0;
+}
+
+/* ── Perfil privado ───────────────────────────────────────────── */
+.privadoBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 80px 20px;
+  text-align: center;
+  background: var(--color-warm-beige);
+  border-radius: 14px;
+  margin-top: 40px;
+}
+
+.privadoIcon { font-size: 56px; line-height: 1; }
+
+.privadoTitle {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.privadoText {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  color: var(--color-sage);
+  margin: 0;
+}
+
+.loadingMsg {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--color-sage);
+  text-align: center;
+  margin-top: 80px;
+}
+
+.btnVoltar {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--color-cream-text);
+  background: var(--color-forest);
+  border: none;
+  border-radius: 20px;
+  padding: 10px 28px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btnVoltar:hover { opacity: 0.88; }
+
+/* ── Banner livro adicionado ──────────────────────────────────── */
+.bannerAdicionado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #e8f4e8;
+  border: 1.5px solid #b4d9b4;
+  border-radius: 10px;
+  padding: 14px 20px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: #2e6b3e;
+  font-weight: 500;
+  flex-wrap: wrap;
+}
+
+.btnIrBiblioteca {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-cream-text);
+  background: var(--color-forest);
+  border: none;
+  border-radius: 20px;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.btnIrBiblioteca:hover { opacity: 0.88; }
+
+/* ── Botão "adicionado" (estado confirmado no card) ───────────── */
+.btnAddLivroFeito {
+  margin-top: 6px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: #2e6b3e;
+  background: #e8f4e8;
+  border: 1.5px solid #b4d9b4;
+  border-radius: 12px;
+  padding: 4px 10px;
+  width: 100%;
+  cursor: default;
+}
+
+/* ── Rodapé de ações ──────────────────────────────────────────── */
+.rodapeAcoes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+}
+
+/* ── Footer ───────────────────────────────────────────────────── */
+.footerWrap { margin-top: 40px; }
+
+@media (max-width: 768px) {
+  .main { padding: 0 20px; }
+  .profileHeader { flex-direction: column; text-align: center; }
+  .bookGrid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+}

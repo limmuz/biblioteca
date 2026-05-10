@@ -1,6 +1,6 @@
 # RTM - Matriz de Rastreabilidade de Requisitos
 
-Atualizado em 09/05/2026 — cobertura SonarCloud 86.6%, CI verde, Testcontainers 1.21.3, lambdas S5778 corrigidos.
+Atualizado em 10/05/2026 — cobertura SonarCloud 86.6%, CI verde, Testcontainers 1.21.3. Sistema de avaliações (RF-10 a RF-12) e funcionalidades sociais de perfil (RF-13 a RF-16) implementados.
 
 ---
 
@@ -17,6 +17,13 @@ Atualizado em 09/05/2026 — cobertura SonarCloud 86.6%, CI verde, Testcontainer
 | RF-07 | Excluir livro | Integração | `LivroE2ETest.java` (`DeletarLivroTests`) + `LivroServiceIntegrationTest.java` | ✅ Implementado |
 | RF-08 | Gerenciar sessão (usuário autenticado) | E2E / Caixa Preta | `LivroE2ETest.java` (`UsuarioMeTests`) | ✅ Implementado |
 | RF-09 | Consultar CEP via API externa (ViaCEP) | VCR / WireMock | `ViaCepServiceWireMockTest.java` | ✅ Implementado |
+| RF-10 | Avaliar livro com estrelas e comentário | E2E / Caixa Preta | `AvaliacaoE2ETest.java` (5 grupos de testes, 20 cenários) | ✅ Implementado |
+| RF-11 | Visualizar avaliações de outros leitores | E2E / Caixa Preta | `AvaliacaoE2ETest.java` (`ListarAvaliacoesTests`) | ✅ Implementado |
+| RF-12 | Calcular média de avaliações por livro | E2E / Caixa Preta | `AvaliacaoE2ETest.java` (`MediasTests`) | ✅ Implementado |
+| RF-13 | Personalizar perfil (foto, fundo, fonte, bio, privacidade, meta de leitura) | E2E / Caixa Preta | `UsuarioE2ETest.java` (`AtualizarPerfilTests`) — testa `PUT /api/usuarios/me` com bio, metaLeitura, perfilPublico, bgBase64, nickname; verifica persistência no MongoDB | ✅ Implementado |
+| RF-14 | Visualizar perfil público de outro leitor | E2E / Caixa Preta | `UsuarioE2ETest.java` (`PerfilPublicoTests`) — testa 200 com bgBase64, 403 para perfil privado, 404 para nickname inexistente, presença de estatísticas | ✅ Implementado |
+| RF-15 | Adicionar perfil de leitor à lista de acompanhados | Frontend (localStorage) | `PerfilPage` — `perfisAdicionados` persistido no `localStorage`; seção "Perfis adicionados" com cards e botão de remover | ✅ Implementado |
+| RF-16 | Adicionar livro bem avaliado de outro leitor à própria biblioteca | E2E / Caixa Preta | `LivroE2ETest.java` (`CriarLivroTests`) — `POST /api/livros` cobre criação com status `QUERO LER`; RF valida regra de negócio no frontend (média ≥ 4) | ✅ Implementado |
 
 ---
 
@@ -365,6 +372,8 @@ sequenceDiagram
 | E2E / Caixa Preta | `AuthE2ETest.java` | Testcontainers + RestTemplate | Fluxo completo de registro e login via HTTP |
 | E2E / Caixa Preta | `LivroE2ETest.java` | Testcontainers + RestTemplate | CRUD completo de livros via HTTP com JWT |
 | VCR / WireMock | `ViaCepServiceWireMockTest.java` | WireMock 3.5.2 | Testa integração com API externa (ViaCEP) sem dependência da internet |
+| E2E / Caixa Preta | `AvaliacaoE2ETest.java` | Testcontainers + RestTemplate | 20 cenários: criar/atualizar/excluir avaliação, listar, calcular médias, outros leitores, validação de rating 1-5, JWT |
+| E2E / Caixa Preta | `UsuarioE2ETest.java` | Testcontainers + RestTemplate | 14 cenários: GET /me, PUT /me (bio, metaLeitura, perfilPublico, bgBase64, nickname), perfil público (200/403/404/estatísticas), listar leitores, pesquisar por nome e @nickname |
 
 > ⚠️ **Nenhum Mock (`@Mock`, `@MockBean`, `Mockito.mock()`) foi utilizado.** Todos os testes de persistência usam MongoDB real via Testcontainers, conforme exigido pelo professor.
 
@@ -404,4 +413,126 @@ sequenceDiagram
 
 ---
 
-*Revisão final: 09/05/2026*
+---
+
+### RF-13 — Personalizar Perfil
+
+```mermaid
+sequenceDiagram
+    actor U as Usuário
+    participant F as PerfilPage (React)
+    participant C as UsuarioController
+    participant S as UsuarioService
+    participant R as UsuarioRepository
+    participant M as MongoDB
+
+    U->>F: Altera foto, fundo, fonte ou bio
+    F->>F: Salva em localStorage (lybre_avatar / lybre_bg / lybre_fonte)
+    F->>C: PUT /api/usuarios/me {avatarBase64 | bgBase64 | bio | metaLeitura | perfilPublico} + JWT
+    C->>S: atualizarPorEmail(email, dados)
+    S->>R: findByEmail(email)
+    R->>M: query
+    M-->>R: usuario
+    S->>S: atualiza apenas campos presentes no mapa
+    S->>R: save(usuario atualizado)
+    R->>M: update
+    M-->>R: OK
+    S-->>C: UsuarioResponse
+    C-->>F: 200 OK + usuário atualizado
+    F->>U: Exibe confirmação (toast)
+```
+
+---
+
+### RF-14 — Visualizar Perfil Público
+
+```mermaid
+sequenceDiagram
+    actor U as Usuário
+    participant F as PerfilPublicoPage (React)
+    participant C as UsuarioController
+    participant S as UsuarioService
+    participant R as UsuarioRepository / LivroRepository
+    participant M as MongoDB
+
+    U->>F: Acessa /leitor/:nickname
+    F->>C: GET /api/usuarios/perfil/:nickname + JWT
+    C->>S: buscarPerfilPublicoDetalhado(nickname)
+    S->>R: findByNicknameIgnoreCase(nickname)
+    R->>M: query
+    alt Não encontrado
+        M-->>S: Optional.empty()
+        S-->>C: 404 Not Found
+        C-->>F: 404
+        F->>U: Exibe "Leitor não encontrado"
+    else Perfil privado
+        S->>S: verificar perfilPublico == false
+        S-->>C: 403 Forbidden
+        C-->>F: 403
+        F->>U: Exibe tela de perfil privado 🔒
+    else Perfil público
+        S->>R: findByUserEmail(email do leitor)
+        R->>M: busca livros do leitor
+        M-->>S: lista de livros
+        S-->>C: PerfilPublicoDetalhadoResponse {nome, bgBase64, livros, totais}
+        C-->>F: 200 OK
+        F->>U: Exibe perfil com fundo, stats e livros
+    end
+```
+
+---
+
+### RF-15 — Adicionar Perfil de Leitor
+
+```mermaid
+sequenceDiagram
+    actor U as Usuário
+    participant F as PerfilPage (React)
+    participant LS as localStorage
+
+    U->>F: Clica em "+ Adicionar" no card de leitor
+    F->>F: Verifica se já está em perfisAdicionados
+    alt Já adicionado
+        F->>F: handleRemoverLeitor(id) — filtra da lista
+    else Novo
+        F->>F: handleAdicionarLeitor(leitor) — adiciona ao array
+    end
+    F->>LS: setItem('lybre_perfis_add', JSON.stringify(lista))
+    F->>U: Exibe toast de confirmação
+    F->>F: Renderiza seção "Perfis adicionados" com cards
+```
+
+---
+
+### RF-16 — Adicionar Livro de Outro Leitor
+
+```mermaid
+sequenceDiagram
+    actor U as Usuário
+    participant F as PerfilPublicoPage (React)
+    participant C as LivroController
+    participant S as LivroService
+    participant R as LivroRepository
+    participant M as MongoDB
+
+    U->>F: Clica em "+ Minha biblioteca" em livro com ★ ≥ 4
+    F->>C: POST /api/livros {title, author, cover, categories, status: "QUERO LER"} + JWT
+    C->>S: salvar(livro)
+    alt Livro já na biblioteca
+        S-->>C: 409 Conflict
+        C-->>F: 409
+        F->>U: Toast "Livro já está na sua biblioteca"
+    else Sucesso
+        S->>R: save(livro com email do usuário logado)
+        R->>M: insert
+        M-->>R: livro salvo
+        S-->>C: 201 Created
+        C-->>F: 201
+        F->>F: Marca livro como adicionado; exibe banner "Ver minha biblioteca →"
+        F->>U: Toast de confirmação
+    end
+```
+
+---
+
+*Revisão final: 10/05/2026*

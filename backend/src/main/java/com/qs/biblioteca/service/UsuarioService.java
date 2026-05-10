@@ -1,6 +1,7 @@
 package com.qs.biblioteca.service;
 
 import com.qs.biblioteca.dto.*;
+import com.qs.biblioteca.repository.LivroRepository;
 import com.qs.biblioteca.model.Role;
 import com.qs.biblioteca.model.Usuario;
 import com.qs.biblioteca.repository.UsuarioRepository;
@@ -26,13 +27,16 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final LivroRepository livroRepository;
 
     public UsuarioService(UsuarioRepository usuarioRepository,
             PasswordEncoder passwordEncoder,
-            JwtService jwtService) {
+            JwtService jwtService,
+            LivroRepository livroRepository) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.livroRepository = livroRepository;
     }
 
     public AuthResponse registrar(RegisterRequest request) {
@@ -99,6 +103,11 @@ public class UsuarioService {
             if (m instanceof Number number) usuario.setMetaLeitura(number.intValue());
         }
         if (dados.containsKey("avatarBase64")) usuario.setAvatarBase64((String) dados.get("avatarBase64"));
+        if (dados.containsKey("bgBase64")) usuario.setBgBase64((String) dados.get("bgBase64"));
+        if (dados.containsKey("perfilPublico")) {
+            Object p = dados.get("perfilPublico");
+            if (p instanceof Boolean b) usuario.setPerfilPublico(b);
+        }
         if (dados.containsKey("cep")) usuario.setCep((String) dados.get("cep"));
         if (dados.containsKey(CAMPO_LOGRADOURO)) usuario.setLogradouro((String) dados.get(CAMPO_LOGRADOURO));
         if (dados.containsKey(CAMPO_BAIRRO)) usuario.setBairro((String) dados.get(CAMPO_BAIRRO));
@@ -109,10 +118,44 @@ public class UsuarioService {
         return new UsuarioResponse(usuario);
     }
 
+    public List<PublicUsuarioResponse> listarLeitoresPublicos(String emailAtual) {
+        return usuarioRepository.findAll()
+                .stream()
+                .filter(u -> !u.getEmail().equalsIgnoreCase(emailAtual))
+                .limit(20)
+                .map(PublicUsuarioResponse::new)
+                .toList();
+    }
+
     public PublicUsuarioResponse buscarPublicoPorNickname(String nickname) {
         Usuario usuario = usuarioRepository.findByNicknameIgnoreCase(nickname)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, MSG_USUARIO_NAO_ENCONTRADO));
         return new PublicUsuarioResponse(usuario);
+    }
+
+    public PerfilPublicoDetalhadoResponse buscarPerfilPublicoDetalhado(String nickname) {
+        Usuario usuario = usuarioRepository.findByNicknameIgnoreCase(nickname)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, MSG_USUARIO_NAO_ENCONTRADO));
+        if (!usuario.isPerfilPublico()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Este perfil é privado");
+        }
+        return new PerfilPublicoDetalhadoResponse(usuario, livroRepository.findByUserEmail(usuario.getEmail()));
+    }
+
+    public List<PublicUsuarioResponse> buscarPublicoPorTermo(String termo) {
+        String limpo = termo.trim();
+        if (limpo.startsWith("@")) {
+            return usuarioRepository.findByNicknameIgnoreCase(limpo.substring(1))
+                    .map(u -> List.of(new PublicUsuarioResponse(u)))
+                    .orElse(List.of());
+        }
+        List<Usuario> porNome = usuarioRepository.findByNomeContainingIgnoreCase(limpo);
+        if (!porNome.isEmpty()) {
+            return porNome.stream().map(PublicUsuarioResponse::new).toList();
+        }
+        return usuarioRepository.findByNicknameIgnoreCase(limpo)
+                .map(u -> List.of(new PublicUsuarioResponse(u)))
+                .orElse(List.of());
     }
 
     public void redefinirSenha(String email, String senhaAtual, String novaSenha) {
