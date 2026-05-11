@@ -6,6 +6,7 @@ import Footer from '../components/Footer/Footer';
 import api from '../services/api';
 import { getUser, clearSession } from '../services/auth';
 import AdBanner from '../components/shared/AdBanner';
+import LoadingSpinner from '../components/shared/LoadingSpinner';
 import styles from './PerfilPage.module.css';
 
 function Toast({ message, type, onClose }) {
@@ -499,9 +500,7 @@ export default function PerfilPage() {
     return (
       <div className={styles.page}>
         <AppHeader />
-        <main className={styles.main}>
-          <h2 style={{ color: 'white', textAlign: 'center', marginTop: '100px' }}>Carregando perfil...</h2>
-        </main>
+        <LoadingSpinner message="Carregando seu perfil..." />
       </div>
     );
   }

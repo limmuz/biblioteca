@@ -4,6 +4,7 @@ import AppHeader from '../components/shared/AppHeader';
 import Footer from '../components/Footer/Footer';
 import api from '../services/api';
 import { isAuthenticated } from '../services/auth';
+import LoadingSpinner from '../components/shared/LoadingSpinner';
 import styles from './PerfilPublicoPage.module.css';
 
 const STATUS_LABEL = {
@@ -124,9 +125,7 @@ export default function PerfilPublicoPage() {
     return (
       <div className={styles.page}>
         <AppHeader />
-        <main className={styles.main}>
-          <p className={styles.loadingMsg}>Carregando perfil...</p>
-        </main>
+        <LoadingSpinner message="Carregando perfil do leitor..." />
       </div>
     );
   }
