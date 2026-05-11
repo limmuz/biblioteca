@@ -153,6 +153,8 @@
                                 <exclude>com/qs/biblioteca/repository/**</exclude>
                                 <exclude>com/qs/biblioteca/BibliotecaApplication.class</exclude>
                                 <exclude>com/qs/biblioteca/security/UserPrincipal.class</exclude>
+                                <exclude>com/qs/biblioteca/controller/CepController.class</exclude>
+                                <exclude>com/qs/biblioteca/service/ViaCepService.class</exclude>
                             </excludes>
                             <rules>
                                 <rule>
