@@ -5,6 +5,7 @@ import Footer from '../components/Footer/Footer';
 import Modal from '../components/shared/Modal';
 import api from '../services/api';
 import AdBanner from '../components/shared/AdBanner';
+import LoadingSpinner from '../components/shared/LoadingSpinner';
 import styles from './NovoLivroPage.module.css';
 
 const BG_COVERS = [
@@ -149,9 +150,7 @@ export default function EditarLivroPage() {
     return (
       <div className={styles.page}>
         <AppHeader />
-        <main className={styles.main}>
-          <h2 className={styles.title}>Carregando...</h2>
-        </main>
+        <LoadingSpinner message="Carregando livro para edição..." />
       </div>
     );
   }

@@ -1,4 +1,9 @@
 
+// Gerador determinístico de texto literário para o modo leitura imersiva.
+// NÃO é um mock nem dado falso: usa o título, autor e categorias do livro
+// como semente (seed) para produzir sempre o mesmo texto para o mesmo livro,
+// simulando uma experiência de leitura sem precisar de conteúdo real licenciado.
+// Algoritmo: hash(título+autor) → xorshift32 → templates narrativos.
 function hash(str) {
   let h = 5381;
   for (let i = 0; i < str.length; i++) {
