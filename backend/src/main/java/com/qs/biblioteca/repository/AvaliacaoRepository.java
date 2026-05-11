@@ -10,6 +10,8 @@ import java.util.Optional;
 @Repository
 public interface AvaliacaoRepository extends MongoRepository<Avaliacao, String> {
 
+    List<Avaliacao> findByUsuarioEmail(String email);
+
     List<Avaliacao> findByLivroTituloIgnoreCaseAndLivroAutorIgnoreCase(String titulo, String autor);
 
     Optional<Avaliacao> findByLivroTituloIgnoreCaseAndLivroAutorIgnoreCaseAndUsuarioEmail(
