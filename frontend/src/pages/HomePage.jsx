@@ -64,10 +64,18 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        await refreshLists();
-        const res = await api.get("/avaliacoes/medias");
+        const [resLivros, resMedias] = await Promise.all([
+          api.get("/livros"),
+          api.get("/avaliacoes/medias").catch(() => ({ data: [] })),
+        ]);
+        const all = resLivros.data;
+        setRecentlyRead(all.filter((b) => b.status === "LIDO"));
+        setReadingList(all.filter((b) => b.status === "LENDO" || b.status === "QUERO LER"));
+        const recs = all.filter((b) => b.status === "RECOMENDADO");
+        const naLista = new Set(["LIDO", "LENDO", "QUERO LER"]);
+        setRecommendations(recs.length > 0 ? recs : all.filter((b) => !naLista.has(b.status)).slice(0, 4));
         const map = {};
-        res.data.forEach(m => {
+        resMedias.data.forEach(m => {
           const key = `${m.livroTitulo.toLowerCase()}||${m.livroAutor.toLowerCase()}`;
           map[key] = m;
         });
@@ -127,7 +135,8 @@ export default function HomePage() {
                       src={book.cover}
                       alt={book.title}
                       className={styles.carouselRectImage}
-                      onError={(e) => { e.target.src = 'https://via.placeholder.com/140x210?text=Sem+Capa'; }}
+                      loading="lazy"
+                      onError={(e) => { e.target.src = '/books/book-sherlock.png'; }}
                     />
                     <div className={styles.carouselRectInfo}>
                       <p className={styles.carouselRectTitle}>{book.title}</p>

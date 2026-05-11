@@ -153,7 +153,7 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | Testes unitários parametrizados | `LivroValidatorParamTest.java` |
 | Testes de integração | `LivroServiceIntegrationTest.java` |
 | Testes E2E / Caixa Preta | `AuthE2ETest.java` + `LivroE2ETest.java` + `AvaliacaoE2ETest.java` |
-| VCR para API externa | ViaCEP (busca de CEP no cadastro) com WireMock |
+| Integração com API externa real | ViaCEP (busca de CEP no cadastro) — teste real via `ViaCepIntegrationTest.java` |
 | Cobertura >= 80% (JaCoCo) | 88.3% no SonarCloud — check JaCoCo aprovado |
 | SonarCloud configurado | Rodando — https://sonarcloud.io/project/overview?id=AnaPaula2024_biblioteca |
 | CI com GitHub Actions | Pipeline configurado |
@@ -182,10 +182,11 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 |---|---|---|
 | `AuthE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-01 (Cadastro) e RF-02 (Login) |
 | `LivroE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-03 a RF-08 (CRUD de livros + sessão) |
-| `AvaliacaoE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-09 a RF-11 (criar, listar, excluir avaliações e médias) |
-| `UsuarioE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-12 a RF-16 (perfil, endereços, busca de leitores, senha, exclusão de conta) |
+| `AvaliacaoE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-10 a RF-12 (criar, listar avaliações e calcular médias) |
+| `UsuarioE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-13 a RF-16 (perfil, personalização, perfil público, busca de leitores) |
 | `LivroServiceIntegrationTest.java` | `backend/src/test/java/com/qs/biblioteca/integration/` | RF-04 a RF-07 (integração com MongoDB) |
-| `LivroValidatorParamTest.java` | `backend/src/test/java/com/qs/biblioteca/unit/` | Validações de negócio (unitário parametrizado) |
+| `ViaCepIntegrationTest.java` | `backend/src/test/java/com/qs/biblioteca/integration/` | RF-09 (integração real com API ViaCEP — sem mocks) |
+| `LivroValidatorParamTest.java` | `backend/src/test/java/com/qs/biblioteca/unit/` | Validações de negócio (unitário parametrizado — caixa branca) |
 
 ---
 
@@ -210,7 +211,7 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | JUnit 5 | - | Testes automatizados |
 | Testcontainers | 1.21.3 | MongoDB real nos testes |
 | JaCoCo | 0.8.12 | Relatório de cobertura de testes |
-| WireMock | 3.5.2 | Simulação de API externa (ViaCEP) nos testes |
+| ViaCEP | API pública | API externa real de consulta de CEP (integração real nos testes) |
 | SonarCloud | - | Análise de qualidade de código |
 | GitHub Actions | - | CI/CD automatizado |
 
