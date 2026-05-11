@@ -127,48 +127,60 @@ export default function PerfilPage() {
   useEffect(() => {
     const carregarDados = async () => {
       try {
-        const resUsuario = await api.get('/usuarios/me');
-        const u = resUsuario.data;
-        setUsuario(u);
-        if (u.avatarBase64) {
-          setAvatarUrl(u.avatarBase64);
-          localStorage.setItem('lybre_avatar', u.avatarBase64);
-        }
-        if (u.bgBase64 && !localStorage.getItem('lybre_bg')) {
-          setBgImage(u.bgBase64);
-          localStorage.setItem('lybre_bg', u.bgBase64);
-        }
-        setPerfilForm({
-          nome: u.nome || '',
-          email: u.email || '',
-          nickname: u.nickname || '',
-          bio: u.bio || '',
-          metaLeitura: u.metaLeitura || '',
-          perfilPublico: u.perfilPublico ?? true,
-          telefones: u.telefones?.length ? u.telefones : [''],
-          redesSociais: u.redesSociais?.length ? u.redesSociais : [''],
-        });
-        if (u.enderecos?.length) {
-          setEnderecos(u.enderecos);
-        } else if (u.cep) {
-          setEnderecos([{ cep: u.cep, logradouro: u.logradouro || '', bairro: u.bairro || '', cidade: u.cidade || '', uf: u.uf || '' }]);
+        const [resMe, resLivros, resMedias, resLeitores] = await Promise.allSettled([
+          api.get('/usuarios/me'),
+          api.get('/livros'),
+          api.get('/avaliacoes/medias'),
+          api.get('/usuarios/leitores'),
+        ]);
+
+        if (resMe.status === 'rejected') {
+          const status = resMe.reason?.response?.status;
+          if (status === 401 || status === 404) {
+            clearSession();
+            navigate('/login');
+            return;
+          }
         } else {
-          setEnderecos([]);
+          const u = resMe.value.data;
+          setUsuario(u);
+          if (u.avatarBase64) {
+            setAvatarUrl(u.avatarBase64);
+            localStorage.setItem('lybre_avatar', u.avatarBase64);
+          }
+          if (u.bgBase64 && !localStorage.getItem('lybre_bg')) {
+            setBgImage(u.bgBase64);
+            localStorage.setItem('lybre_bg', u.bgBase64);
+          }
+          setPerfilForm({
+            nome: u.nome || '',
+            email: u.email || '',
+            nickname: u.nickname || '',
+            bio: u.bio || '',
+            metaLeitura: u.metaLeitura || '',
+            perfilPublico: u.perfilPublico ?? true,
+            telefones: u.telefones?.length ? u.telefones : [''],
+            redesSociais: u.redesSociais?.length ? u.redesSociais : [''],
+          });
+          if (u.enderecos?.length) {
+            setEnderecos(u.enderecos);
+          } else if (u.cep) {
+            setEnderecos([{ cep: u.cep, logradouro: u.logradouro || '', bairro: u.bairro || '', cidade: u.cidade || '', uf: u.uf || '' }]);
+          } else {
+            setEnderecos([]);
+          }
         }
 
-        const [resLivros, resMedias, resLeitores] = await Promise.all([
-          api.get('/livros'),
-          api.get('/avaliacoes/medias').catch(() => ({ data: [] })),
-          api.get('/usuarios/leitores').catch(() => ({ data: [] })),
-        ]);
-        setOutrosLeitores(resLeitores.data);
+        setOutrosLeitores(resLeitores.status === 'fulfilled' ? resLeitores.value.data : []);
+        const mediasData = resMedias.status === 'fulfilled' ? resMedias.value.data : [];
+        const todosLivros = resLivros.status === 'fulfilled' ? resLivros.value.data : [];
+
         const mediaMap = {};
-        resMedias.data.forEach(m => {
+        mediasData.forEach(m => {
           const key = `${m.livroTitulo.toLowerCase()}||${m.livroAutor.toLowerCase()}`;
           mediaMap[key] = m;
         });
         setMedias(mediaMap);
-        const todosLivros = resLivros.data;
         const queroLer = todosLivros.filter(l => l.status === 'QUERO LER');
         const favoritos = todosLivros.filter(l => {
           const key = `${(l.title || '').toLowerCase()}||${(l.author || '').toLowerCase()}`;
@@ -283,7 +295,6 @@ export default function PerfilPage() {
     setSalvandoPerfil(true);
     try {
       await api.put('/usuarios/me', {
-        ...usuario,
         nome: perfilForm.nome,
         email: perfilForm.email,
         nickname: perfilForm.nickname,
@@ -341,8 +352,9 @@ export default function PerfilPage() {
       const novosEnderecos = editandoEnderecoIdx === 'novo'
         ? [...enderecos, { ...enderecoForm, cep: enderecoForm.cep.replaceAll(/\D/g, '') }]
         : enderecos.map((e, i) => i === editandoEnderecoIdx ? { ...enderecoForm, cep: enderecoForm.cep.replaceAll(/\D/g, '') } : e);
-      await api.put('/usuarios/me', { ...usuario, enderecos: novosEnderecos });
+      await api.put('/usuarios/me', { enderecos: novosEnderecos });
       setEnderecos(novosEnderecos);
+      setUsuario(u => ({ ...u, enderecos: novosEnderecos }));
       setEditandoEnderecoIdx(null);
       showToast('Endereço salvo com sucesso!');
     } catch (err) {
@@ -363,8 +375,9 @@ export default function PerfilPage() {
         setConfirmModal(null);
         const novosEnderecos = enderecos.filter((_, i) => i !== idx);
         try {
-          await api.put('/usuarios/me', { ...usuario, enderecos: novosEnderecos });
+          await api.put('/usuarios/me', { enderecos: novosEnderecos });
           setEnderecos(novosEnderecos);
+          setUsuario(u => ({ ...u, enderecos: novosEnderecos }));
           showToast('Endereço excluído.');
         } catch (err) {
           console.error(err);
@@ -735,7 +748,7 @@ export default function PerfilPage() {
                       <button type="button" className={styles.statBookBtn}
                         onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro } })}>
                         <img src={livro.cover} alt={livro.title} className={styles.statBookCover}
-                          onError={(e) => { e.target.src = 'https://via.placeholder.com/60x90?text=Capa'; }} />
+                          onError={(e) => { e.target.src = '/books/book-sherlock.png'; }} />
                         <div className={styles.statBookInfo}>
                           <p className={styles.statBookTitle}>{livro.title}</p>
                           <p className={styles.statBookAuthor}>{livro.author}</p>
@@ -762,7 +775,7 @@ export default function PerfilPage() {
                     <button type="button" className={styles.statBookBtn}
                       onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro } })}>
                       <img src={livro.cover} alt={livro.title} className={styles.statBookCover}
-                        onError={(e) => { e.target.src = 'https://via.placeholder.com/60x90?text=Capa'; }} />
+                        onError={(e) => { e.target.src = '/books/book-sherlock.png'; }} />
                       <div className={styles.statBookInfo}>
                         <p className={styles.statBookTitle}>{livro.title}</p>
                         <p className={styles.statBookAuthor}>{livro.author}</p>
@@ -1112,6 +1125,13 @@ export default function PerfilPage() {
                         Ver Perfil
                       </button>
                     )}
+                    <button
+                      type="button"
+                      className={perfisAdicionados.some(p => p.id === leitor.id) ? styles.btnAdicionadoLeitor : styles.btnAdicionarLeitor}
+                      onClick={() => perfisAdicionados.some(p => p.id === leitor.id) ? handleRemoverLeitor(leitor.id) : handleAdicionarLeitor(leitor)}
+                    >
+                      {perfisAdicionados.some(p => p.id === leitor.id) ? '✓ Adicionado' : '+ Adicionar'}
+                    </button>
                   </div>
                 ))}
               </div>

@@ -281,7 +281,6 @@ export default function PerfilPublicoPage() {
               {livrosFiltrados.map((livro) => {
                 const r = getRating(livro);
                 const infoStatus = STATUS_LABEL[livro.status];
-                const bemAvaliado = r.media >= 4;
                 const jaAdicionado = livrosAdicionados.has(livro.title);
                 const badgeExtra = infoStatus ? styles[`badge_${infoStatus.cls}`] : '';
                 const badgeCls = infoStatus ? `${styles.statusBadge} ${badgeExtra}` : '';
@@ -295,7 +294,8 @@ export default function PerfilPublicoPage() {
                         src={livro.cover}
                         alt={livro.title}
                         className={styles.bookCover}
-                        onError={e => { e.target.src = 'https://via.placeholder.com/140x210?text=Sem+Capa'; }}
+                        loading="lazy"
+                        onError={e => { e.target.src = '/books/book-sherlock.png'; }}
                       />
                       {infoStatus && (
                         <span className={badgeCls}>{infoStatus.label}</span>
@@ -312,7 +312,7 @@ export default function PerfilPublicoPage() {
                           <span className={styles.ratingCount}>{r.media.toFixed(1)} ({r.total})</span>
                         </div>
                       )}
-                      {loggedIn && !ePerfilPropio && bemAvaliado && (
+                      {loggedIn && !ePerfilPropio && (
                         <button
                           className={jaAdicionado ? styles.btnAddLivroFeito : styles.btnAddLivro}
                           type="button"

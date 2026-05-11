@@ -1,6 +1,6 @@
 # RTM - Matriz de Rastreabilidade de Requisitos
 
-Atualizado em 10/05/2026 — cobertura SonarCloud 88.3%, CI verde (Pipeline #45), Testcontainers 1.21.3. Sistema de avaliações (RF-10 a RF-12) e funcionalidades sociais de perfil (RF-13 a RF-16) implementados. Security Hotspot S2245 resolvido (SecureRandom).
+Atualizado em 11/05/2026 — cobertura SonarCloud 88.3%, CI verde, Testcontainers 1.21.3. Sistema de avaliações (RF-10 a RF-12) e funcionalidades sociais de perfil (RF-13 a RF-16) implementados. WireMock removido — RF-09 testado com integração real contra ViaCEP. Diagramas UML adicionados para RF-10, RF-11 e RF-12.
 
 ---
 
@@ -16,7 +16,7 @@ Atualizado em 10/05/2026 — cobertura SonarCloud 88.3%, CI verde (Pipeline #45)
 | RF-06 | Atualizar livro | Integração | `LivroE2ETest.java` (`AtualizarLivroTests`) + `LivroServiceIntegrationTest.java` | ✅ Implementado |
 | RF-07 | Excluir livro | Integração | `LivroE2ETest.java` (`DeletarLivroTests`) + `LivroServiceIntegrationTest.java` | ✅ Implementado |
 | RF-08 | Gerenciar sessão (usuário autenticado) | E2E / Caixa Preta | `LivroE2ETest.java` (`UsuarioMeTests`) | ✅ Implementado |
-| RF-09 | Consultar CEP via API externa (ViaCEP) | VCR / WireMock | `ViaCepServiceWireMockTest.java` | ✅ Implementado |
+| RF-09 | Consultar CEP via API externa (ViaCEP) | Integração / API Real | `ViaCepIntegrationTest.java` — testa `GET /api/cep/{cep}` contra ViaCEP real; valida 200 para CEP válido (01310-100) e 404 para CEP inexistente (00000-000) | ✅ Implementado |
 | RF-10 | Avaliar livro com estrelas e comentário | E2E / Caixa Preta | `AvaliacaoE2ETest.java` (5 grupos de testes, 20 cenários) | ✅ Implementado |
 | RF-11 | Visualizar avaliações de outros leitores | E2E / Caixa Preta | `AvaliacaoE2ETest.java` (`ListarAvaliacoesTests`) | ✅ Implementado |
 | RF-12 | Calcular média de avaliações por livro | E2E / Caixa Preta | `AvaliacaoE2ETest.java` (`MediasTests`) | ✅ Implementado |
@@ -341,24 +341,31 @@ sequenceDiagram
 
 ---
 
-### RF-09 — Consultar CEP via API Externa (VCR / WireMock)
+### RF-09 — Consultar CEP via API Externa (Integração Real)
 
 ```mermaid
 sequenceDiagram
-    participant T as ViaCepServiceWireMockTest
-    participant W as WireMock Server
+    actor U as Usuário
+    participant F as CadastroPage / PerfilPage (React)
+    participant C as CepController
     participant S as ViaCepService
-    participant V as ViaCEP API (stubbed)
+    participant V as ViaCEP API (viacep.com.br)
 
-    T->>W: configura stub GET /ws/01310-100/json/
-    W-->>T: stub registrado
-    T->>S: buscarEnderecoPorCep("01310-100")
-    S->>W: GET http://localhost:{porta}/ws/01310-100/json/
-    W->>V: (intercepta - não chama API real)
-    W-->>S: 200 OK + {cep, logradouro, localidade, uf}
-    S-->>T: Map{cep=01310-100, logradouro=Avenida Paulista, ...}
-    T->>T: assertThat(resultado).containsEntry(...)
-    T->>W: verify(1 chamada para /ws/01310-100/json/)
+    U->>F: Digita CEP no formulário de cadastro ou perfil
+    F->>C: GET /api/cep/{cep} + JWT
+    C->>S: buscarEnderecoPorCep(cep)
+    S->>V: GET https://viacep.com.br/ws/{cep}/json/
+    alt CEP válido
+        V-->>S: 200 OK + {cep, logradouro, bairro, localidade, uf}
+        S-->>C: Map com dados do endereço
+        C-->>F: 200 OK + endereço
+        F->>U: Preenche campos automaticamente
+    else CEP inválido / inexistente
+        V-->>S: 200 OK + {"erro": true}
+        S-->>C: Map com chave "erro"
+        C-->>F: 404 Not Found
+        F->>U: Exibe mensagem de CEP não encontrado
+    end
 ```
 
 ---
@@ -483,6 +490,109 @@ sequenceDiagram
 
 ---
 
+### RF-10 — Avaliar Livro com Estrelas e Comentário
+
+```mermaid
+sequenceDiagram
+    actor U as Usuário
+    participant F as AvaliacaoModal (React)
+    participant C as AvaliacaoController
+    participant S as AvaliacaoService
+    participant R as AvaliacaoRepository
+    participant M as MongoDB
+
+    U->>F: Seleciona estrelas (1–5) e escreve comentário
+    F->>C: POST /api/avaliacoes {livroTitulo, livroAutor, rating, comentario} + JWT
+    C->>C: verificar JWT (extrai email do usuário)
+    alt JWT inválido
+        C-->>F: 401 Unauthorized
+    else JWT válido
+        C->>S: avaliar(request, email)
+        S->>R: findByLivroTituloAndLivroAutorAndUsuarioEmail(titulo, autor, email)
+        R->>M: query
+        alt Avaliação já existe (atualização)
+            M-->>R: avaliacao existente
+            S->>S: atualiza rating e comentário
+            S->>R: save(avaliacao atualizada)
+            R->>M: update
+            S-->>C: AvaliacaoResponse
+            C-->>F: 200 OK + avaliação atualizada
+        else Nova avaliação
+            M-->>R: Optional.empty()
+            S->>R: save(nova avaliacao com criadoEm)
+            R->>M: insert
+            M-->>R: avaliacao salva
+            S-->>C: AvaliacaoResponse
+            C-->>F: 201 Created + avaliação
+        end
+        F->>U: Exibe confirmação (toast)
+    end
+```
+
+---
+
+### RF-11 — Visualizar Avaliações de Outros Leitores
+
+```mermaid
+sequenceDiagram
+    actor U as Usuário
+    participant F as DetalheDoLivroPage (React)
+    participant C as AvaliacaoController
+    participant S as AvaliacaoService
+    participant R as AvaliacaoRepository
+    participant M as MongoDB
+
+    U->>F: Acessa detalhes de um livro
+    F->>C: GET /api/avaliacoes?titulo=X&autor=Y + JWT
+    C->>C: verificar JWT
+    alt JWT inválido
+        C-->>F: 401 Unauthorized
+    else JWT válido
+        C->>S: listarPorLivro(titulo, autor)
+        S->>R: findByLivroTituloIgnoreCaseAndLivroAutorIgnoreCase(titulo, autor)
+        R->>M: query
+        M-->>R: lista de avaliações de todos os leitores
+        R-->>S: List<Avaliacao>
+        S-->>C: List<AvaliacaoResponse>
+        C-->>F: 200 OK + [...avaliações com nome, nickname, rating, comentário]
+        F->>U: Exibe avaliações com estrelas e comentário de cada leitor
+    end
+```
+
+---
+
+### RF-12 — Calcular Média de Avaliações por Livro
+
+```mermaid
+sequenceDiagram
+    actor U as Usuário
+    participant F as ListagemPage / PerfilPage (React)
+    participant C as AvaliacaoController
+    participant S as AvaliacaoService
+    participant R as AvaliacaoRepository
+    participant M as MongoDB
+
+    U->>F: Acessa listagem de livros ou perfil
+    F->>C: GET /api/avaliacoes/medias + JWT
+    C->>C: verificar JWT
+    alt JWT inválido
+        C-->>F: 401 Unauthorized
+    else JWT válido
+        C->>S: calcularMediasPorLivro()
+        S->>R: findAll()
+        R->>M: query (todas as avaliações)
+        M-->>R: List<Avaliacao>
+        R-->>S: todas as avaliações
+        S->>S: agrupa por (titulo||autor) e calcula média dos ratings
+        S-->>C: Map<String, Double>
+        C-->>F: 200 OK + {medias: {"titulo||autor": 4.5, ...}}
+        F->>F: aplica estrelas coloridas nos cards de livros
+        F->>U: Visualiza média de cada livro em estrelas
+    end
+```
+
+---
+
 ## Estratégia de Testes
 
 | Tipo | Arquivo | Ferramenta | Descrição |
@@ -491,11 +601,11 @@ sequenceDiagram
 | Integração | `LivroServiceIntegrationTest.java` | Testcontainers + MongoDB real | Testa `LivroRepository` com banco real e efêmero |
 | E2E / Caixa Preta | `AuthE2ETest.java` | Testcontainers + RestTemplate | Fluxo completo de registro e login via HTTP |
 | E2E / Caixa Preta | `LivroE2ETest.java` | Testcontainers + RestTemplate | CRUD completo de livros via HTTP com JWT |
-| VCR / WireMock | `ViaCepServiceWireMockTest.java` | WireMock 3.5.2 | Testa integração com API externa (ViaCEP) sem dependência da internet |
+| Integração / API Real | `ViaCepIntegrationTest.java` | Testcontainers + RestTemplate + ViaCEP real | Testa endpoint `GET /api/cep/{cep}` contra API ViaCEP real (sem mocks): valida CEP válido (200) e inexistente (404) |
 | E2E / Caixa Preta | `AvaliacaoE2ETest.java` | Testcontainers + RestTemplate | 20 cenários: criar/atualizar/excluir avaliação, listar, calcular médias, outros leitores, validação de rating 1-5, JWT |
 | E2E / Caixa Preta | `UsuarioE2ETest.java` | Testcontainers + RestTemplate | 14 cenários: GET /me, PUT /me (bio, metaLeitura, perfilPublico, bgBase64, nickname), perfil público (200/403/404/estatísticas), listar leitores, pesquisar por nome e @nickname |
 
-> ⚠️ **Nenhum Mock (`@Mock`, `@MockBean`, `Mockito.mock()`) foi utilizado.** Todos os testes de persistência usam MongoDB real via Testcontainers, conforme exigido pelo professor.
+> ⚠️ **Nenhum Mock (`@Mock`, `@MockBean`, `Mockito.mock()`, WireMock) foi utilizado.** Todos os testes de persistência usam MongoDB real via Testcontainers. A integração com API externa (ViaCEP) é testada com chamada real à API pública, conforme exigido pelo professor.
 
 ---
 
@@ -533,4 +643,4 @@ sequenceDiagram
 
 ---
 
-*Revisão final: 10/05/2026 — Pipeline #45, cobertura 88.3%, 0 Security Hotspots*
+*Revisão final: 11/05/2026 — WireMock removido, ViaCEP testado com API real, diagramas UML adicionados para RF-10/RF-11/RF-12, cobertura 88.3%, 0 Security Hotspots*
