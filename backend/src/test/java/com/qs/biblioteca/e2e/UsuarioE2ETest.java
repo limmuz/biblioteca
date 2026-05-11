@@ -263,6 +263,48 @@ class UsuarioE2ETest extends BaseMongoTest {
         }
 
         @Test
+        @DisplayName("Deve incluir campo perfilPublico na listagem de leitores")
+        void leitores_deveConterCampoPerfilPublico() {
+            registrarEObterToken("outro@email.com", "senha123", "outro_leitor");
+
+            ResponseEntity<Map[]> response = restTemplate.exchange(
+                    baseUrl + "/api/usuarios/leitores",
+                    HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt()),
+                    Map[].class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals(1, response.getBody().length);
+            assertTrue(response.getBody()[0].containsKey("perfilPublico"));
+        }
+
+        @Test
+        @DisplayName("Deve excluir leitor com perfil privado da listagem")
+        void leitores_deveExcluirPerfilPrivado() {
+            String tokenPrivado = registrarEObterToken("privado@email.com", "senha123", "leitor_privado");
+
+            HttpHeaders headersPrivado = new HttpHeaders();
+            headersPrivado.setContentType(MediaType.APPLICATION_JSON);
+            headersPrivado.setBearerAuth(tokenPrivado);
+            restTemplate.exchange(
+                    baseUrl + "/api/usuarios/me",
+                    HttpMethod.PUT,
+                    new HttpEntity<>(Map.of("perfilPublico", false), headersPrivado),
+                    Map.class);
+
+            ResponseEntity<Map[]> response = restTemplate.exchange(
+                    baseUrl + "/api/usuarios/leitores",
+                    HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt()),
+                    Map[].class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals(0, response.getBody().length);
+        }
+
+        @Test
         @DisplayName("Deve retornar 403 sem JWT")
         void leitores_semJwt_deveRetornar403() {
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
@@ -295,6 +337,32 @@ class UsuarioE2ETest extends BaseMongoTest {
         void pesquisar_porNicknameComArroba_deveRetornarResultado() {
             ResponseEntity<Map[]> response = restTemplate.exchange(
                     baseUrl + "/api/usuarios/pesquisar?q=@leitora_teste",
+                    HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt()),
+                    Map[].class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+            assertEquals(1, response.getBody().length);
+            assertEquals("leitora_teste", response.getBody()[0].get("nickname"));
+        }
+
+        @Test
+        @DisplayName("Deve excluir leitor com perfil privado da pesquisa por nome")
+        void pesquisar_deveExcluirPerfilPrivado() {
+            String tokenPrivado = registrarEObterToken("privado@email.com", "senha123", "leitor_privado");
+
+            HttpHeaders headersPrivado = new HttpHeaders();
+            headersPrivado.setContentType(MediaType.APPLICATION_JSON);
+            headersPrivado.setBearerAuth(tokenPrivado);
+            restTemplate.exchange(
+                    baseUrl + "/api/usuarios/me",
+                    HttpMethod.PUT,
+                    new HttpEntity<>(Map.of("perfilPublico", false), headersPrivado),
+                    Map.class);
+
+            ResponseEntity<Map[]> response = restTemplate.exchange(
+                    baseUrl + "/api/usuarios/pesquisar?q=Leitor Teste",
                     HttpMethod.GET,
                     new HttpEntity<>(headersComJwt()),
                     Map[].class);

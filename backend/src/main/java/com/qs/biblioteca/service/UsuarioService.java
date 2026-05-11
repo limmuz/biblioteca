@@ -128,6 +128,7 @@ public class UsuarioService {
         return usuarioRepository.findAll()
                 .stream()
                 .filter(u -> !u.getEmail().equalsIgnoreCase(emailAtual))
+                .filter(Usuario::isPerfilPublico)
                 .limit(20)
                 .map(PublicUsuarioResponse::new)
                 .toList();
@@ -152,14 +153,17 @@ public class UsuarioService {
         String limpo = termo.trim();
         if (limpo.startsWith("@")) {
             return usuarioRepository.findByNicknameIgnoreCase(limpo.substring(1))
+                    .filter(Usuario::isPerfilPublico)
                     .map(u -> List.of(new PublicUsuarioResponse(u)))
                     .orElse(List.of());
         }
-        List<Usuario> porNome = usuarioRepository.findByNomeContainingIgnoreCase(limpo);
+        List<Usuario> porNome = usuarioRepository.findByNomeContainingIgnoreCase(limpo)
+                .stream().filter(Usuario::isPerfilPublico).toList();
         if (!porNome.isEmpty()) {
             return porNome.stream().map(PublicUsuarioResponse::new).toList();
         }
         return usuarioRepository.findByNicknameIgnoreCase(limpo)
+                .filter(Usuario::isPerfilPublico)
                 .map(u -> List.of(new PublicUsuarioResponse(u)))
                 .orElse(List.of());
     }

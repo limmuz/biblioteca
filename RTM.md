@@ -1,6 +1,6 @@
 # RTM - Matriz de Rastreabilidade de Requisitos
 
-Atualizado em 11/05/2026 — cobertura SonarCloud 88.3%, CI verde, Testcontainers 1.21.3. Sistema de avaliações (RF-10 a RF-12) e funcionalidades sociais de perfil (RF-13 a RF-16) implementados. WireMock removido — RF-09 testado com integração real contra ViaCEP. Diagramas UML adicionados para RF-10, RF-11 e RF-12.
+Atualizado em 11/05/2026 — cobertura SonarCloud 88.3%, CI verde, Testcontainers 1.21.3. Sistema de avaliações (RF-10 a RF-12) e funcionalidades sociais de perfil (RF-13 a RF-16) implementados. WireMock removido — RF-09 testado com integração real contra ViaCEP. Diagramas UML adicionados para RF-10, RF-11 e RF-12. Filtro de privacidade aplicado em `/leitores` e `/pesquisar` — perfis privados excluídos; 3 novos cenários E2E adicionados (total 17 em `UsuarioE2ETest.java`).
 
 ---
 
@@ -603,7 +603,7 @@ sequenceDiagram
 | E2E / Caixa Preta | `LivroE2ETest.java` | Testcontainers + RestTemplate | CRUD completo de livros via HTTP com JWT |
 | Integração / API Real | `ViaCepIntegrationTest.java` | Testcontainers + RestTemplate + ViaCEP real | Testa endpoint `GET /api/cep/{cep}` contra API ViaCEP real (sem mocks): valida CEP válido (200) e inexistente (404) |
 | E2E / Caixa Preta | `AvaliacaoE2ETest.java` | Testcontainers + RestTemplate | 20 cenários: criar/atualizar/excluir avaliação, listar, calcular médias, outros leitores, validação de rating 1-5, JWT |
-| E2E / Caixa Preta | `UsuarioE2ETest.java` | Testcontainers + RestTemplate | 14 cenários: GET /me, PUT /me (bio, metaLeitura, perfilPublico, bgBase64, nickname), perfil público (200/403/404/estatísticas), listar leitores, pesquisar por nome e @nickname |
+| E2E / Caixa Preta | `UsuarioE2ETest.java` | Testcontainers + RestTemplate | 17 cenários: GET /me, PUT /me (bio, metaLeitura, perfilPublico, bgBase64, nickname), perfil público (200/403/404/estatísticas), listar leitores (campo perfilPublico presente, exclui perfil privado), pesquisar por nome e @nickname (exclui perfil privado) |
 
 > ⚠️ **Nenhum Mock (`@Mock`, `@MockBean`, `Mockito.mock()`, WireMock) foi utilizado.** Todos os testes de persistência usam MongoDB real via Testcontainers. A integração com API externa (ViaCEP) é testada com chamada real à API pública, conforme exigido pelo professor.
 
@@ -643,4 +643,4 @@ sequenceDiagram
 
 ---
 
-*Revisão final: 11/05/2026 — WireMock removido, ViaCEP testado com API real, diagramas UML adicionados para RF-10/RF-11/RF-12, cobertura 88.3%, 0 Security Hotspots*
+*Revisão final: 11/05/2026 — WireMock removido, ViaCEP testado com API real, diagramas UML adicionados para RF-10/RF-11/RF-12, cobertura 88.3%, 0 Security Hotspots. Filtro perfilPublico aplicado em listarLeitoresPublicos e buscarPublicoPorTermo — 3 novos cenários E2E cobrem exclusão de perfil privado.*
