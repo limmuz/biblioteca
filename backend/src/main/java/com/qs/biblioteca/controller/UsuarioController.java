@@ -61,4 +61,9 @@ public class UsuarioController {
 	public ResponseEntity<PerfilPublicoDetalhadoResponse> perfilPublico(@PathVariable String nickname) {
 		return ResponseEntity.ok(usuarioService.buscarPerfilPublicoDetalhado(nickname));
 	}
+
+	@GetMapping("/perfil/id/{id}")
+	public ResponseEntity<PerfilPublicoDetalhadoResponse> perfilPublicoPorId(@PathVariable String id) {
+		return ResponseEntity.ok(usuarioService.buscarPerfilPublicoDetalhadoPorId(id));
+	}
 }

@@ -114,7 +114,7 @@
 
 .searchInput {
   flex: 1;
-  font-family: var(--font-sans);
+  font-family: var(--font-poppins);
   font-size: 12px;
   color: var(--color-ink);
   background: transparent;
@@ -225,9 +225,9 @@
 }
 
 .dropTitle {
-  font-family: var(--font-sans);
+  font-family: var(--font-poppins);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-ink);
   margin: 0;
   white-space: nowrap;
@@ -236,7 +236,7 @@
 }
 
 .dropAuthor {
-  font-family: var(--font-sans);
+  font-family: var(--font-poppins);
   font-size: 11px;
   color: var(--color-sage);
   margin: 0;
@@ -246,9 +246,9 @@
 }
 
 .dropStatus {
-  font-family: var(--font-sans);
+  font-family: var(--font-poppins);
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -260,10 +260,10 @@
   background: rgba(74,103,65,0.06);
   border: none;
   border-top: 1px solid rgba(17,26,25,0.08);
-  font-family: var(--font-sans);
+  font-family: var(--font-poppins);
   font-size: 12px;
   color: var(--color-forest);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   text-align: center;
   transition: background 0.12s;

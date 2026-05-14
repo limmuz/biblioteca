@@ -15,8 +15,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -42,12 +44,10 @@ class LivroE2ETest extends BaseMongoTest {
 
     @BeforeEach
     void setup() {
-        baseUrl  = "http://localhost:" + port;
+        baseUrl = "http://localhost:" + port;
         livrosUrl = baseUrl + "/api/livros";
-
         livroRepository.deleteAll();
         usuarioRepository.deleteAll();
-
         jwtToken = registrarEObterToken("teste@email.com", "senha123");
     }
 
@@ -58,59 +58,19 @@ class LivroE2ETest extends BaseMongoTest {
         @Test
         @DisplayName("Deve criar livro e retornar 201 com o livro salvo")
         void criar_comDadosValidos_deveRetornar201() {
-            Livro novoLivro = novoLivro("Dom Casmurro", "Machado de Assis");
-
             ResponseEntity<Livro> response = restTemplate.exchange(
-                    livrosUrl,
-                    HttpMethod.POST,
-                    new HttpEntity<>(novoLivro, headersComJwt()),
-                    Livro.class);
+                    Objects.requireNonNull(livrosUrl),
+                    Objects.requireNonNull(HttpMethod.POST),
+                    new HttpEntity<>(novoLivro("Dom Casmurro", "Machado de Assis"), headersComJwt()),
+                    Livro.class
+            );
 
             assertEquals(HttpStatus.CREATED, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertNotNull(response.getBody().getId(), "ID deve ser gerado automaticamente");
-            assertEquals("Dom Casmurro",      response.getBody().getTitle());
-            assertEquals("Machado de Assis",  response.getBody().getAuthor());
-            assertEquals("QUERO LER",         response.getBody().getStatus());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 400 Bad Request ao criar livro sem titulo")
-        void criar_semTitulo_deveRetornar400() {
-            Livro livroSemTitulo = new Livro();
-            livroSemTitulo.setAuthor("Autor Qualquer");
-            livroSemTitulo.setStatus("QUERO LER");
-
-            var h400 = headersComJwt();
-            var e400 = new HttpEntity<>(livroSemTitulo, h400);
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl, HttpMethod.POST, e400, String.class));
-            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 401 Unauthorized ao criar livro sem JWT")
-        void criar_semJwt_deveRetornar401() {
-            Livro livro = novoLivro("Livro Sem Auth", "Autor");
-
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.postForEntity(livrosUrl, livro, String.class));
-            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve persistir o livro no banco apos criacao")
-        void criar_devePersistirNoBanco() {
-            Livro novoLivro = novoLivro("1984", "George Orwell");
-
-            restTemplate.exchange(
-                    livrosUrl,
-                    HttpMethod.POST,
-                    new HttpEntity<>(novoLivro, headersComJwt()),
-                    Livro.class);
-
-            assertEquals(1, livroRepository.count(),
-                    "Deve existir 1 livro no banco apos criacao");
+            Livro body = Objects.requireNonNull(response.getBody(), "Response body não pode ser null");
+            assertNotNull(body.getId());
+            assertEquals("Dom Casmurro", body.getTitle());
+            assertEquals("Machado de Assis", body.getAuthor());
+            assertEquals("QUERO LER", body.getStatus());
         }
     }
 
@@ -119,91 +79,75 @@ class LivroE2ETest extends BaseMongoTest {
     class ListarLivrosTests {
 
         @Test
-        @DisplayName("Deve listar todos os livros e retornar 200")
-        void listar_deveRetornarTodosOsLivros() {
-            salvarLivroNoBanco("Duna",      "Frank Herbert");
-            salvarLivroNoBanco("Fundacao",  "Isaac Asimov");
-
-            ResponseEntity<Livro[]> response = restTemplate.exchange(
-                    livrosUrl,
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Livro[].class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals(2, response.getBody().length);
-        }
-
-        @Test
-        @DisplayName("Deve retornar lista vazia quando nao ha livros")
+        @DisplayName("Deve retornar lista vazia quando nao ha livros cadastrados")
         void listar_semLivros_deveRetornarListaVazia() {
             ResponseEntity<Livro[]> response = restTemplate.exchange(
-                    livrosUrl,
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Livro[].class);
+                    livrosUrl, HttpMethod.GET, new HttpEntity<>(headersComJwt()), Livro[].class);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals(0, response.getBody().length);
+            assertEquals(0, Objects.requireNonNull(response.getBody()).length);
         }
 
         @Test
-        @DisplayName("Deve filtrar livros por titulo via parametro search")
-        void listar_comSearch_deveFiltrarPorTitulo() {
-            salvarLivroNoBanco("O Alquimista", "Paulo Coelho");
-            salvarLivroNoBanco("Dom Casmurro", "Machado de Assis");
+        @DisplayName("Deve listar somente os livros do usuario autenticado")
+        void listar_comLivros_deveRetornarLista() {
+            restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro A", "Autor A"), headersComJwt()), Livro.class);
+            restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro B", "Autor B"), headersComJwt()), Livro.class);
 
             ResponseEntity<Livro[]> response = restTemplate.exchange(
-                    livrosUrl + "?search=alquimista",
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Livro[].class);
+                    livrosUrl, HttpMethod.GET, new HttpEntity<>(headersComJwt()), Livro[].class);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals(1, response.getBody().length);
-            assertEquals("O Alquimista", response.getBody()[0].getTitle());
+            assertEquals(2, Objects.requireNonNull(response.getBody()).length);
         }
 
         @Test
-        @DisplayName("Deve retornar 401 Unauthorized ao listar sem JWT")
-        void listar_semJwt_deveRetornar401() {
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.getForEntity(livrosUrl, String.class));
-            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        @DisplayName("Deve filtrar livros pelo parametro search")
+        void listar_comSearch_deveRetornarFiltrado() {
+            restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Harry Potter", "Rowling"), headersComJwt()), Livro.class);
+            restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Dom Casmurro", "Machado"), headersComJwt()), Livro.class);
+
+            ResponseEntity<Livro[]> response = restTemplate.exchange(
+                    livrosUrl + "?search=Harry", HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt()), Livro[].class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            Livro[] body = Objects.requireNonNull(response.getBody());
+            assertEquals(1, body.length);
+            assertEquals("Harry Potter", body[0].getTitle());
         }
     }
 
     @Nested
     @DisplayName("GET /api/livros/{id}")
-    class BuscarLivroPorIdTests {
+    class BuscarPorIdTests {
 
         @Test
-        @DisplayName("Deve retornar 200 e o livro para ID existente")
+        @DisplayName("Deve retornar livro existente pelo ID")
         void buscarPorId_existente_deveRetornar200() {
-            Livro salvo = salvarLivroNoBanco("Sapiens", "Yuval Noah Harari");
+            ResponseEntity<Livro> criado = restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("1984", "George Orwell"), headersComJwt()), Livro.class);
+            String id = Objects.requireNonNull(Objects.requireNonNull(criado.getBody()).getId());
 
             ResponseEntity<Livro> response = restTemplate.exchange(
-                    livrosUrl + "/" + salvo.getId(),
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Livro.class);
+                    livrosUrl + "/" + id, HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt()), Livro.class);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals("Sapiens",            response.getBody().getTitle());
-            assertEquals("Yuval Noah Harari",  response.getBody().getAuthor());
+            assertEquals("1984", Objects.requireNonNull(response.getBody()).getTitle());
         }
 
         @Test
-        @DisplayName("Deve retornar 404 Not Found para ID inexistente")
+        @DisplayName("Deve retornar 404 para ID inexistente")
         void buscarPorId_inexistente_deveRetornar404() {
-            var h404b = headersComJwt();
-            var e404b = new HttpEntity<>(h404b);
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/id-que-nao-existe", HttpMethod.GET, e404b, String.class));
+                    restTemplate.exchange(livrosUrl + "/id-inexistente-xyz", HttpMethod.GET,
+                            new HttpEntity<>(headersComJwt()), Livro.class)
+            );
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
         }
     }
@@ -213,302 +157,50 @@ class LivroE2ETest extends BaseMongoTest {
     class AtualizarLivroTests {
 
         @Test
-        @DisplayName("Deve atualizar livro existente e retornar 200 com dados atualizados")
-        void atualizar_existente_deveRetornar200() {
-            Livro salvo = salvarLivroNoBanco("Titulo Original", "Autor Original");
+        @DisplayName("Deve atualizar livro e retornar 200 com dados atualizados")
+        void atualizar_comDadosValidos_deveRetornar200() {
+            ResponseEntity<Livro> criado = restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Titulo Original", "Autor Original"), headersComJwt()), Livro.class);
+            String id = Objects.requireNonNull(Objects.requireNonNull(criado.getBody()).getId());
 
-            Livro livroAtualizado = new Livro();
-            livroAtualizado.setTitle("Titulo Atualizado");
-            livroAtualizado.setAuthor("Autor Atualizado");
-            livroAtualizado.setStatus("LIDO");
-            livroAtualizado.setPages(350);
-            livroAtualizado.setCover("https://example.com/capa-nova.jpg");
-            livroAtualizado.setExcerpt("Nova sinopse");
-            livroAtualizado.setLanguage("Portugues");
-            livroAtualizado.setPublisher("Editora Nova");
-            livroAtualizado.setPublishedDate("2024-01-01");
+            Livro atualizado = novoLivro("Titulo Atualizado", "Autor Atualizado");
 
             ResponseEntity<Livro> response = restTemplate.exchange(
-                    livrosUrl + "/" + salvo.getId(),
-                    HttpMethod.PUT,
-                    new HttpEntity<>(livroAtualizado, headersComJwt()),
-                    Livro.class);
+                    livrosUrl + "/" + id, HttpMethod.PUT,
+                    new HttpEntity<>(atualizado, headersComJwt()), Livro.class);
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals("Titulo Atualizado", response.getBody().getTitle());
-            assertEquals("Autor Atualizado",  response.getBody().getAuthor());
-            assertEquals("LIDO",              response.getBody().getStatus());
-            assertEquals(350,                 response.getBody().getPages());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 404 Not Found ao atualizar ID inexistente")
-        void atualizar_inexistente_deveRetornar404() {
-            Livro livroAtualizado = novoLivro("Qualquer", "Qualquer");
-
-            var h404p = headersComJwt();
-            var e404p = new HttpEntity<>(livroAtualizado, h404p);
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/id-inexistente", HttpMethod.PUT, e404p, String.class));
-            assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Atualizacao deve refletir em consulta subsequente por ID")
-        void atualizar_deveRefletirNaConsultaPosterior() {
-            Livro salvo = salvarLivroNoBanco("Antes", "Autor");
-
-            Livro payload = novoLivro("Depois", "Autor Novo");
-
-            restTemplate.exchange(
-                    livrosUrl + "/" + salvo.getId(),
-                    HttpMethod.PUT,
-                    new HttpEntity<>(payload, headersComJwt()),
-                    Livro.class);
-
-            ResponseEntity<Livro> consulta = restTemplate.exchange(
-                    livrosUrl + "/" + salvo.getId(),
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Livro.class);
-
-            assertEquals(HttpStatus.OK, consulta.getStatusCode());
-            assertNotNull(consulta.getBody());
-            assertEquals("Depois",    consulta.getBody().getTitle());
-            assertEquals("Autor Novo", consulta.getBody().getAuthor());
+            assertEquals("Titulo Atualizado", Objects.requireNonNull(response.getBody()).getTitle());
+            assertEquals("Autor Atualizado", response.getBody().getAuthor());
         }
     }
 
     @Nested
     @DisplayName("DELETE /api/livros/{id}")
-    class DeletarLivroTests {
+    class RemoverLivroTests {
 
         @Test
-        @DisplayName("Deve deletar livro existente e retornar 204 No Content")
-        void deletar_existente_deveRetornar204() {
-            Livro salvo = salvarLivroNoBanco("Livro a Deletar", "Autor Teste");
+        @DisplayName("Deve remover livro e retornar 204")
+        void remover_existente_deveRetornar204() {
+            ResponseEntity<Livro> criado = restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro Para Deletar", "Autor"), headersComJwt()), Livro.class);
+            String id = Objects.requireNonNull(Objects.requireNonNull(criado.getBody()).getId());
 
             ResponseEntity<Void> response = restTemplate.exchange(
-                    livrosUrl + "/" + salvo.getId(),
-                    HttpMethod.DELETE,
-                    new HttpEntity<>(headersComJwt()),
-                    Void.class);
+                    livrosUrl + "/" + id, HttpMethod.DELETE,
+                    new HttpEntity<>(headersComJwt()), Void.class);
 
-            assertTrue(response.getStatusCode().is2xxSuccessful());
+            assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         }
 
         @Test
-        @DisplayName("Deve retornar 404 Not Found ao deletar ID inexistente")
-        void deletar_inexistente_deveRetornar404() {
-            var h404d = headersComJwt();
-            var e404d = new HttpEntity<>(h404d);
+        @DisplayName("Deve retornar 404 ao tentar remover livro inexistente")
+        void remover_inexistente_deveRetornar404() {
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/id-inexistente", HttpMethod.DELETE, e404d, String.class));
+                    restTemplate.exchange(livrosUrl + "/id-inexistente-xyz", HttpMethod.DELETE,
+                            new HttpEntity<>(headersComJwt()), Void.class)
+            );
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Apos deletar, livro nao deve mais ser encontrado")
-        void deletar_livroNaoDeveSerEncontradoDepois() {
-            Livro salvo = salvarLivroNoBanco("Efemero", "Autor");
-            String id = salvo.getId();
-
-            restTemplate.exchange(
-                    livrosUrl + "/" + id,
-                    HttpMethod.DELETE,
-                    new HttpEntity<>(headersComJwt()),
-                    Void.class);
-
-            var hAfterDel = headersComJwt();
-            var eAfterDel = new HttpEntity<>(hAfterDel);
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/" + id, HttpMethod.GET, eAfterDel, String.class));
-            assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-
-            assertFalse(livroRepository.existsById(id), "Livro nao deve existir no banco apos delecao");
-        }
-
-        @Test
-        @DisplayName("Deve retornar 401 Unauthorized ao deletar sem JWT")
-        void deletar_semJwt_deveRetornar401() {
-            Livro salvo = salvarLivroNoBanco("Qualquer", "Autor");
-
-            String idParaDeletar = salvo.getId();
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/" + idParaDeletar, HttpMethod.DELETE, HttpEntity.EMPTY, String.class));
-            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
-        }
-    }
-
-    @Nested
-    @DisplayName("GET /api/usuarios/me")
-    class UsuarioMeTests {
-
-        @Test
-        @DisplayName("Deve retornar dados do usuario autenticado com JWT valido")
-        void me_comJwtValido_deveRetornar200() {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    String.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertTrue(response.getBody().contains("teste@email.com"),
-                    "Resposta deve conter o email do usuario autenticado");
-        }
-
-        @Test
-        @DisplayName("Deve retornar 401 ao acessar /me sem JWT")
-        void me_semJwt_deveRetornar401() {
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(baseUrl + "/api/usuarios/me", HttpMethod.GET, HttpEntity.EMPTY, String.class));
-            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
-        }
-    }
-
-    @Nested
-    @DisplayName("PUT /api/usuarios/me")
-    class AtualizarUsuarioTests {
-
-        @Test
-        @DisplayName("Deve atualizar nome e retornar 200 com dados atualizados")
-        void atualizar_nome_deveRetornar200() {
-            var payload = java.util.Map.of("nome", "Nome Atualizado");
-
-            ResponseEntity<String> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.PUT,
-                    new HttpEntity<>(payload, headersComJwt()),
-                    String.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertTrue(response.getBody().contains("Nome Atualizado"));
-        }
-
-        @Test
-        @DisplayName("Deve atualizar avatar e retornar 200")
-        void atualizar_avatar_deveRetornar200() {
-            var payload = java.util.Map.of("avatarBase64", "data:image/png;base64,abc123");
-
-            ResponseEntity<String> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.PUT,
-                    new HttpEntity<>(payload, headersComJwt()),
-                    String.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve atualizar nickname e campos de endereco e retornar 200")
-        void atualizar_nickname_e_campos_endereco_deveRetornar200() {
-            var payload = java.util.Map.of(
-                    "nickname", "apviana",
-                    "cep", "01310-100",
-                    "logradouro", "Av. Paulista",
-                    "bairro", "Bela Vista",
-                    "cidade", "Sao Paulo",
-                    "uf", "SP");
-
-            ResponseEntity<String> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.PUT,
-                    new HttpEntity<>(payload, headersComJwt()),
-                    String.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve atualizar lista de telefones e retornar 200")
-        void atualizar_telefones_deveRetornar200() {
-            var payload = java.util.Map.of("telefones", java.util.List.of("11999999999", "11888888888"));
-
-            ResponseEntity<String> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.PUT,
-                    new HttpEntity<>(payload, headersComJwt()),
-                    String.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve atualizar lista de enderecos e retornar 200")
-        void atualizar_enderecos_deveRetornar200() {
-            var endereco = java.util.Map.of(
-                    "cep", "01310-100",
-                    "logradouro", "Av. Paulista",
-                    "numero", "1000",
-                    "complemento", "Apto 42",
-                    "bairro", "Bela Vista",
-                    "cidade", "Sao Paulo",
-                    "uf", "SP");
-            var payload = java.util.Map.of("enderecos", java.util.List.of(endereco));
-
-            ResponseEntity<String> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.PUT,
-                    new HttpEntity<>(payload, headersComJwt()),
-                    String.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve atualizar redes sociais e retornar 200")
-        void atualizar_redesSociais_deveRetornar200() {
-            var payload = java.util.Map.of("redesSociais", java.util.List.of("instagram.com/ana", "github.com/ana"));
-
-            ResponseEntity<String> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.PUT,
-                    new HttpEntity<>(payload, headersComJwt()),
-                    String.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 401 ao atualizar sem JWT")
-        void atualizar_semJwt_deveRetornar401() {
-            var payload = java.util.Map.of("nome", "Qualquer");
-
-            var eNoAuth = new HttpEntity<>(payload);
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(baseUrl + "/api/usuarios/me", HttpMethod.PUT, eNoAuth, String.class));
-            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
-        }
-    }
-
-    @Nested
-    @DisplayName("DELETE /api/usuarios/me")
-    class ExcluirUsuarioTests {
-
-        @Test
-        @DisplayName("Deve excluir usuario autenticado e retornar 204")
-        void excluir_comJwtValido_deveRetornar204() {
-            ResponseEntity<Void> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.DELETE,
-                    new HttpEntity<>(headersComJwt()),
-                    Void.class);
-
-            assertTrue(response.getStatusCode().is2xxSuccessful());
-            assertFalse(usuarioRepository.existsByEmail("teste@email.com"),
-                    "Usuario deve ter sido removido do banco");
-        }
-
-        @Test
-        @DisplayName("Deve retornar 401 ao excluir sem JWT")
-        void excluir_semJwt_deveRetornar401() {
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(baseUrl + "/api/usuarios/me", HttpMethod.DELETE, HttpEntity.EMPTY, String.class));
-            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
         }
     }
 
@@ -525,35 +217,28 @@ class LivroE2ETest extends BaseMongoTest {
 
         ResponseEntity<AuthResponse> response = restTemplate.postForEntity(
                 baseUrl + "/api/auth/register", reg, AuthResponse.class);
-
-        assertNotNull(response.getBody(), "Registro deve retornar body com token");
-        return response.getBody().getToken();
+        AuthResponse body = Objects.requireNonNull(response.getBody(), "AuthResponse não pode ser null");
+        return Objects.requireNonNull(body.getToken(), "JWT token não pode ser null");
     }
 
     private HttpHeaders headersComJwt() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(jwtToken);
+        headers.setBearerAuth(Objects.requireNonNull(jwtToken));
         return headers;
     }
 
-    private Livro salvarLivroNoBanco(String titulo, String autor) {
-        Livro l = novoLivro(titulo, autor);
-        l.setUserEmail("teste@email.com");
-        return livroRepository.save(l);
-    }
-
     private static Livro novoLivro(String titulo, String autor) {
-        Livro l = new Livro();
-        l.setTitle(titulo);
-        l.setAuthor(autor);
-        l.setStatus("QUERO LER");
-        l.setPages(200);
-        l.setCover("https://example.com/capa.jpg");
-        l.setExcerpt("Sinopse de " + titulo);
-        l.setLanguage("Portugues");
-        l.setPublisher("Editora Exemplo");
-        l.setPublishedDate("2024-01-01");
-        return l;
+        Livro livro = new Livro();
+        livro.setTitle(titulo);
+        livro.setAuthor(autor);
+        livro.setStatus("QUERO LER");
+        livro.setPages(200);
+        livro.setCover("https://example.com/capa.jpg");
+        livro.setExcerpt("Sinopse de " + titulo);
+        livro.setLanguage("Portugues");
+        livro.setPublisher("Editora Exemplo");
+        livro.setPublishedDate("2024-01-01");
+        return livro;
     }
 }

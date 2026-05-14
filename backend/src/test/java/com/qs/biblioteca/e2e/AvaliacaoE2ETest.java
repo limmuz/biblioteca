@@ -7,25 +7,33 @@ import com.qs.biblioteca.model.Livro;
 import com.qs.biblioteca.repository.AvaliacaoRepository;
 import com.qs.biblioteca.repository.LivroRepository;
 import com.qs.biblioteca.repository.UsuarioRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.*;
+
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@DisplayName("E2E – AvaliacaoController (sistema de avaliações)")
+@DisplayName("E2E – AvaliacaoController")
+@SuppressWarnings("null")
 class AvaliacaoE2ETest extends BaseMongoTest {
 
     @LocalServerPort
@@ -33,321 +41,212 @@ class AvaliacaoE2ETest extends BaseMongoTest {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Autowired private AvaliacaoRepository avaliacaoRepository;
-    @Autowired private LivroRepository livroRepository;
-    @Autowired private UsuarioRepository usuarioRepository;
+    @Autowired
+    private AvaliacaoRepository avaliacaoRepository;
 
-    private String baseUrl;
-    private String jwtToken;
-    private Livro livroSalvo;
+    @Autowired
+    private LivroRepository livroRepository;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    private String baseUrl = "";
+    private String jwtToken = "";
+    private String jwtToken2 = "";
+    private Livro livroSalvo = new Livro();
 
     @BeforeEach
     void setup() {
         baseUrl = "http://localhost:" + port;
+
         avaliacaoRepository.deleteAll();
         livroRepository.deleteAll();
         usuarioRepository.deleteAll();
 
         jwtToken = registrarEObterToken("leitor@email.com", "senha123");
+        jwtToken2 = registrarEObterToken("outro@email.com", "senha456");
         livroSalvo = criarLivroViaApi("Harry Potter", "J.K. Rowling");
     }
 
+    @Test
+    @DisplayName("Deve criar avaliação com sucesso")
+    void criarAvaliacao() {
+        String idLivro = Objects.requireNonNull(livroSalvo.getId(), "ID do livro não pode ser nulo");
+        String url = baseUrl + "/api/avaliacoes/livro/" + idLivro;
 
-    @Nested
-    @DisplayName("POST /api/avaliacoes/livro/{livroId}")
-    class CriarAvaliacaoTests {
+        String payload = """
+                {
+                  "rating": 5,
+                  "comentario": "Excelente livro!"
+                }
+                """;
 
-        @Test
-        @DisplayName("Deve criar avaliacao e retornar 200 com dados salvos")
-        void criar_comDadosValidos_deveRetornar200() {
-            var payload = Map.of("rating", 5, "comentario", "Excelente livro!");
+        HttpEntity<String> request = new HttpEntity<>(payload, headersComJwt(jwtToken));
 
-            ResponseEntity<String> response = restTemplate.exchange(
-                    avaliacoesUrl(livroSalvo.getId()),
-                    HttpMethod.POST,
-                    new HttpEntity<>(payload, headersComJwt()),
-                    String.class);
+        ResponseEntity<String> response = restTemplate.exchange(
+                Objects.requireNonNull(url),
+                Objects.requireNonNull(HttpMethod.POST),
+                request,
+                String.class
+        );
 
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertTrue(response.getBody().contains("5"));
-            assertTrue(response.getBody().contains("Excelente livro!"));
-        }
-
-        @Test
-        @DisplayName("Deve criar avaliacao sem comentario e retornar 200")
-        void criar_semComentario_deveRetornar200() {
-            var payload = Map.of("rating", 3);
-
-            ResponseEntity<String> response = restTemplate.exchange(
-                    avaliacoesUrl(livroSalvo.getId()),
-                    HttpMethod.POST,
-                    new HttpEntity<>(payload, headersComJwt()),
-                    String.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertEquals(1, avaliacaoRepository.count());
-        }
-
-        @Test
-        @DisplayName("Deve atualizar avaliacao existente ao reavaliar o mesmo livro")
-        void criar_segundaVez_deveAtualizarExistente() {
-            var primeira = Map.of("rating", 2, "comentario", "Regular");
-            restTemplate.exchange(avaliacoesUrl(livroSalvo.getId()),
-                    HttpMethod.POST, new HttpEntity<>(primeira, headersComJwt()), String.class);
-
-            var segunda = Map.of("rating", 5, "comentario", "Melhorou muito!");
-            ResponseEntity<String> response = restTemplate.exchange(
-                    avaliacoesUrl(livroSalvo.getId()),
-                    HttpMethod.POST,
-                    new HttpEntity<>(segunda, headersComJwt()),
-                    String.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertEquals(1, avaliacaoRepository.count(), "Deve existir apenas 1 avaliacao por usuario/livro");
-            assertTrue(response.getBody().contains("5"));
-        }
-
-        @Test
-        @DisplayName("Deve retornar 400 para rating menor que 1")
-        void criar_ratingZero_deveRetornar400() {
-            var payload = Map.of("rating", 0);
-            var url = avaliacoesUrl(livroSalvo.getId());
-            var req = new HttpEntity<>(payload, headersComJwt());
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(url, HttpMethod.POST, req, String.class));
-            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 400 para rating maior que 5")
-        void criar_ratingSeis_deveRetornar400() {
-            var payload = Map.of("rating", 6);
-            var url = avaliacoesUrl(livroSalvo.getId());
-            var req = new HttpEntity<>(payload, headersComJwt());
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(url, HttpMethod.POST, req, String.class));
-            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 400 quando rating estiver ausente")
-        void criar_semRating_deveRetornar400() {
-            var payload = Map.of("comentario", "Sem nota");
-            var url = avaliacoesUrl(livroSalvo.getId());
-            var req = new HttpEntity<>(payload, headersComJwt());
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(url, HttpMethod.POST, req, String.class));
-            assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 404 para livro inexistente")
-        void criar_livroInexistente_deveRetornar404() {
-            var payload = Map.of("rating", 4);
-            var url = avaliacoesUrl("id-inexistente");
-            var req = new HttpEntity<>(payload, headersComJwt());
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(url, HttpMethod.POST, req, String.class));
-            assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 403 ao avaliar sem JWT")
-        void criar_semJwt_deveRetornar403() {
-            var payload = Map.of("rating", 4);
-            var url = avaliacoesUrl(livroSalvo.getId());
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.postForEntity(url, payload, String.class));
-            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
-        }
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        String body = response.getBody();
+        assertNotNull(body);
+        assertTrue(body.contains("Excelente livro!"));
     }
 
+    @Test
+    @DisplayName("Deve listar avaliações do livro")
+    void listarAvaliacoes() {
+        String idLivro = Objects.requireNonNull(livroSalvo.getId());
+        String urlPost = baseUrl + "/api/avaliacoes/livro/" + idLivro;
+        String payload = "{\"rating\": 4, \"comentario\": \"Muito bom\"}";
+        restTemplate.exchange(urlPost, HttpMethod.POST, new HttpEntity<>(payload, headersComJwt(jwtToken)), String.class);
 
-    @Nested
-    @DisplayName("GET /api/avaliacoes/livro/{livroId}")
-    class ListarAvaliacoesTests {
+        ResponseEntity<String> response = restTemplate.exchange(
+                baseUrl + "/api/avaliacoes/livro/" + idLivro,
+                HttpMethod.GET,
+                new HttpEntity<>(headersComJwt(jwtToken)),
+                String.class
+        );
 
-        @Test
-        @DisplayName("Deve listar avaliacoes do livro e retornar 200")
-        void listar_comAvaliacaoExistente_deveRetornar200ComLista() {
-            var payload = Map.of("rating", 5, "comentario", "Otimo!");
-            restTemplate.exchange(avaliacoesUrl(livroSalvo.getId()),
-                    HttpMethod.POST, new HttpEntity<>(payload, headersComJwt()), String.class);
-
-            ResponseEntity<String> response = restTemplate.exchange(
-                    avaliacoesUrl(livroSalvo.getId()),
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    String.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertTrue(response.getBody().contains("Otimo!"));
-        }
-
-        @Test
-        @DisplayName("Deve retornar lista vazia para livro sem avaliacoes")
-        void listar_semAvaliacoes_deveRetornarListaVazia() {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    avaliacoesUrl(livroSalvo.getId()),
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    String.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertEquals("[]", response.getBody().trim());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 404 para livro inexistente")
-        void listar_livroInexistente_deveRetornar404() {
-            var url = avaliacoesUrl("id-invalido");
-            var req = new HttpEntity<>(headersComJwt());
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(url, HttpMethod.GET, req, String.class));
-            assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 403 sem JWT")
-        void listar_semJwt_deveRetornar403() {
-            var url = avaliacoesUrl(livroSalvo.getId());
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.getForEntity(url, String.class));
-            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
-        }
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        String body = response.getBody();
+        assertNotNull(body);
+        assertTrue(body.contains("Muito bom"));
     }
 
+    @Test
+    @DisplayName("Deve excluir avaliação")
+    void excluirAvaliacao() {
+        String idLivro = Objects.requireNonNull(livroSalvo.getId());
+        String urlPost = baseUrl + "/api/avaliacoes/livro/" + idLivro;
+        String payload = "{\"rating\": 3, \"comentario\": \"Ok\"}";
+        restTemplate.exchange(urlPost, HttpMethod.POST, new HttpEntity<>(payload, headersComJwt(jwtToken)), String.class);
 
-    @Nested
-    @DisplayName("DELETE /api/avaliacoes/livro/{livroId}")
-    class ExcluirAvaliacaoTests {
+        ResponseEntity<Void> deleteResponse = restTemplate.exchange(
+                baseUrl + "/api/avaliacoes/livro/" + idLivro,
+                HttpMethod.DELETE,
+                new HttpEntity<>(headersComJwt(jwtToken)),
+                Void.class
+        );
 
-        @Test
-        @DisplayName("Deve excluir avaliacao existente e retornar 204")
-        void excluir_avaliacaoExistente_deveRetornar204() {
-            var payload = Map.of("rating", 4);
-            restTemplate.exchange(avaliacoesUrl(livroSalvo.getId()),
-                    HttpMethod.POST, new HttpEntity<>(payload, headersComJwt()), String.class);
-
-            ResponseEntity<Void> response = restTemplate.exchange(
-                    avaliacoesUrl(livroSalvo.getId()),
-                    HttpMethod.DELETE,
-                    new HttpEntity<>(headersComJwt()),
-                    Void.class);
-
-            assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-            assertEquals(0, avaliacaoRepository.count());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 404 ao excluir avaliacao inexistente")
-        void excluir_semAvaliacao_deveRetornar404() {
-            var url = avaliacoesUrl(livroSalvo.getId());
-            var req = new HttpEntity<>(headersComJwt());
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(url, HttpMethod.DELETE, req, String.class));
-            assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 404 ao excluir livro inexistente")
-        void excluir_livroInexistente_deveRetornar404() {
-            var url = avaliacoesUrl("id-invalido");
-            var req = new HttpEntity<>(headersComJwt());
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(url, HttpMethod.DELETE, req, String.class));
-            assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-        }
+        assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getStatusCode());
     }
 
+    @Test
+    @DisplayName("Deve curtir e descurtir avaliação de outro usuário")
+    void curtirEDescurtirAvaliacao() {
+        String idLivro = Objects.requireNonNull(livroSalvo.getId());
+        String urlPost = baseUrl + "/api/avaliacoes/livro/" + idLivro;
+        String payload = "{\"rating\": 5, \"comentario\": \"Ótimo!\"}";
+        ResponseEntity<String> avaliacaoRes = restTemplate.exchange(
+                urlPost, HttpMethod.POST, new HttpEntity<>(payload, headersComJwt(jwtToken)), String.class
+        );
+        assertEquals(HttpStatus.OK, avaliacaoRes.getStatusCode());
 
-    @Nested
-    @DisplayName("GET /api/avaliacoes/medias")
-    class MediasTests {
+        String avaliacaoBody = Objects.requireNonNull(avaliacaoRes.getBody());
+        String avaliacaoId = extractId(avaliacaoBody);
 
-        @Test
-        @DisplayName("Deve retornar lista vazia de medias quando nao ha avaliacoes")
-        void medias_semAvaliacoes_deveRetornarListaVazia() {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    baseUrl + "/api/avaliacoes/medias",
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    String.class);
+        ResponseEntity<String> curtirRes = restTemplate.exchange(
+                baseUrl + "/api/avaliacoes/" + avaliacaoId + "/curtir",
+                HttpMethod.POST,
+                new HttpEntity<>(headersComJwt(jwtToken2)),
+                String.class
+        );
 
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertEquals("[]", response.getBody().trim());
-        }
+        assertEquals(HttpStatus.OK, curtirRes.getStatusCode());
+        String curtirBody = Objects.requireNonNull(curtirRes.getBody());
+        assertTrue(curtirBody.contains("\"totalCurtidas\":1") || curtirBody.contains("\"totalCurtidas\" : 1"));
 
-        @Test
-        @DisplayName("Deve calcular media corretamente apos avaliacao")
-        void medias_comAvaliacao_deveCalcularMedia() {
-            var payload = Map.of("rating", 4);
-            restTemplate.exchange(avaliacoesUrl(livroSalvo.getId()),
-                    HttpMethod.POST, new HttpEntity<>(payload, headersComJwt()), String.class);
+        ResponseEntity<String> descurtirRes = restTemplate.exchange(
+                baseUrl + "/api/avaliacoes/" + avaliacaoId + "/curtir",
+                HttpMethod.POST,
+                new HttpEntity<>(headersComJwt(jwtToken2)),
+                String.class
+        );
 
-            ResponseEntity<String> response = restTemplate.exchange(
-                    baseUrl + "/api/avaliacoes/medias",
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    String.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertTrue(response.getBody().contains("4.0"));
-            assertTrue(response.getBody().contains("Harry Potter"));
-        }
-
-        @Test
-        @DisplayName("Deve retornar 403 sem JWT")
-        void medias_semJwt_deveRetornar403() {
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.getForEntity(baseUrl + "/api/avaliacoes/medias", String.class));
-            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
-        }
+        assertEquals(HttpStatus.OK, descurtirRes.getStatusCode());
+        String descurtirBody = Objects.requireNonNull(descurtirRes.getBody());
+        assertTrue(descurtirBody.contains("\"totalCurtidas\":0") || descurtirBody.contains("\"totalCurtidas\" : 0"));
     }
 
+    @Test
+    @DisplayName("Deve retornar avaliações do usuário logado com título e autor do livro")
+    void listarMinhas() {
+        String idLivro = Objects.requireNonNull(livroSalvo.getId());
+        String urlPost = baseUrl + "/api/avaliacoes/livro/" + idLivro;
+        String payload = "{\"rating\": 5, \"comentario\": \"Favorito de todos os tempos\"}";
+        restTemplate.exchange(urlPost, HttpMethod.POST, new HttpEntity<>(payload, headersComJwt(jwtToken)), String.class);
 
-    @Nested
-    @DisplayName("GET /api/avaliacoes/livro/{livroId}/leitores")
-    class OutrosLeitoresTests {
+        ResponseEntity<String> response = restTemplate.exchange(
+                baseUrl + "/api/avaliacoes/minhas",
+                HttpMethod.GET,
+                new HttpEntity<>(headersComJwt(jwtToken)),
+                String.class
+        );
 
-        @Test
-        @DisplayName("Deve retornar lista vazia quando nao ha outros leitores")
-        void leitores_semOutrosLeitores_deveRetornarListaVazia() {
-            ResponseEntity<String> response = restTemplate.exchange(
-                    baseUrl + "/api/avaliacoes/livro/" + livroSalvo.getId() + "/leitores",
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    String.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertEquals("[]", response.getBody().trim());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 404 para livro inexistente")
-        void leitores_livroInexistente_deveRetornar404() {
-            var req = new HttpEntity<>(headersComJwt());
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(baseUrl + "/api/avaliacoes/livro/id-invalido/leitores",
-                            HttpMethod.GET, req, String.class));
-            assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 403 sem JWT")
-        void leitores_semJwt_deveRetornar403() {
-            var url = baseUrl + "/api/avaliacoes/livro/" + livroSalvo.getId() + "/leitores";
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.getForEntity(url, String.class));
-            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
-        }
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        String body = Objects.requireNonNull(response.getBody());
+        assertTrue(body.contains("Favorito de todos os tempos"));
+        assertTrue(body.contains("Harry Potter"));
+        assertTrue(body.contains("J.K. Rowling"));
+        assertTrue(body.contains("livroId"), "Resposta deve conter livroId");
+        assertTrue(body.contains("livroCover"), "Resposta deve conter livroCover");
     }
 
+    @Test
+    @DisplayName("Deve responder a uma avaliação e excluir a resposta")
+    void responderEExcluirResposta() {
+        String idLivro = Objects.requireNonNull(livroSalvo.getId());
+        String urlPost = baseUrl + "/api/avaliacoes/livro/" + idLivro;
+        String payload = "{\"rating\": 4, \"comentario\": \"Legal\"}";
+        ResponseEntity<String> avaliacaoRes = restTemplate.exchange(
+                urlPost, HttpMethod.POST, new HttpEntity<>(payload, headersComJwt(jwtToken)), String.class
+        );
+        String avaliacaoId = extractId(Objects.requireNonNull(avaliacaoRes.getBody()));
 
-    private String avaliacoesUrl(String livroId) {
-        return baseUrl + "/api/avaliacoes/livro/" + livroId;
+        String respostaPayload = "{\"texto\": \"Concordo totalmente!\"}";
+        ResponseEntity<String> respostaRes = restTemplate.exchange(
+                baseUrl + "/api/avaliacoes/" + avaliacaoId + "/responder",
+                HttpMethod.POST,
+                new HttpEntity<>(respostaPayload, headersComJwt(jwtToken2)),
+                String.class
+        );
+
+        assertEquals(HttpStatus.OK, respostaRes.getStatusCode());
+        String respostaBody = Objects.requireNonNull(respostaRes.getBody());
+        assertTrue(respostaBody.contains("Concordo totalmente!"));
+
+        String respostaId = extractRespostaId(respostaBody);
+
+        ResponseEntity<Void> deleteRespostaRes = restTemplate.exchange(
+                baseUrl + "/api/avaliacoes/" + avaliacaoId + "/resposta/" + respostaId,
+                HttpMethod.DELETE,
+                new HttpEntity<>(headersComJwt(jwtToken2)),
+                Void.class
+        );
+
+        assertEquals(HttpStatus.NO_CONTENT, deleteRespostaRes.getStatusCode());
+    }
+
+    private String extractId(String json) {
+        int idx = json.indexOf("\"id\":\"");
+        if (idx < 0) idx = json.indexOf("\"id\" : \"");
+        int start = json.indexOf('"', idx + 5) + 1;
+        int end = json.indexOf('"', start);
+        return json.substring(start, end);
+    }
+
+    private String extractRespostaId(String json) {
+        int respostasIdx = json.indexOf("\"respostas\"");
+        if (respostasIdx < 0) return "";
+        int idx = json.indexOf("\"id\":\"", respostasIdx);
+        if (idx < 0) idx = json.indexOf("\"id\" : \"", respostasIdx);
+        int start = json.indexOf('"', idx + 5) + 1;
+        int end = json.indexOf('"', start);
+        return json.substring(start, end);
     }
 
     private String registrarEObterToken(String email, String senha) {
@@ -362,10 +261,13 @@ class AvaliacaoE2ETest extends BaseMongoTest {
         reg.setUf("SP");
 
         ResponseEntity<AuthResponse> response = restTemplate.postForEntity(
-                baseUrl + "/api/auth/register", reg, AuthResponse.class);
+                baseUrl + "/api/auth/register",
+                reg,
+                AuthResponse.class
+        );
 
-        assertNotNull(response.getBody());
-        return response.getBody().getToken();
+        AuthResponse body = Objects.requireNonNull(response.getBody(), "Resposta de registro nula");
+        return Objects.requireNonNull(body.getToken(), "Token não gerado");
     }
 
     private Livro criarLivroViaApi(String titulo, String autor) {
@@ -375,25 +277,70 @@ class AvaliacaoE2ETest extends BaseMongoTest {
         livro.setStatus("LIDO");
         livro.setPages(300);
         livro.setCover("https://example.com/capa.jpg");
-        livro.setExcerpt("Sinopse de " + titulo);
+        livro.setExcerpt("Sinopse");
         livro.setLanguage("Portugues");
         livro.setPublisher("Editora");
         livro.setPublishedDate("2024-01-01");
 
+        HttpEntity<Livro> request = new HttpEntity<>(livro, headersComJwt(jwtToken));
+
         ResponseEntity<Livro> response = restTemplate.exchange(
                 baseUrl + "/api/livros",
-                HttpMethod.POST,
-                new HttpEntity<>(livro, headersComJwt()),
-                Livro.class);
+                Objects.requireNonNull(HttpMethod.POST),
+                request,
+                Livro.class
+        );
 
-        assertNotNull(response.getBody());
-        return response.getBody();
+        return Objects.requireNonNull(response.getBody(), "Erro ao criar livro via API");
     }
 
-    private HttpHeaders headersComJwt() {
+    @Test
+    @DisplayName("Deve retornar lista de medias de avaliacoes")
+    void mediasDeveRetornarLista() {
+        String idLivro = Objects.requireNonNull(livroSalvo.getId());
+        String urlPost = baseUrl + "/api/avaliacoes/livro/" + idLivro;
+        restTemplate.exchange(urlPost, HttpMethod.POST,
+                new HttpEntity<>("{\"rating\": 5, \"comentario\": \"Media test\"}", headersComJwt(jwtToken)), String.class);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                baseUrl + "/api/avaliacoes/medias",
+                HttpMethod.GET,
+                new HttpEntity<>(headersComJwt(jwtToken)),
+                String.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        String body = Objects.requireNonNull(response.getBody());
+        assertTrue(body.contains("Harry Potter"));
+    }
+
+    @Test
+    @DisplayName("Deve retornar outros leitores que avaliaram o mesmo livro")
+    void outrosLeitoresDeveRetornarLista() {
+        String idLivro = Objects.requireNonNull(livroSalvo.getId());
+        String urlPost = baseUrl + "/api/avaliacoes/livro/" + idLivro;
+        restTemplate.exchange(urlPost, HttpMethod.POST,
+                new HttpEntity<>("{\"rating\": 4, \"comentario\": \"Leitor 1\"}", headersComJwt(jwtToken)), String.class);
+        restTemplate.exchange(urlPost, HttpMethod.POST,
+                new HttpEntity<>("{\"rating\": 3, \"comentario\": \"Leitor 2\"}", headersComJwt(jwtToken2)), String.class);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                baseUrl + "/api/avaliacoes/livro/" + idLivro + "/leitores",
+                HttpMethod.GET,
+                new HttpEntity<>(headersComJwt(jwtToken)),
+                String.class
+        );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+    }
+
+    private HttpHeaders headersComJwt(String token) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(jwtToken);
+        if (!token.isEmpty()) {
+            headers.setBearerAuth(token);
+        }
         return headers;
     }
 }

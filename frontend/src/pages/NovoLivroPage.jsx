@@ -4,6 +4,7 @@ import AppHeader from '../components/shared/AppHeader';
 import Footer from '../components/Footer/Footer';
 import api from '../services/api';
 import AdBanner from '../components/shared/AdBanner';
+import Modal from '../components/shared/Modal';
 import styles from './NovoLivroPage.module.css';
 
 const BG_COVERS = [
@@ -22,6 +23,7 @@ export default function NovoLivroPage() {
   const navigate = useNavigate();
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
+  const [duplicadoModal, setDuplicadoModal] = useState(false);
   
   const [livro, setLivro] = useState({
     title: '',
@@ -61,13 +63,16 @@ export default function NovoLivroPage() {
       };
 
       await api.post('/livros', payload);
+      localStorage.removeItem('lybre_livros_cache');
       navigate('/home');
     } catch (error) {
       console.error("Erro ao salvar:", error);
       let mensagemErro = 'Erro ao salvar o livro. ';
       
       if (error.response?.status === 409) {
-        mensagemErro = `Este livro já está cadastrado na sua biblioteca: "${livro.title}" de ${livro.author}.`;
+        setDuplicadoModal(true);
+        setCarregando(false);
+        return;
       } else if (error.response?.status === 400) {
         mensagemErro += 'Verifique se todos os campos obrigatórios estão preenchidos corretamente.';
       } else if (error.response?.data?.message) {
@@ -168,6 +173,16 @@ export default function NovoLivroPage() {
       <div className={styles.footerWrap}>
         <Footer />
       </div>
+      {duplicadoModal && (
+        <Modal
+          title="Livro já cadastrado"
+          message={`"${livro.title}" de ${livro.author} já está na sua biblioteca.`}
+          onConfirm={() => { setDuplicadoModal(false); navigate('/home'); }}
+          onCancel={() => setDuplicadoModal(false)}
+          confirmLabel="Ver biblioteca"
+          cancelLabel="Continuar editando"
+        />
+      )}
     </div>
   );
 }

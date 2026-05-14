@@ -16,9 +16,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * Testes unitários de caixa branca para {@link LivroValidator}.
- */
 @DisplayName("LivroValidator – testes parametrizados de validação de negócio")
 class LivroValidatorParamTest {
 

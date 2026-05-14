@@ -78,9 +78,12 @@ O projeto usa o **MongoDB Atlas** (banco na nuvem). **Não é necessário instal
    spring.data.mongodb.uri=mongodb+srv://USUARIO:SENHA@biblioteca-cluster.xxxxx.mongodb.net/biblioteca_db?retryWrites=true&w=majority
    jwt.secret=CHAVE_SECRETA_AQUI
    jwt.expiration-ms=86400000
+   cloudinary.cloud-name=seu_cloud_name
+   cloudinary.api-key=sua_api_key
+   cloudinary.api-secret=seu_api_secret
    ```
 
-   > As credenciais de acesso (usuário, senha e chave JWT) não ficam no repositório por segurança. Entre em contato com a Ana Paula para receber as informações de conexão.
+   > As credenciais de acesso (usuário, senha, chave JWT e Cloudinary) não ficam no repositório por segurança. Entre em contato com a Ana Paula para receber as informações de conexão.
 
    > O arquivo `application.properties` está no `.gitignore` e **nunca deve ser commitado** — ele contém credenciais reais.
 
@@ -152,8 +155,10 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | Testcontainers (sem Mocks) | Todos os testes usam MongoDB real |
 | Testes unitários parametrizados | `LivroValidatorParamTest.java` |
 | Testes de integração | `LivroServiceIntegrationTest.java` |
-| Testes E2E / Caixa Preta | `AuthE2ETest.java` + `LivroE2ETest.java` + `AvaliacaoE2ETest.java` |
+| Testes E2E / Caixa Preta | `AuthE2ETest.java` + `LivroE2ETest.java` + `AvaliacaoE2ETest.java` + `UsuarioE2ETest.java` + `ImagemE2ETest.java` |
 | Integração com API externa real | ViaCEP (busca de CEP no cadastro) — teste real via `ViaCepIntegrationTest.java` |
+| Upload de imagem via Cloudinary | Avatar enviado para Cloudinary e URL armazenada no banco; endpoint `/api/imagens/upload` |
+| RF-20 (Upload de avatar) | Implementado com `ImagemController` + `CloudinaryService` |
 | Cobertura >= 80% (JaCoCo) | 88.3% no SonarCloud — check JaCoCo aprovado |
 | SonarCloud configurado | Rodando — https://sonarcloud.io/project/overview?id=AnaPaula2024_biblioteca |
 | CI com GitHub Actions | Pipeline configurado |
@@ -164,12 +169,14 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 |---|---|
 | Biblioteca pessoal | Adicionar, editar, excluir e organizar livros por status (Lido, Lendo, Quero Ler) |
 | Avaliações com estrelas | Avaliar livros de 1 a 5 estrelas com comentário; ver média de todos os leitores |
+| Curtir e responder comentários | Curtir (toggle) a avaliação de outro leitor e responder com texto; excluir própria resposta |
 | Meus Favoritos | Seção automática com livros avaliados com 4 ou 5 estrelas |
-| Personalização de perfil | Foto de perfil, plano de fundo personalizado, fonte da página, bio e meta de leitura |
+| Personalização de perfil | Foto de perfil enviada ao Cloudinary (URL armazenada), plano de fundo, fonte da página, bio e meta de leitura |
 | Perfil público/privado | Toggle visível no perfil; perfil privado retorna 403 para outros usuários |
 | Conheça outros leitores | Carousel de perfis públicos com cards com fundo, avatar, bio e botões de ação |
 | Perfis adicionados | Seção para acompanhar leitores favoritados (persistido em localStorage) |
 | Perfil público detalhado | Ver livros, estatísticas e fundo de outro leitor; adicionar livros bem avaliados à própria biblioteca |
+| Ver perfil por ID | Usuários sem nickname têm perfil acessível via `/leitor/id/{id}` |
 | Busca de leitores | Buscar por nome ou @nickname na seção social do perfil |
 | Estatísticas de leitura | Contadores de lidos, lendo e quero ler com mosaico visual |
 | Repositório no GitHub | https://github.com/AnaPaula2024/biblioteca |
@@ -182,8 +189,9 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 |---|---|---|
 | `AuthE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-01 (Cadastro) e RF-02 (Login) |
 | `LivroE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-03 a RF-08 (CRUD de livros + sessão) |
-| `AvaliacaoE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-10 a RF-12 (criar, listar avaliações e calcular médias) |
+| `AvaliacaoE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-10 a RF-12 (criar, listar, excluir avaliações; curtir/descurtir e responder comentários) |
 | `UsuarioE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-13 a RF-16 (perfil, personalização, perfil público, busca e listagem de leitores — inclui exclusão de perfis privados) |
+| `ImagemE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-20 (upload de avatar: sem token → 401; Cloudinary não configurado no perfil de teste → 503) |
 | `LivroServiceIntegrationTest.java` | `backend/src/test/java/com/qs/biblioteca/integration/` | RF-04 a RF-07 (integração com MongoDB) |
 | `ViaCepIntegrationTest.java` | `backend/src/test/java/com/qs/biblioteca/integration/` | RF-09 (integração real com API ViaCEP — sem mocks) |
 | `LivroValidatorParamTest.java` | `backend/src/test/java/com/qs/biblioteca/unit/` | Validações de negócio (unitário parametrizado — caixa branca) |
@@ -195,7 +203,8 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | Coleção | Campos principais |
 |---|---|
 | `livros` | `title`, `author`, `cover`, `excerpt`, `status`, `language`, `pages`, `categories`, `publisher`, `publishedDate` |
-| `usuarios` | `nome`, `email`, `senhaHash`, `role`, `cep`, `logradouro`, `bairro`, `cidade`, `uf`, `enderecos`, `telefones`, `redesSociais` |
+| `usuarios` | `nome`, `email`, `senhaHash`, `role`, `cep`, `logradouro`, `bairro`, `cidade`, `uf`, `enderecos`, `telefones`, `redesSociais`, `avatarBase64` (URL Cloudinary), `bgBase64`, `bio`, `nickname`, `perfilPublico` |
+| `avaliacoes` | `livroTitulo`, `livroAutor`, `usuarioEmail`, `usuarioNome`, `usuarioNickname`, `avatarBase64` (URL Cloudinary), `rating`, `comentario`, `criadoEm`, `curtidas` (lista de emails), `respostas` (lista de objetos com `id`, `usuarioEmail`, `texto`, `criadoEm`) |
 
 ---
 
@@ -212,6 +221,7 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | Testcontainers | 1.21.3 | MongoDB real nos testes |
 | JaCoCo | 0.8.12 | Relatório de cobertura de testes |
 | ViaCEP | API pública | API externa real de consulta de CEP (integração real nos testes) |
+| Cloudinary | SDK v1.39.0 | Hospedagem de imagens (avatar do perfil) |
 | SonarCloud | - | Análise de qualidade de código |
 | GitHub Actions | - | CI/CD automatizado |
 
@@ -227,4 +237,4 @@ O pipeline roda automaticamente a cada push:
 
 ---
 
-*Última atualização: 11/05/2026*
+*Última atualização: 14/05/2026*

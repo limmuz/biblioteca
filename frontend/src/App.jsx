@@ -86,6 +86,14 @@ export default function App() {
         />
 
         <Route
+          path="/leitor/id/:userId"
+          element={
+            <ProtectedRoute>
+              <PerfilPublicoPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/leitor/:nickname"
           element={
             <ProtectedRoute>

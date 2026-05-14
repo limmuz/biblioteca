@@ -8,10 +8,23 @@ import api from '../services/api';
 import AdBanner from '../components/shared/AdBanner';
 import styles from './ListagemPage.module.css';
 
+const CACHE_TTL = 5 * 60 * 1000;
+function lerCache(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    return Date.now() - ts < CACHE_TTL ? data : null;
+  } catch { return null; }
+}
+function salvarCache(key, data) {
+  try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+}
+
 export default function ListagemPage() {
   const location = useLocation();
   const [livros, setLivros] = useState([]);
-  const [medias, setMedias] = useState({});
+  const [medias, setMedias] = useState(() => lerCache('lybre_medias_cache') || {});
   const [loading, setLoading] = useState(false);
 
   const queryBusca = location.state?.query || "";
@@ -34,9 +47,10 @@ export default function ListagemPage() {
 
         const map = {};
         resMedias.data.forEach(m => {
-          const key = `${m.livroTitulo.toLowerCase()}||${m.livroAutor.toLowerCase()}`;
+          const key = `${(m.livroTitulo || '').toLowerCase()}||${(m.livroAutor || '').toLowerCase()}`;
           map[key] = m;
         });
+        salvarCache('lybre_medias_cache', map);
         setMedias(map);
       } catch (err) {
         console.error("Erro ao carregar:", err);
@@ -49,7 +63,7 @@ export default function ListagemPage() {
   }, [queryBusca]);
 
   const getRating = (book) => {
-    const key = `${book.title.toLowerCase()}||${book.author.toLowerCase()}`;
+    const key = `${(book.title || '').toLowerCase()}||${(book.author || '').toLowerCase()}`;
     return medias[key] || { media: 0, total: 0 };
   };
 
