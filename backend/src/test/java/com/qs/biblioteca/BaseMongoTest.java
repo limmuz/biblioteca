@@ -1,39 +1,18 @@
 package com.qs.biblioteca;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.DockerClientFactory;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
-
+@Testcontainers(disabledWithoutDocker = true)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public abstract class BaseMongoTest {
 
-    private static final MongoDBContainer MONGO = criarMongo();
-
-    @SuppressWarnings("java:S108")
-    private static MongoDBContainer criarMongo() {
-        try {
-            if (DockerClientFactory.instance().isDockerAvailable()) {
-                MongoDBContainer c = new MongoDBContainer(DockerImageName.parse("mongo:7.0"));
-                c.start();
-                return c;
-            }
-        } catch (Exception ignored) {}
-        return null;
-    }
-
-    @BeforeAll
-    static void skipIfDockerUnavailable() {
-        assumeTrue(MONGO != null, "Docker não disponível — testes ignorados");
-    }
-
-    @DynamicPropertySource
-    static void mongoProperties(DynamicPropertyRegistry registry) {
-        if (MONGO != null) {
-            registry.add("spring.data.mongodb.uri", MONGO::getConnectionString);
-        }
-    }
+    @Container
+    @ServiceConnection
+    static MongoDBContainer mongoDBContainer =
+            new MongoDBContainer(DockerImageName.parse("mongo:7.0"));
 }
