@@ -26,6 +26,7 @@ public class UsuarioResponse {
     private String bio;
     private int metaLeitura;
     private boolean perfilPublico;
+    private List<String> leitoresSeguidos;
 
     public UsuarioResponse(Usuario u) {
         this.id = u.getId();
@@ -46,5 +47,6 @@ public class UsuarioResponse {
         this.bio = u.getBio();
         this.metaLeitura = u.getMetaLeitura();
         this.perfilPublico = u.isPerfilPublico();
+        this.leitoresSeguidos = u.getLeitoresSeguidos();
     }
 }

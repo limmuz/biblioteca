@@ -1,26 +1,39 @@
 package com.qs.biblioteca;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
 
-/**
- * Base para todos os testes que precisam de MongoDB.
- * Inicia o container uma vez e sobrepõe a URI via @DynamicPropertySource,
- * garantindo que nenhum teste conecte ao banco de produção.
- */
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
 public abstract class BaseMongoTest {
 
-    static final MongoDBContainer mongoDBContainer =
-            new MongoDBContainer(DockerImageName.parse("mongo:7.0"));
+    private static final MongoDBContainer MONGO = criarMongo();
 
-    static {
-        mongoDBContainer.start();
+    @SuppressWarnings("java:S108")
+    private static MongoDBContainer criarMongo() {
+        try {
+            if (DockerClientFactory.instance().isDockerAvailable()) {
+                MongoDBContainer c = new MongoDBContainer(DockerImageName.parse("mongo:7.0"));
+                c.start();
+                return c;
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    @BeforeAll
+    static void skipIfDockerUnavailable() {
+        assumeTrue(MONGO != null, "Docker não disponível — testes ignorados");
     }
 
     @DynamicPropertySource
     static void mongoProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.mongodb.uri", mongoDBContainer::getConnectionString);
+        if (MONGO != null) {
+            registry.add("spring.data.mongodb.uri", MONGO::getConnectionString);
+        }
     }
 }

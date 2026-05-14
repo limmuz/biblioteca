@@ -1,7 +1,7 @@
 package com.qs.biblioteca.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -13,15 +13,13 @@ public class ViaCepService {
     private final String baseUrl;
     private final RestTemplate restTemplate;
 
-    @Autowired
-    public ViaCepService(@Value("${viacep.base-url:https://viacep.com.br/ws}") String baseUrl) {
+    public ViaCepService(
+            @Value("${viacep.base-url:https://viacep.com.br/ws}") String baseUrl) {
         this.baseUrl = baseUrl;
-        this.restTemplate = new RestTemplate();
-    }
-
-    public ViaCepService(String baseUrl, RestTemplate restTemplate) {
-        this.baseUrl = baseUrl;
-        this.restTemplate = restTemplate;
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(3000);
+        factory.setReadTimeout(3000);
+        this.restTemplate = new RestTemplate(factory);
     }
 
     @SuppressWarnings("unchecked")

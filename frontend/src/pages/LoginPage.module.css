@@ -34,10 +34,35 @@
 }
 
 .errorMsg {
-  color: #d14343;
+  color: #c0392b;
   font-size: 13px;
   margin-top: 6px;
   text-align: center;
+}
+
+.errorBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fff0f0;
+  border: 1px solid #f5c6c6;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 4px;
+}
+
+.errorBox .errorIcon {
+  font-size: 15px;
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
+.errorBox .errorText {
+  color: #c0392b;
+  font-size: 13px;
+  font-family: var(--font-poppins);
+  line-height: 1.5;
+  margin: 0;
 }
 
 .successMsg {

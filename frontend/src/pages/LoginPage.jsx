@@ -16,8 +16,13 @@ export default function LoginPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    setLoading(true);
 
+    if (!email.trim() || !password.trim()) {
+      setError('Preencha o email e a senha para entrar.');
+      return;
+    }
+
+    setLoading(true);
     try {
       const response = await api.post('/auth/login', {
         email,
@@ -26,9 +31,13 @@ export default function LoginPage() {
       saveSession(response.data);
       navigate('/home');
     } catch (err) {
-      const mensagemErro = err.response?.data?.message || 
-        'Erro ao fazer login. Verifique se o email e senha estão corretos e tente novamente.';
-      setError(mensagemErro);
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        setError('Email ou senha incorretos. Verifique seus dados e tente novamente.');
+      } else if (err.message === 'Network Error') {
+        setError('Erro de conexão. Verifique sua internet e tente novamente.');
+      } else {
+        setError('Erro ao fazer login. Tente novamente em instantes.');
+      }
       console.error('Erro no login:', err);
     } finally {
       setLoading(false);
@@ -60,7 +69,12 @@ export default function LoginPage() {
         <button type="submit" className={styles.submitBtn}>
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
-        {error ? <p style={{ color: '#d14343', marginTop: '10px' }}>{error}</p> : null}
+        {error && (
+          <div className={styles.errorBox}>
+            <span className={styles.errorIcon}>⚠️</span>
+            <p className={styles.errorText}>{error}</p>
+          </div>
+        )}
       </form>
       <hr className={styles.divider} />
       <p className={styles.bottomLink}>

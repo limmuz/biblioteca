@@ -9,13 +9,26 @@ import AdBanner from "../components/shared/AdBanner";
 import styles from "./HomePage.module.css";
 import api from "../services/api";
 
+const CACHE_TTL = 5 * 60 * 1000;
+function lerCache(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    return Date.now() - ts < CACHE_TTL ? data : null;
+  } catch { return null; }
+}
+function salvarCache(key, data) {
+  try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+}
+
 export default function HomePage() {
   const navigate = useNavigate();
   const [recentlyRead, setRecentlyRead] = useState([]);
   const [readingList, setReadingList] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
-  const [medias, setMedias] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [medias, setMedias] = useState(() => lerCache('lybre_medias_cache') || {});
+  const [loading, setLoading] = useState(() => lerCache('lybre_livros_cache') === null);
   const [errorModal, setErrorModal] = useState(null);
   const [showAllRecs, setShowAllRecs] = useState(false);
   const carouselRef = useRef(null);
@@ -62,15 +75,33 @@ export default function HomePage() {
   }, [recentlyRead]);
 
   useEffect(() => {
+    const cachedLivros = lerCache('lybre_livros_cache');
+    if (cachedLivros) {
+      const naLista = new Set(["LIDO", "LENDO", "QUERO LER"]);
+      setRecentlyRead(cachedLivros.filter((b) => b.status === "LIDO"));
+      setReadingList(cachedLivros.filter((b) => b.status === "LENDO" || b.status === "QUERO LER"));
+      const recs = cachedLivros.filter((b) => b.status === "RECOMENDADO");
+      setRecommendations(recs.length > 0 ? recs : cachedLivros.filter((b) => !naLista.has(b.status)).slice(0, 4));
+    }
     const fetchData = async () => {
       try {
-        await refreshLists();
-        const res = await api.get("/avaliacoes/medias");
+        const [resLivros, resMedias] = await Promise.all([
+          api.get("/livros"),
+          api.get("/avaliacoes/medias").catch(() => ({ data: [] })),
+        ]);
+        const all = resLivros.data;
+        salvarCache('lybre_livros_cache', all);
+        setRecentlyRead(all.filter((b) => b.status === "LIDO"));
+        setReadingList(all.filter((b) => b.status === "LENDO" || b.status === "QUERO LER"));
+        const recs = all.filter((b) => b.status === "RECOMENDADO");
+        const naLista = new Set(["LIDO", "LENDO", "QUERO LER"]);
+        setRecommendations(recs.length > 0 ? recs : all.filter((b) => !naLista.has(b.status)).slice(0, 4));
         const map = {};
-        res.data.forEach(m => {
-          const key = `${m.livroTitulo.toLowerCase()}||${m.livroAutor.toLowerCase()}`;
+        resMedias.data.forEach(m => {
+          const key = `${(m.livroTitulo || '').toLowerCase()}||${(m.livroAutor || '').toLowerCase()}`;
           map[key] = m;
         });
+        salvarCache('lybre_medias_cache', map);
         setMedias(map);
       } catch (err) {
         console.error("Erro ao carregar dados:", err);
@@ -127,7 +158,8 @@ export default function HomePage() {
                       src={book.cover}
                       alt={book.title}
                       className={styles.carouselRectImage}
-                      onError={(e) => { e.target.src = 'https://via.placeholder.com/140x210?text=Sem+Capa'; }}
+                      loading="lazy"
+                      onError={(e) => { e.target.src = '/books/book-sherlock.png'; }}
                     />
                     <div className={styles.carouselRectInfo}>
                       <p className={styles.carouselRectTitle}>{book.title}</p>

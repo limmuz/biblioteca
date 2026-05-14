@@ -4,6 +4,7 @@ import com.qs.biblioteca.dto.AvaliacaoRequest;
 import com.qs.biblioteca.dto.AvaliacaoResponse;
 import com.qs.biblioteca.dto.MediaAvaliacaoResponse;
 import com.qs.biblioteca.dto.PublicUsuarioResponse;
+import com.qs.biblioteca.dto.RespostaRequest;
 import com.qs.biblioteca.service.AvaliacaoService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -45,6 +46,11 @@ public class AvaliacaoController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/minhas")
+    public ResponseEntity<List<AvaliacaoResponse>> minhas(Authentication authentication) {
+        return ResponseEntity.ok(avaliacaoService.listarMinhas(authentication.getName()));
+    }
+
     @GetMapping("/medias")
     public ResponseEntity<List<MediaAvaliacaoResponse>> medias() {
         return ResponseEntity.ok(avaliacaoService.calcularMedias());
@@ -55,5 +61,29 @@ public class AvaliacaoController {
             @PathVariable String livroId,
             Authentication authentication) {
         return ResponseEntity.ok(avaliacaoService.outrosLeitores(livroId, authentication.getName()));
+    }
+
+    @PostMapping("/{avaliacaoId}/curtir")
+    public ResponseEntity<AvaliacaoResponse> curtir(
+            @PathVariable String avaliacaoId,
+            Authentication authentication) {
+        return ResponseEntity.ok(avaliacaoService.curtir(avaliacaoId, authentication.getName()));
+    }
+
+    @PostMapping("/{avaliacaoId}/responder")
+    public ResponseEntity<AvaliacaoResponse> responder(
+            @PathVariable String avaliacaoId,
+            @Valid @RequestBody RespostaRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(avaliacaoService.responder(avaliacaoId, authentication.getName(), request.getTexto()));
+    }
+
+    @DeleteMapping("/{avaliacaoId}/resposta/{respostaId}")
+    public ResponseEntity<Void> excluirResposta(
+            @PathVariable String avaliacaoId,
+            @PathVariable String respostaId,
+            Authentication authentication) {
+        avaliacaoService.excluirResposta(avaliacaoId, respostaId, authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 }

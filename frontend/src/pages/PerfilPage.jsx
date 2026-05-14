@@ -1,11 +1,42 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { useNavigate } from 'react-router-dom';
+
+const CACHE_TTL = 5 * 60 * 1000;
+function lerCache(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    return Date.now() - ts < CACHE_TTL ? data : null;
+  } catch { return null; }
+}
+function salvarCache(key, data) {
+  try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+}
+
+function compressImageToBlob(file, maxWidth, maxHeight, quality) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      const ratio = Math.min(maxWidth / img.width, maxHeight / img.height, 1);
+      canvas.width = Math.round(img.width * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(resolve, 'image/jpeg', quality);
+    };
+    img.src = url;
+  });
+}
+import { useNavigate, useLocation } from 'react-router-dom';
 import AppHeader from '../components/shared/AppHeader';
 import Footer from '../components/Footer/Footer';
 import api from '../services/api';
 import { getUser, clearSession } from '../services/auth';
 import AdBanner from '../components/shared/AdBanner';
+import LoadingSpinner from '../components/shared/LoadingSpinner';
 import styles from './PerfilPage.module.css';
 
 function Toast({ message, type, onClose }) {
@@ -76,7 +107,10 @@ const BG_FALLBACK = [
 
 export default function PerfilPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const fileInputRef = useRef(null);
+  const bgInputRef = useRef(null);
+  const perfisAddRef = useRef(null);
 
   const [usuario, setUsuario] = useState(null);
   const [livrosFavoritos, setLivrosFavoritos] = useState([]);
@@ -96,22 +130,19 @@ export default function PerfilPage() {
   const [perfilForm, setPerfilForm] = useState({ nome: '', email: '', nickname: '', bio: '', metaLeitura: '', perfilPublico: true, telefones: [''], redesSociais: [''] });
   const [salvandoPerfil, setSalvandoPerfil] = useState(false);
 
-  const [outrosLeitores, setOutrosLeitores] = useState([]);
+  const [outrosLeitores, setOutrosLeitores] = useState(() => lerCache('lybre_leitores_cache') || []);
   const leitoresCarouselRef = useRef(null);
 
-  const [perfisAdicionados, setPerfisAdicionados] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('lybre_perfis_add') || '[]'); }
-    catch { return []; }
-  });
+  const [perfisAdicionados, setPerfisAdicionados] = useState([]);
 
   const [buscaNickname, setBuscaNickname] = useState('');
   const [leitoresEncontrados, setLeitoresEncontrados] = useState([]);
   const [buscandoLeitor, setBuscandoLeitor] = useState(false);
   const [buscaErro, setBuscaErro] = useState('');
 
-  const [medias, setMedias] = useState({});
+  const [medias, setMedias] = useState(() => lerCache('lybre_medias_cache') || {});
+  const [meusComentarios, setMeusComentarios] = useState([]);
 
-  const bgInputRef = useRef(null);
   const [bgImage, setBgImage] = useState(() => localStorage.getItem('lybre_bg') || null);
   const [bgOpacity, setBgOpacity] = useState(() => Number.parseFloat(localStorage.getItem('lybre_bg_opacity') || '0.45'));
   const [perfilFonte, setPerfilFonte] = useState(() => localStorage.getItem('lybre_fonte') || 'serif');
@@ -127,48 +158,79 @@ export default function PerfilPage() {
   useEffect(() => {
     const carregarDados = async () => {
       try {
-        const resUsuario = await api.get('/usuarios/me');
-        const u = resUsuario.data;
-        setUsuario(u);
-        if (u.avatarBase64) {
-          setAvatarUrl(u.avatarBase64);
-          localStorage.setItem('lybre_avatar', u.avatarBase64);
-        }
-        if (u.bgBase64 && !localStorage.getItem('lybre_bg')) {
-          setBgImage(u.bgBase64);
-          localStorage.setItem('lybre_bg', u.bgBase64);
-        }
-        setPerfilForm({
-          nome: u.nome || '',
-          email: u.email || '',
-          nickname: u.nickname || '',
-          bio: u.bio || '',
-          metaLeitura: u.metaLeitura || '',
-          perfilPublico: u.perfilPublico ?? true,
-          telefones: u.telefones?.length ? u.telefones : [''],
-          redesSociais: u.redesSociais?.length ? u.redesSociais : [''],
-        });
-        if (u.enderecos?.length) {
-          setEnderecos(u.enderecos);
-        } else if (u.cep) {
-          setEnderecos([{ cep: u.cep, logradouro: u.logradouro || '', bairro: u.bairro || '', cidade: u.cidade || '', uf: u.uf || '' }]);
+        const [resMe, resLivros, resMedias, resLeitores, resMinhas] = await Promise.allSettled([
+          api.get('/usuarios/me'),
+          api.get('/livros'),
+          api.get('/avaliacoes/medias'),
+          api.get('/usuarios/leitores'),
+          api.get('/avaliacoes/minhas'),
+        ]);
+
+        if (resMe.status === 'rejected') {
+          const status = resMe.reason?.response?.status;
+          if (status === 401 || status === 404) {
+            clearSession();
+            navigate('/login');
+            return;
+          }
         } else {
-          setEnderecos([]);
+          const u = resMe.value.data;
+          setUsuario(u);
+          if (u.avatarBase64) {
+            setAvatarUrl(u.avatarBase64);
+            localStorage.setItem('lybre_avatar', u.avatarBase64);
+          }
+          if (u.bgBase64) {
+            setBgImage(u.bgBase64);
+            localStorage.setItem('lybre_bg', u.bgBase64);
+          }
+          setPerfilForm({
+            nome: u.nome || '',
+            email: u.email || '',
+            nickname: u.nickname || '',
+            bio: u.bio || '',
+            metaLeitura: u.metaLeitura || '',
+            perfilPublico: u.perfilPublico ?? true,
+            telefones: u.telefones?.length ? u.telefones : [''],
+            redesSociais: u.redesSociais?.length ? u.redesSociais : [''],
+          });
+          if (u.enderecos?.length) {
+            setEnderecos(u.enderecos);
+          } else if (u.cep) {
+            setEnderecos([{ cep: u.cep, logradouro: u.logradouro || '', bairro: u.bairro || '', cidade: u.cidade || '', uf: u.uf || '' }]);
+          } else {
+            setEnderecos([]);
+          }
+          if (u.leitoresSeguidos?.length > 0) {
+            Promise.allSettled(
+              u.leitoresSeguidos.map(id =>
+                api.get(`/usuarios/perfil/id/${encodeURIComponent(id)}`).catch(() => null)
+              )
+            ).then(resultados => {
+              const perfis = resultados
+                .filter(r => r.status === 'fulfilled' && r.value?.data)
+                .map(r => r.value.data);
+              if (perfis.length > 0) setPerfisAdicionados(perfis);
+            });
+          }
         }
 
-        const [resLivros, resMedias, resLeitores] = await Promise.all([
-          api.get('/livros'),
-          api.get('/avaliacoes/medias').catch(() => ({ data: [] })),
-          api.get('/usuarios/leitores').catch(() => ({ data: [] })),
-        ]);
-        setOutrosLeitores(resLeitores.data);
+        if (resLeitores.status === 'fulfilled') {
+          const leitoresData = resLeitores.value.data;
+          salvarCache('lybre_leitores_cache', leitoresData);
+          setOutrosLeitores(leitoresData);
+        }
+        setMeusComentarios(resMinhas.status === 'fulfilled' ? resMinhas.value.data : []);
+        const mediasData = resMedias.status === 'fulfilled' ? resMedias.value.data : [];
+        const todosLivros = resLivros.status === 'fulfilled' ? resLivros.value.data : [];
+
         const mediaMap = {};
-        resMedias.data.forEach(m => {
-          const key = `${m.livroTitulo.toLowerCase()}||${m.livroAutor.toLowerCase()}`;
+        mediasData.forEach(m => {
+          const key = `${(m.livroTitulo || '').toLowerCase()}||${(m.livroAutor || '').toLowerCase()}`;
           mediaMap[key] = m;
         });
+        salvarCache('lybre_medias_cache', mediaMap);
         setMedias(mediaMap);
-        const todosLivros = resLivros.data;
         const queroLer = todosLivros.filter(l => l.status === 'QUERO LER');
         const favoritos = todosLivros.filter(l => {
           const key = `${(l.title || '').toLowerCase()}||${(l.author || '').toLowerCase()}`;
@@ -198,6 +260,15 @@ export default function PerfilPage() {
     if (savedAvatar) setAvatarUrl(savedAvatar);
   }, []);
 
+  useEffect(() => {
+    if (!loading && location.state?.scrollTo === 'perfisAdicionados') {
+      const t = setTimeout(() => {
+        perfisAddRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 400);
+      return () => clearTimeout(t);
+    }
+  }, [loading, location.state]);
+
   const handleLogout = () => { clearSession(); navigate('/login'); };
 
   const handleAvatarChange = (e) => {
@@ -207,41 +278,25 @@ export default function PerfilPage() {
       showToast('A imagem deve ter no máximo 2MB.', 'error');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const dataUrl = ev.target.result;
-      setAvatarUrl(dataUrl);
-      localStorage.setItem('lybre_avatar', dataUrl);
+    compressImageToBlob(file, 200, 200, 0.8).then(async (blob) => {
+      const localUrl = URL.createObjectURL(blob);
+      setAvatarUrl(localUrl);
       try {
-        await api.put('/usuarios/me', { avatarBase64: dataUrl });
+        const form = new FormData();
+        form.append('file', blob, 'avatar.jpg');
+        form.append('pasta', 'avatares');
+        const { data } = await api.post('/imagens/upload', form);
+        await api.put('/usuarios/me', { avatarBase64: data.url });
+        localStorage.setItem('lybre_avatar', data.url);
+        setAvatarUrl(data.url);
         showToast('Foto atualizada com sucesso!');
       } catch (err) {
-        console.error('Erro ao salvar avatar:', err);
-        showToast('Foto salva localmente, mas falhou no servidor.', 'error');
+        console.error('Erro upload foto:', err?.response?.data?.erro || err?.response?.data || err?.message || err);
+        showToast('Erro ao atualizar foto.', 'error');
       }
-    };
-    reader.readAsDataURL(file);
+    });
   };
 
-  const handleBgChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { showToast('A imagem deve ter no máximo 5MB.', 'error'); return; }
-    const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const dataUrl = ev.target.result;
-      setBgImage(dataUrl);
-      setUsuario(u => ({ ...u, bgBase64: dataUrl }));
-      localStorage.setItem('lybre_bg', dataUrl);
-      try {
-        await api.put('/usuarios/me', { bgBase64: dataUrl });
-        showToast('Plano de fundo atualizado!');
-      } catch {
-        showToast('Fundo salvo localmente, mas falhou no servidor.', 'error');
-      }
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleRemoverBg = async () => {
     setBgImage(null);
@@ -253,23 +308,53 @@ export default function PerfilPage() {
     showToast('Plano de fundo removido.');
   };
 
+  const handleBgChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('A imagem deve ter no máximo 5MB.', 'error');
+      return;
+    }
+    compressImageToBlob(file, 1920, 1080, 0.8).then(async (blob) => {
+      const localUrl = URL.createObjectURL(blob);
+      setBgImage(localUrl);
+      try {
+        const form = new FormData();
+        form.append('file', blob, 'fundo.jpg');
+        form.append('pasta', 'fundos');
+        const { data } = await api.post('/imagens/upload', form);
+        await api.put('/usuarios/me', { bgBase64: data.url });
+        localStorage.setItem('lybre_bg', data.url);
+        setBgImage(data.url);
+        showToast('Plano de fundo atualizado!');
+      } catch (err) {
+        console.error('Erro upload fundo:', err?.response?.data?.erro || err?.response?.data || err?.message || err);
+        showToast('Erro ao atualizar fundo.', 'error');
+      }
+    });
+  };
+
   const handleBgOpacity = (val) => {
     setBgOpacity(val);
     localStorage.setItem('lybre_bg_opacity', String(val));
   };
 
-  const handleAdicionarLeitor = (leitor) => {
+  const handleAdicionarLeitor = async (leitor) => {
     if (perfisAdicionados.some(p => p.id === leitor.id)) return;
     const novo = [...perfisAdicionados, leitor];
     setPerfisAdicionados(novo);
-    localStorage.setItem('lybre_perfis_add', JSON.stringify(novo));
+    try {
+      await api.put('/usuarios/me', { leitoresSeguidos: novo.map(p => p.id) });
+    } catch { /* silencioso */ }
     showToast(`${leitor.nome} adicionado aos seus perfis!`);
   };
 
-  const handleRemoverLeitor = (id) => {
+  const handleRemoverLeitor = async (id) => {
     const novo = perfisAdicionados.filter(p => p.id !== id);
     setPerfisAdicionados(novo);
-    localStorage.setItem('lybre_perfis_add', JSON.stringify(novo));
+    try {
+      await api.put('/usuarios/me', { leitoresSeguidos: novo.map(p => p.id) });
+    } catch { /* silencioso */ }
   };
 
   const addTelefone = () => setPerfilForm(f => ({ ...f, telefones: [...f.telefones, ''] }));
@@ -283,7 +368,6 @@ export default function PerfilPage() {
     setSalvandoPerfil(true);
     try {
       await api.put('/usuarios/me', {
-        ...usuario,
         nome: perfilForm.nome,
         email: perfilForm.email,
         nickname: perfilForm.nickname,
@@ -341,8 +425,9 @@ export default function PerfilPage() {
       const novosEnderecos = editandoEnderecoIdx === 'novo'
         ? [...enderecos, { ...enderecoForm, cep: enderecoForm.cep.replaceAll(/\D/g, '') }]
         : enderecos.map((e, i) => i === editandoEnderecoIdx ? { ...enderecoForm, cep: enderecoForm.cep.replaceAll(/\D/g, '') } : e);
-      await api.put('/usuarios/me', { ...usuario, enderecos: novosEnderecos });
+      await api.put('/usuarios/me', { enderecos: novosEnderecos });
       setEnderecos(novosEnderecos);
+      setUsuario(u => ({ ...u, enderecos: novosEnderecos }));
       setEditandoEnderecoIdx(null);
       showToast('Endereço salvo com sucesso!');
     } catch (err) {
@@ -363,8 +448,9 @@ export default function PerfilPage() {
         setConfirmModal(null);
         const novosEnderecos = enderecos.filter((_, i) => i !== idx);
         try {
-          await api.put('/usuarios/me', { ...usuario, enderecos: novosEnderecos });
+          await api.put('/usuarios/me', { enderecos: novosEnderecos });
           setEnderecos(novosEnderecos);
+          setUsuario(u => ({ ...u, enderecos: novosEnderecos }));
           showToast('Endereço excluído.');
         } catch (err) {
           console.error(err);
@@ -482,13 +568,24 @@ export default function PerfilPage() {
     return entries.reduce((a, b) => (b[1] > a[1] ? b : a), entries[0])[0];
   }, [todosPorStatus]);
 
+  const livrosPorTituloAutor = useMemo(() => {
+    const map = {};
+    [...todosPorStatus['LIDO'], ...todosPorStatus['LENDO'], ...todosPorStatus['QUERO LER'], ...todosPorStatus['RECOMENDADO']]
+      .forEach(l => { map[`${l.title.toLowerCase()}||${l.author.toLowerCase()}`] = l; });
+    return map;
+  }, [todosPorStatus]);
+
+  const livrosMaisComentados = useMemo(() => {
+    return Object.values(medias)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 6);
+  }, [medias]);
+
   if (loading) {
     return (
       <div className={styles.page}>
         <AppHeader />
-        <main className={styles.main}>
-          <h2 style={{ color: 'white', textAlign: 'center', marginTop: '100px' }}>Carregando perfil...</h2>
-        </main>
+        <LoadingSpinner message="Carregando seu perfil..." />
       </div>
     );
   }
@@ -517,7 +614,6 @@ export default function PerfilPage() {
       <AppHeader />
       <main className={styles.main}>
 
-        {/* Cabeçalho do Perfil */}
         <div className={styles.profileHeader}>
           <div className={styles.avatarWrapper}>
             {avatarUrl
@@ -563,7 +659,6 @@ export default function PerfilPage() {
           </div>
         </div>
 
-        {/* Formulário de edição de perfil */}
         {editandoPerfil && (
           <div className={styles.addressCard}>
             <h2 className={styles.sectionTitle}>Editar Informações</h2>
@@ -598,7 +693,7 @@ export default function PerfilPage() {
               <div className={styles.formRow}>
                 <span className={styles.formLabel}>Telefones</span>
                 {perfilForm.telefones.map((tel, i) => (
-                  <div key={i} className={styles.multiInputRow}>{/* NOSONAR - editable list without stable IDs */}
+                  <div key={i} className={styles.multiInputRow}>
                     <input className={styles.formInput} type="tel" value={tel} placeholder="(11) 99999-9999"
                       aria-label={`Telefone ${i + 1}`}
                       onChange={e => updateTelefone(i, e.target.value)} />
@@ -612,7 +707,7 @@ export default function PerfilPage() {
               <div className={styles.formRow}>
                 <span className={styles.formLabel}>Redes Sociais</span>
                 {perfilForm.redesSociais.map((rs, i) => (
-                  <div key={i} className={styles.multiInputRow}>{/* NOSONAR - editable list without stable IDs */}
+                  <div key={i} className={styles.multiInputRow}>
                     <input className={styles.formInput} type="text" value={rs} placeholder="@instagram ou link"
                       aria-label={`Rede social ${i + 1}`}
                       onChange={e => updateRedeSocial(i, e.target.value)} />
@@ -635,25 +730,28 @@ export default function PerfilPage() {
               </div>
               <div className={styles.formRow}>
                 <span className={styles.formLabel}>Plano de fundo</span>
-                <input ref={bgInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBgChange} />
-                <div className={styles.bgUploadRow}>
-                  <button className={styles.btnEdit} type="button" onClick={() => bgInputRef.current?.click()}>
-                    {bgImage ? 'Trocar imagem' : 'Escolher imagem'}
-                  </button>
-                  {bgImage && (
-                    <>
+                {bgImage ? (
+                  <>
+                    <div className={styles.bgUploadRow}>
                       <img src={bgImage} alt="Prévia do fundo" className={styles.bgPreview} />
-                      <button className={styles.bgRemoveBtn} type="button" onClick={handleRemoverBg}>Remover</button>
-                    </>
-                  )}
-                </div>
-                {bgImage && (
-                  <div className={styles.opacityRow}>
-                    <span className={styles.opacityLabel}>Opacidade</span>
-                    <input type="range" min="0.05" max="0.9" step="0.01" value={bgOpacity}
-                      className={styles.opacitySlider}
-                      onChange={e => handleBgOpacity(Number.parseFloat(e.target.value))} />
-                    <span className={styles.opacityLabel}>{Math.round(bgOpacity * 100)}%</span>
+                      <button className={styles.btnEdit} type="button" onClick={() => bgInputRef.current?.click()}>Alterar fundo</button>
+                      <button className={styles.btnSmallDelete} type="button" onClick={handleRemoverBg}>Remover</button>
+                      <input ref={bgInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBgChange} />
+                    </div>
+                    <div className={styles.opacityRow}>
+                      <span className={styles.opacityLabel}>Opacidade</span>
+                      <input type="range" min="0.05" max="0.9" step="0.01" value={bgOpacity}
+                        className={styles.opacitySlider}
+                        onChange={e => handleBgOpacity(Number.parseFloat(e.target.value))} />
+                      <span className={styles.opacityLabel}>{Math.round(bgOpacity * 100)}%</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className={styles.bgUploadRow}>
+                    <button className={styles.btnEdit} type="button" onClick={() => bgInputRef.current?.click()}>
+                      Escolher imagem de fundo
+                    </button>
+                    <input ref={bgInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleBgChange} />
                   </div>
                 )}
               </div>
@@ -675,14 +773,13 @@ export default function PerfilPage() {
                   <option value="'Courier New', monospace">Mono</option>
                 </select>
               </div>
-              <button className={styles.btnPrimary} onClick={handleSalvarPerfil} disabled={salvandoPerfil} type="button">
+              <button className={styles.btnPrimary} style={{ alignSelf: 'flex-start' }} onClick={handleSalvarPerfil} disabled={salvandoPerfil} type="button">
                 {salvandoPerfil ? 'Salvando...' : 'Salvar Perfil'}
               </button>
             </div>
           </div>
         )}
 
-        {/* Estatísticas */}
         <div className={styles.statsCard}>
           <h2 className={styles.sectionTitle}>Estatísticas de Leitura</h2>
           <div className={styles.statsPills}>
@@ -735,7 +832,7 @@ export default function PerfilPage() {
                       <button type="button" className={styles.statBookBtn}
                         onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro } })}>
                         <img src={livro.cover} alt={livro.title} className={styles.statBookCover}
-                          onError={(e) => { e.target.src = 'https://via.placeholder.com/60x90?text=Capa'; }} />
+                          onError={(e) => { e.target.src = '/books/book-sherlock.png'; }} />
                         <div className={styles.statBookInfo}>
                           <p className={styles.statBookTitle}>{livro.title}</p>
                           <p className={styles.statBookAuthor}>{livro.author}</p>
@@ -762,7 +859,7 @@ export default function PerfilPage() {
                     <button type="button" className={styles.statBookBtn}
                       onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro } })}>
                       <img src={livro.cover} alt={livro.title} className={styles.statBookCover}
-                        onError={(e) => { e.target.src = 'https://via.placeholder.com/60x90?text=Capa'; }} />
+                        onError={(e) => { e.target.src = '/books/book-sherlock.png'; }} />
                       <div className={styles.statBookInfo}>
                         <p className={styles.statBookTitle}>{livro.title}</p>
                         <p className={styles.statBookAuthor}>{livro.author}</p>
@@ -781,7 +878,6 @@ export default function PerfilPage() {
           )}
         </div>
 
-        {/* Endereços */}
         <div className={styles.addressCard}>
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>Endereços</h2>
@@ -896,7 +992,6 @@ export default function PerfilPage() {
           )}
         </div>
 
-        {/* Livros Favoritos */}
         <div className={styles.favoritesSection}>
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>Meus Favoritos ({livrosFavoritos.length})</h2>
@@ -937,7 +1032,103 @@ export default function PerfilPage() {
           )}
         </div>
 
-        {/* Outros Leitores */}
+        {meusComentarios.length > 0 && (
+          <div className={styles.commentsSection}>
+            <h2 className={styles.sectionTitle}>Meus Comentários ({meusComentarios.length})</h2>
+            <div className={styles.commentsList}>
+              {meusComentarios.map(av => {
+                const livro = livrosPorTituloAutor[`${av.livroTitulo?.toLowerCase()}||${av.livroAutor?.toLowerCase()}`];
+                const cover = livro?.cover || av.livroCover;
+                const livroId = livro?.id || av.livroId;
+                const data = av.criadoEm ? new Date(av.criadoEm).toLocaleDateString('pt-BR') : '';
+                return (
+                  <div key={av.id} className={styles.commentItem}>
+                    <div className={styles.commentRow}>
+                      {cover && (
+                        <button
+                          type="button"
+                          className={styles.commentCoverBtn}
+                          onClick={() => livroId && navigate(`/livro/${livroId}`, { state: { bookData: livro } })}
+                        >
+                          <img src={cover} alt={av.livroTitulo} className={styles.commentCover}
+                            onError={e => { e.target.style.display = 'none'; }} />
+                        </button>
+                      )}
+                      <div className={styles.commentBody}>
+                        <div className={styles.commentBookInfo}>
+                          <p className={styles.commentBookTitle}>{av.livroTitulo}</p>
+                          <p className={styles.commentBookAuthor}>{av.livroAutor}</p>
+                        </div>
+                        <div className={styles.commentStars}>
+                          {[1,2,3,4,5].map(s => (
+                            <span key={s} className={s <= av.rating ? styles.starFilled : styles.starEmpty}>★</span>
+                          ))}
+                        </div>
+                        {av.comentario && <p className={styles.commentText}>"{av.comentario}"</p>}
+                        <div className={styles.commentMeta}>
+                          {av.totalCurtidas > 0 && <span className={styles.commentCurtidas}>❤️ {av.totalCurtidas}</span>}
+                          {data && <span className={styles.commentData}>{data}</span>}
+                        </div>
+                        {livroId && (
+                          <button
+                            type="button"
+                            className={styles.btnVerLivroComment}
+                            onClick={() => navigate(`/livro/${livroId}`, { state: { bookData: livro } })}
+                          >
+                            Ver livro →
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {livrosMaisComentados.length > 0 && (
+          <div className={styles.commentsSection}>
+            <h2 className={styles.sectionTitle}>Livros Mais Comentados</h2>
+            <div className={styles.topBooksGrid}>
+              {livrosMaisComentados.map((m, idx) => {
+                const livro = livrosPorTituloAutor[`${m.livroTitulo?.toLowerCase()}||${m.livroAutor?.toLowerCase()}`];
+                return (
+                  <div
+                    key={`${m.livroTitulo}||${m.livroAutor}`}
+                    className={styles.topBookItem}
+                  >
+                    <span className={styles.topBookRank}>#{idx + 1}</span>
+                    {livro?.cover && (
+                      <img src={livro.cover} alt={m.livroTitulo} className={styles.topBookCover}
+                        onError={e => { e.target.style.display = 'none'; }} />
+                    )}
+                    <div className={styles.topBookInfo}>
+                      <p className={styles.topBookTitle}>{m.livroTitulo}</p>
+                      <p className={styles.topBookAuthor}>{m.livroAutor}</p>
+                      <div className={styles.topBookRatingRow}>
+                        {[1,2,3,4,5].map(s => (
+                          <span key={s} className={s <= Math.round(m.media) ? styles.starFilled : styles.starEmpty}>★</span>
+                        ))}
+                        <span className={styles.topBookStats}>{m.media.toFixed(1)} · {m.total} comentário{m.total !== 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+                    {livro && (
+                      <button
+                        type="button"
+                        className={styles.btnVerComentario}
+                        onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro } })}
+                      >
+                        Ver
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {outrosLeitores.length > 0 && (
           <div className={styles.communitySection}>
             <h2 className={styles.sectionTitle}>Conheça outros leitores</h2>
@@ -948,7 +1139,6 @@ export default function PerfilPage() {
                 const inicLetras = leitor.nome?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?';
                 return (
                   <div key={leitor.id} className={styles.leitorCard}>
-                    {/* Fundo do card */}
                     <div
                       className={styles.leitorCardBg}
                       style={leitor.bgBase64 ? { backgroundImage: `url(${leitor.bgBase64})` } : {}}
@@ -956,7 +1146,6 @@ export default function PerfilPage() {
                     />
                     <div className={styles.leitorCardOverlay} aria-hidden="true" />
 
-                    {/* Avatar */}
                     <div className={styles.leitorCardAvatar}>
                       {leitor.avatarBase64
                         ? <img src={leitor.avatarBase64} alt={leitor.nome} className={styles.leitorCardAvatarImg} />
@@ -964,24 +1153,23 @@ export default function PerfilPage() {
                       }
                     </div>
 
-                    {/* Info */}
                     <div className={styles.leitorCardInfo}>
                       <p className={styles.leitorCardNome}>{leitor.nome}</p>
                       {leitor.nickname && <p className={styles.leitorCardNick}>@{leitor.nickname}</p>}
                       {leitor.bio && <p className={styles.leitorCardBio}>{leitor.bio}</p>}
                     </div>
 
-                    {/* Ações */}
                     <div className={styles.leitorCardActions}>
-                      {leitor.nickname && (
-                        <button
-                          type="button"
-                          className={styles.btnVerPerfilCard}
-                          onClick={() => navigate(`/leitor/${leitor.nickname}`)}
-                        >
-                          Ver perfil
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className={styles.btnVerPerfilCard}
+                        onClick={() => leitor.nickname
+                          ? navigate(`/leitor/${leitor.nickname}`)
+                          : navigate(`/leitor/id/${leitor.id}`)
+                        }
+                      >
+                        Ver perfil
+                      </button>
                       <button
                         type="button"
                         className={jaAdicionado ? styles.btnAdicionadoCard : styles.btnAdicionarCard}
@@ -997,9 +1185,8 @@ export default function PerfilPage() {
           </div>
         )}
 
-        {/* Perfis Adicionados */}
         {perfisAdicionados.length > 0 && (
-          <div className={styles.communitySection}>
+          <div className={styles.communitySection} ref={perfisAddRef}>
             <h2 className={styles.sectionTitle}>Perfis adicionados</h2>
             <p className={styles.communitySubtitle}>Leitores que você acompanha</p>
             <div className={styles.perfisAdicionadosGrid}>
@@ -1024,15 +1211,16 @@ export default function PerfilPage() {
                       {leitor.nickname && <p className={styles.perfilAdicionadoNick}>@{leitor.nickname}</p>}
                     </div>
                     <div className={styles.perfilAdicionadoAcoes}>
-                      {leitor.nickname && (
-                        <button
-                          type="button"
-                          className={styles.btnVerPerfilCard}
-                          onClick={() => navigate(`/leitor/${leitor.nickname}`)}
-                        >
-                          Ver perfil
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className={styles.btnVerPerfilCard}
+                        onClick={() => leitor.nickname
+                          ? navigate(`/leitor/${leitor.nickname}`, { state: { from: 'perfisAdicionados' } })
+                          : navigate(`/leitor/id/${leitor.id}`, { state: { from: 'perfisAdicionados' } })
+                        }
+                      >
+                        Ver perfil
+                      </button>
                       <button
                         type="button"
                         className={styles.btnRemoverPerfilAdd}
@@ -1048,7 +1236,6 @@ export default function PerfilPage() {
           </div>
         )}
 
-        {/* Comunidades */}
         <div className={styles.communitySection}>
           <h2 className={styles.sectionTitle}>Comunidades de Leitura</h2>
           <p className={styles.communitySubtitle}>Grupos do Facebook para leitores</p>
@@ -1081,45 +1268,63 @@ export default function PerfilPage() {
                 onChange={e => { setBuscaNickname(e.target.value); setBuscaErro(''); setLeitoresEncontrados([]); }}
                 placeholder="Ex: Sofia ou @sofia_reads"
               />
-              <button className={styles.btnPrimary} type="submit" disabled={buscandoLeitor}>
+              <button className={styles.btnSearch} type="submit" disabled={buscandoLeitor}>
                 {buscandoLeitor ? 'Buscando...' : 'Buscar'}
               </button>
             </form>
             {buscaErro && <p className={styles.searchError}>{buscaErro}</p>}
             {leitoresEncontrados.length > 0 && (
               <div className={styles.leitorResultados}>
-                {leitoresEncontrados.map(leitor => (
-                  <div key={leitor.id} className={styles.leitorCard}>
-                    <div className={styles.leitorAvatar}>
-                      {leitor.avatarBase64
-                        ? <img src={leitor.avatarBase64} alt="avatar" className={styles.leitorAvatarImg} />
-                        : <div className={styles.leitorAvatarInitials}>
-                            {leitor.nome?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()}
-                          </div>
-                      }
+                {leitoresEncontrados.map(leitor => {
+                  const jaAdic = perfisAdicionados.some(p => p.id === leitor.id);
+                  return (
+                    <div key={leitor.id} className={styles.leitorResultItem}>
+                      <div
+                        className={styles.leitorResultBg}
+                        style={leitor.bgBase64 ? { backgroundImage: `url(${leitor.bgBase64})` } : {}}
+                        aria-hidden="true"
+                      />
+                      <div className={styles.leitorResultOverlay} aria-hidden="true" />
+                      <div className={styles.leitorResultContent}>
+                        <div className={styles.leitorResultAvatar}>
+                          {leitor.avatarBase64
+                            ? <img src={leitor.avatarBase64} alt="avatar" className={styles.leitorResultAvatarImg} />
+                            : leitor.nome?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
+                          }
+                        </div>
+                        <div className={styles.leitorResultInfo}>
+                          <p className={styles.leitorResultNome}>{leitor.nome}</p>
+                          {leitor.nickname && <p className={styles.leitorResultNickname}>@{leitor.nickname}</p>}
+                          {leitor.bio && <p className={styles.leitorResultBio}>"{leitor.bio}"</p>}
+                        </div>
+                        <div className={styles.leitorResultAcoes}>
+                          <button
+                            className={styles.btnVerPerfilCard}
+                            type="button"
+                            onClick={() => leitor.nickname
+                              ? navigate(`/leitor/${leitor.nickname}`)
+                              : navigate(`/leitor/id/${leitor.id}`)
+                            }
+                          >
+                            Ver Perfil
+                          </button>
+                          <button
+                            type="button"
+                            className={jaAdic ? styles.btnAdicionadoCard : styles.btnAdicionarCard}
+                            onClick={() => jaAdic ? handleRemoverLeitor(leitor.id) : handleAdicionarLeitor(leitor)}
+                          >
+                            {jaAdic ? '✓ Adicionado' : '+ Adicionar'}
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <div className={styles.leitorInfo}>
-                      <p className={styles.leitorNome}>{leitor.nome}</p>
-                      {leitor.nickname && <p className={styles.leitorNickname}>@{leitor.nickname}</p>}
-                      {leitor.bio && <p className={styles.leitorBio}>"{leitor.bio}"</p>}
-                    </div>
-                    {leitor.nickname && (
-                      <button
-                        className={styles.btnVerPerfil}
-                        type="button"
-                        onClick={() => navigate(`/leitor/${leitor.nickname}`)}
-                      >
-                        Ver Perfil
-                      </button>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
 
-        {/* Ações */}
         <div className={styles.actionsCard}>
           <button className={styles.btnDanger} onClick={handleLogout}>Sair da Conta</button>
           <button className={styles.btnDangerOutline} onClick={() => setShowDeleteModal(true)} type="button">Excluir Conta</button>
@@ -1129,10 +1334,8 @@ export default function PerfilPage() {
         <div className={styles.footerWrap}><Footer /></div>
       </main>
 
-      {/* Toast */}
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
 
-      {/* Confirm Modal */}
       {confirmModal && (
         <ConfirmModal
           title={confirmModal.title}
@@ -1144,7 +1347,6 @@ export default function PerfilPage() {
         />
       )}
 
-      {/* Modal excluir conta */}
       {showDeleteModal && (
         <ConfirmModal
           title="Excluir Conta"

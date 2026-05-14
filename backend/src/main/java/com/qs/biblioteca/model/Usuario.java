@@ -18,6 +18,7 @@ public class Usuario {
 
     private String nome;
 
+    @Indexed
     private String nickname;
 
     @Indexed(unique = true)
@@ -45,8 +46,11 @@ public class Usuario {
 
     private String bio;
 
+    private List<String> leitoresSeguidos;
+
     private int metaLeitura;
 
+    @Indexed
     private boolean perfilPublico = true;
 
     @Getter
