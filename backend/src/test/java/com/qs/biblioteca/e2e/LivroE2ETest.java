@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @DisplayName("E2E – LivroController (CRUD completo com JWT)")
+@SuppressWarnings("null")
 class LivroE2ETest extends BaseMongoTest {
 
     @LocalServerPort

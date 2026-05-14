@@ -30,8 +30,6 @@ jobs:
         run: chmod +x mvnw
 
       - name: Build backend e rodar testes
-        env:
-          SPRING_DATA_MONGODB_URI: ${{ secrets.MONGODB_URI }}
         run: ./mvnw -B clean verify
 
       - name: Upload relatório de testes
@@ -102,7 +100,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SPRING_DATA_MONGODB_URI: ${{ secrets.MONGODB_URI }}
         run: |
           ./mvnw -B verify sonar:sonar \
             -Dsonar.projectKey=AnaPaula2024_biblioteca \
