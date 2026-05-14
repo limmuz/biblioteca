@@ -16,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -30,10 +31,8 @@ class ViaCepIntegrationTest extends BaseMongoTest {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    // Verifica se o viacep.com.br está acessível antes de cada teste.
-    // Em ambientes sem acesso externo (CI sem saída para a internet) o teste
-    // é pulado com Assumptions.assumeTrue — o build permanece verde.
     @BeforeEach
+    @SuppressWarnings("java:S108")
     void assumirViaCepAcessivel() {
         boolean acessivel = false;
         try {
@@ -44,7 +43,6 @@ class ViaCepIntegrationTest extends BaseMongoTest {
             acessivel = conn.getResponseCode() < 500;
             conn.disconnect();
         } catch (Exception ignored) {
-            // API inacessível neste ambiente
         }
         assumeTrue(acessivel, "ViaCEP API não está acessível neste ambiente — teste ignorado");
     }
@@ -54,8 +52,12 @@ class ViaCepIntegrationTest extends BaseMongoTest {
     void buscarCep_valido_deveRetornarEndereco() {
         String url = "http://localhost:" + port + "/api/cep/01310-100";
 
+        HttpMethod method = Objects.requireNonNull(HttpMethod.GET);
+
         ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
-                url, HttpMethod.GET, null,
+                url, 
+                method, 
+                null,
                 new ParameterizedTypeReference<Map<String, Object>>() {});
 
         assertEquals(200, response.getStatusCode().value());

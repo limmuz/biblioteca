@@ -1,9 +1,7 @@
-# MongoDB Atlas
-spring.data.mongodb.uri=mongodb+srv://<usuario>:<senha>@<cluster>.mongodb.net/<banco>?retryWrites=true&w=majority
-
-# JWT
-jwt.secret=<chave-secreta-minimo-32-caracteres>
-jwt.expiration-ms=86400000
-
-# ViaCEP (opcional, usa padrão se não configurado)
-# viacep.base-url=https://viacep.com.br/ws
+# Exemplo de configuração - NÃO COLOQUE SENHAS REAIS AQUI
+spring.data.mongodb.uri=mongodb+srv://<usuario>:<senha>@cluster.mongodb.net/db
+jwt.secret=<chave-de-pelo-menos-32-caracteres>
+app.seed.enabled=false
+cloudinary.cloud-name=seu_cloud_name
+cloudinary.api-key=sua_api_key
+cloudinary.api-secret=seu_api_secret

@@ -1,6 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+
+const CACHE_TTL = 5 * 60 * 1000;
+function lerCache(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    return Date.now() - ts < CACHE_TTL ? data : null;
+  } catch { return null; }
+}
+function salvarCache(key, data) {
+  try { localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+}
 import AppHeader from '../components/shared/AppHeader';
 import Footer from '../components/Footer/Footer';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
@@ -41,8 +54,8 @@ export default function DetalhesLivroPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [book, setBook] = useState(location.state?.bookData || null);
-  const [loading, setLoading] = useState(!book);
+  const [book, setBook] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
@@ -56,16 +69,38 @@ export default function DetalhesLivroPage() {
   const [editandoAvaliacao, setEditandoAvaliacao] = useState(false);
 
   const [outrosLeitores, setOutrosLeitores] = useState([]);
+  const [respostaAberta, setRespostaAberta] = useState(null);
+  const [textoResposta, setTextoResposta] = useState('');
+  const [enviandoResposta, setEnviandoResposta] = useState(false);
+
+  const [allBooks, setAllBooks] = useState(() => lerCache('lybre_livros_cache') || []);
 
   useEffect(() => {
-    if (book) { setLoading(false); return; }
+    setError(false);
+    setToastVisible(false);
+    setRespostaAberta(null);
+    const fromState = location.state?.bookData;
+    if (fromState && fromState.id === id) {
+      setBook(fromState);
+      setLoading(false);
+      return;
+    }
+    setBook(null);
+    setLoading(true);
     api.get(`/livros/${id}`)
       .then((res) => { setBook(res.data); setLoading(false); })
       .catch(() => { setError(true); setLoading(false); });
-  }, [id, book]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
+    setAvaliacoes([]);
+    setMinhaAvaliacao(null);
+    setRatingForm(0);
+    setComentarioForm('');
+    setEditandoAvaliacao(false);
+    setOutrosLeitores([]);
     api.get(`/avaliacoes/livro/${id}`)
       .then((res) => {
         setAvaliacoes(res.data);
@@ -81,6 +116,32 @@ export default function DetalhesLivroPage() {
       .then((res) => setOutrosLeitores(res.data))
       .catch(() => {});
   }, [id]);
+
+  useEffect(() => {
+    api.get('/livros')
+      .then((res) => { salvarCache('lybre_livros_cache', res.data); setAllBooks(res.data); })
+      .catch(() => {});
+  }, []);
+
+  const currentIdx = allBooks.findIndex(b => b.id === id);
+  const prevBook = currentIdx > 0 ? allBooks[currentIdx - 1] : null;
+  const nextBook = currentIdx >= 0 && currentIdx < allBooks.length - 1 ? allBooks[currentIdx + 1] : null;
+
+  const recoBooks = useMemo(() => {
+    if (!book || allBooks.length === 0) return [];
+    const cats = new Set((book.categories || []).map(c => c.toLowerCase()));
+    return allBooks
+      .filter(b => b.id !== id && (
+        b.author?.toLowerCase() === book.author?.toLowerCase() ||
+        (b.categories || []).some(c => cats.has(c.toLowerCase()))
+      ));
+  }, [allBooks, book, id]);
+
+  const recoCarouselRef = React.useRef(null);
+  const scrollReco = (dir) => {
+    if (!recoCarouselRef.current) return;
+    recoCarouselRef.current.scrollBy({ left: dir * 220, behavior: 'smooth' });
+  };
 
   const mediaRating = avaliacoes.length
     ? (avaliacoes.reduce((s, a) => s + a.rating, 0) / avaliacoes.length).toFixed(1)
@@ -154,15 +215,47 @@ export default function DetalhesLivroPage() {
     navigate(`/editar-livro/${book.id}`, { state: { bookData: book } });
   };
 
+  const handleCurtir = async (avaliacaoId) => {
+    try {
+      const res = await api.post(`/avaliacoes/${avaliacaoId}/curtir`);
+      setAvaliacoes(prev => prev.map(a => a.id === avaliacaoId ? { ...a, ...res.data } : a));
+    } catch (err) { console.error(err); }
+  };
+
+  const handleResponder = async (avaliacaoId) => {
+    if (!textoResposta.trim()) return;
+    setEnviandoResposta(true);
+    try {
+      const res = await api.post(`/avaliacoes/${avaliacaoId}/responder`, { texto: textoResposta });
+      setAvaliacoes(prev => prev.map(a => a.id === avaliacaoId ? { ...a, ...res.data } : a));
+      setTextoResposta('');
+      setRespostaAberta(null);
+    } catch (err) { console.error(err); }
+    finally { setEnviandoResposta(false); }
+  };
+
+  const handleExcluirResposta = async (avaliacaoId, respostaId) => {
+    try {
+      await api.delete(`/avaliacoes/${avaliacaoId}/resposta/${respostaId}`);
+      setAvaliacoes(prev => prev.map(a => a.id === avaliacaoId
+        ? { ...a, respostas: (a.respostas || []).filter(r => r.id !== respostaId) }
+        : a
+      ));
+    } catch (err) { console.error(err); }
+  };
+
   const handleExcluirPermanente = async () => {
     try {
       await api.delete(`/livros/${book.id}`);
+      localStorage.removeItem('lybre_livros_cache');
       navigate('/home');
     } catch (err) {
       console.error(err);
     }
     setConfirmDelete(false);
   };
+
+  const goToBook = (b) => navigate(`/livro/${b.id}`, { state: { bookData: b } });
 
   if (loading) {
     return (
@@ -203,8 +296,10 @@ export default function DetalhesLivroPage() {
   const statusInfo = statusConfig[book.status];
 
   return (
+    <>
     <div className={styles.page}>
       <AppHeader />
+
       <main className={styles.main}>
 
         <div className={styles.hero}>
@@ -274,15 +369,21 @@ export default function DetalhesLivroPage() {
           </div>
         </div>
 
-        {/* Outros leitores */}
         {outrosLeitores.length > 0 && (
           <div className={styles.leitoresCard}>
             <h2 className={styles.sectionTitle}>Outros leitores com este livro</h2>
             <div className={styles.leitoresGrid}>
               {outrosLeitores.map((l) => {
                 const iniciais = l.nome?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+                const perfilUrl = l.nickname ? `/leitor/${l.nickname}` : `/leitor/id/${l.id}`;
                 return (
-                  <div key={l.id} className={styles.leitorChip}>
+                  <button
+                    key={l.id}
+                    type="button"
+                    className={styles.leitorChip}
+                    onClick={() => navigate(perfilUrl)}
+                    title={`Ver perfil de ${l.nome}`}
+                  >
                     {l.avatarBase64
                       ? <img src={l.avatarBase64} alt={l.nome} className={styles.leitorChipAvatar} />
                       : <div className={styles.leitorChipInitials}>{iniciais}</div>
@@ -291,14 +392,13 @@ export default function DetalhesLivroPage() {
                       <p className={styles.leitorChipNome}>{l.nome}</p>
                       {l.nickname && <p className={styles.leitorChipNick}>@{l.nickname}</p>}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
           </div>
         )}
 
-        {/* Avaliações */}
         <div className={styles.avaliacoesCard}>
           <div className={styles.avaliacoesHeader}>
             <h2 className={styles.sectionTitle}>Avaliações</h2>
@@ -311,7 +411,6 @@ export default function DetalhesLivroPage() {
             )}
           </div>
 
-          {/* Esquerda: minha avaliação */}
           {!minhaAvaliacao || editandoAvaliacao ? (
             <div className={styles.minhaAvaliacaoForm}>
               <h3 className={styles.formTitle}>{minhaAvaliacao ? 'Editar avaliação' : 'Avaliar este livro'}</h3>
@@ -348,7 +447,6 @@ export default function DetalhesLivroPage() {
             </div>
           )}
 
-          {/* Direita: lista de avaliações de outros */}
           <div className={styles.avaliacoesList}>
             {avaliacoes.filter(a => !a.minha).length === 0 ? (
               <p className={styles.semAvaliacoes}>Ainda sem avaliações de outros leitores.</p>
@@ -356,6 +454,7 @@ export default function DetalhesLivroPage() {
               avaliacoes.filter(a => !a.minha).map((av) => {
                 const ini = av.usuarioNome?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
                 const data = new Date(av.criadoEm).toLocaleDateString('pt-BR');
+                const respostaOpen = respostaAberta === av.id;
                 return (
                   <div key={av.id} className={styles.avaliacaoItem}>
                     <div className={styles.avaliacaoAvatar}>
@@ -372,6 +471,89 @@ export default function DetalhesLivroPage() {
                         <span className={styles.avaliacaoData}>{data}</span>
                       </div>
                       {av.comentario && <p className={styles.avaliacaoTexto}>{av.comentario}</p>}
+                      <div className={styles.avaliacaoFooter}>
+                        <button
+                          type="button"
+                          className={av.euCurti ? styles.btnCurtirAtivo : styles.btnCurtir}
+                          onClick={() => handleCurtir(av.id)}
+                          title={av.euCurti ? 'Descurtir' : 'Curtir'}
+                        >
+                          {av.euCurti ? '❤️' : '🤍'} {av.totalCurtidas > 0 ? av.totalCurtidas : ''}
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.btnResponder}
+                          onClick={() => {
+                            setRespostaAberta(respostaOpen ? null : av.id);
+                            setTextoResposta('');
+                          }}
+                        >
+                          💬 {(av.respostas?.length > 0) ? av.respostas.length : ''} Responder
+                        </button>
+                      </div>
+                      {respostaOpen && (
+                        <div className={styles.respostaForm}>
+                          <textarea
+                            className={styles.respostaInput}
+                            placeholder="Escreva uma resposta..."
+                            value={textoResposta}
+                            onChange={e => setTextoResposta(e.target.value)}
+                            maxLength={500}
+                            rows={2}
+                          />
+                          <div className={styles.formActions}>
+                            <button
+                              type="button"
+                              className={styles.btnAvaliar}
+                              onClick={() => handleResponder(av.id)}
+                              disabled={!textoResposta.trim() || enviandoResposta}
+                            >
+                              {enviandoResposta ? 'Enviando...' : 'Enviar'}
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.btnCancelar}
+                              onClick={() => { setRespostaAberta(null); setTextoResposta(''); }}
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {av.respostas?.length > 0 && (
+                        <div className={styles.respostaList}>
+                          {av.respostas.map(r => {
+                            const rIni = r.usuarioNome?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+                            return (
+                              <div key={r.id} className={styles.respostaItem}>
+                                <div className={styles.avaliacaoAvatar}>
+                                  {r.avatarBase64
+                                    ? <img src={r.avatarBase64} alt={r.usuarioNome} className={styles.avaliacaoAvatarImg} />
+                                    : <div className={styles.avaliacaoAvatarIni} style={{ width: 26, height: 26, fontSize: 10 }}>{rIni}</div>
+                                  }
+                                </div>
+                                <div className={styles.avaliacaoBody}>
+                                  <div className={styles.avaliacaoMeta}>
+                                    <span className={styles.avaliacaoNome}>{r.usuarioNome}</span>
+                                    {r.usuarioNickname && <span className={styles.avaliacaoNick}>@{r.usuarioNickname}</span>}
+                                    <span className={styles.avaliacaoData}>{new Date(r.criadoEm).toLocaleDateString('pt-BR')}</span>
+                                  </div>
+                                  <p className={styles.avaliacaoTexto}>{r.texto}</p>
+                                  {r.minha && (
+                                    <button
+                                      type="button"
+                                      className={styles.btnExcluir2}
+                                      onClick={() => handleExcluirResposta(av.id, r.id)}
+                                    >
+                                      Excluir
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -379,6 +561,39 @@ export default function DetalhesLivroPage() {
             )}
           </div>
         </div>
+
+        {recoBooks.length > 0 && (
+          <div className={styles.recoSection}>
+            <h2 className={styles.sectionTitle}>Você também pode gostar</h2>
+            <div className={styles.recoCarouselWrap}>
+              {recoBooks.length > 3 && (
+                <button type="button" className={styles.recoArrowLeft} onClick={() => scrollReco(-1)} aria-label="Anterior">‹</button>
+              )}
+              <div className={styles.recoCarousel} ref={recoCarouselRef}>
+                {recoBooks.map(b => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    className={styles.recoCard}
+                    onClick={() => goToBook(b)}
+                  >
+                    <img
+                      src={b.cover}
+                      alt={b.title}
+                      className={styles.recoCover}
+                      onError={e => { e.target.src = 'https://via.placeholder.com/120x180?text=Sem+Capa'; }}
+                    />
+                    <p className={styles.recoTitle}>{b.title}</p>
+                    <p className={styles.recoAuthor}>{b.author}</p>
+                  </button>
+                ))}
+              </div>
+              {recoBooks.length > 3 && (
+                <button type="button" className={styles.recoArrowRight} onClick={() => scrollReco(1)} aria-label="Próximo">›</button>
+              )}
+            </div>
+          </div>
+        )}
 
         <AdBanner variant="banner" />
         <div className={styles.footerWrap}>
@@ -411,5 +626,29 @@ export default function DetalhesLivroPage() {
         />
       )}
     </div>
+
+    {prevBook && (
+      <button
+        className={styles.navArrowLeft}
+        onClick={() => goToBook(prevBook)}
+        title={prevBook.title}
+        aria-label={`Livro anterior: ${prevBook.title}`}
+      >
+        ‹
+        <span className={styles.navArrowLabel}>{prevBook.title}</span>
+      </button>
+    )}
+    {nextBook && (
+      <button
+        className={styles.navArrowRight}
+        onClick={() => goToBook(nextBook)}
+        title={nextBook.title}
+        aria-label={`Próximo livro: ${nextBook.title}`}
+      >
+        ›
+        <span className={styles.navArrowLabel}>{nextBook.title}</span>
+      </button>
+    )}
+    </>
   );
 }

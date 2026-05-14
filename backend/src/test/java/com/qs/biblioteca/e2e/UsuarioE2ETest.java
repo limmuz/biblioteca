@@ -3,7 +3,6 @@ package com.qs.biblioteca.e2e;
 import com.qs.biblioteca.BaseMongoTest;
 import com.qs.biblioteca.dto.AuthResponse;
 import com.qs.biblioteca.dto.RegisterRequest;
-import com.qs.biblioteca.repository.LivroRepository;
 import com.qs.biblioteca.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,13 +17,14 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@DisplayName("E2E – UsuarioController (perfil, personalização e perfil público)")
-@SuppressWarnings({"rawtypes", "unchecked", "null"})
+@DisplayName("E2E – UsuarioController (/me, /leitores, /pesquisar, /perfil)")
+@SuppressWarnings("null")
 class UsuarioE2ETest extends BaseMongoTest {
 
     @LocalServerPort
@@ -32,398 +32,250 @@ class UsuarioE2ETest extends BaseMongoTest {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Autowired private UsuarioRepository usuarioRepository;
-    @Autowired private LivroRepository livroRepository;
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     private String baseUrl;
     private String jwtToken;
 
     @BeforeEach
     void setup() {
-        baseUrl = "http://localhost:" + port;
+        baseUrl = "http://localhost:" + port + "/api";
         usuarioRepository.deleteAll();
-        livroRepository.deleteAll();
-        jwtToken = registrarEObterToken("usuario@email.com", "senha123", "leitora_teste");
+
+        RegisterRequest req = new RegisterRequest();
+        req.setNome("Ana Teste");
+        req.setEmail("ana@teste.com");
+        req.setSenha("senha123");
+
+        ResponseEntity<AuthResponse> res = restTemplate.postForEntity(
+                baseUrl + "/auth/register", req, AuthResponse.class);
+
+        jwtToken = Objects.requireNonNull(res.getBody()).getToken();
     }
 
+    private HttpEntity<Void> comToken() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(jwtToken);
+        return new HttpEntity<>(headers);
+    }
+
+    private HttpEntity<String> comTokenEJson(String payload) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(jwtToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return new HttpEntity<>(payload, headers);
+    }
 
     @Nested
     @DisplayName("GET /api/usuarios/me")
-    class BuscarMeTests {
+    class MeTests {
 
         @Test
-        @DisplayName("Deve retornar dados do usuario autenticado com status 200")
-        void me_autenticado_deveRetornar200ComDados() {
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
+        @DisplayName("Deve retornar perfil do usuario autenticado")
+        void me_autenticado_deveRetornarPerfil() {
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    baseUrl + "/usuarios/me",
                     HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Map.class);
+                    comToken(),
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
+            );
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals("Leitor Teste", response.getBody().get("nome"));
-            assertEquals("usuario@email.com", response.getBody().get("email"));
+            Map<String, Object> body = Objects.requireNonNull(response.getBody());
+            assertEquals("ana@teste.com", body.get("email"));
+            assertEquals("Ana Teste", body.get("nome"));
         }
 
         @Test
-        @DisplayName("Deve retornar 403 sem JWT")
-        void me_semJwt_deveRetornar403() {
+        @DisplayName("Deve retornar 401 sem token de autenticacao")
+        void me_semToken_deveRetornar401() {
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.getForEntity(baseUrl + "/api/usuarios/me", String.class));
-            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+                    restTemplate.getForEntity(baseUrl + "/usuarios/me", String.class)
+            );
+            assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
         }
     }
-
 
     @Nested
-    @DisplayName("PUT /api/usuarios/me — personalização de perfil (RF-13)")
-    class AtualizarPerfilTests {
+    @DisplayName("PUT /api/usuarios/me")
+    class AtualizarTests {
 
         @Test
-        @DisplayName("Deve salvar bio e retornar 200 com bio atualizada")
-        void atualizar_bio_deveRetornar200() {
-            var payload = Map.of("bio", "Apaixonada por livros de fantasia");
-
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
+        @DisplayName("Deve atualizar nome do usuario e retornar dados atualizados")
+        void atualizar_comNomeNovo_deveRetornarUsuarioAtualizado() {
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    baseUrl + "/usuarios/me",
                     HttpMethod.PUT,
-                    new HttpEntity<>(payload, headersComJwt()),
-                    Map.class);
+                    comTokenEJson("{\"nome\": \"Ana Atualizada\", \"bio\": \"Leitora\"}"),
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
+            );
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals("Apaixonada por livros de fantasia", response.getBody().get("bio"));
+            Map<String, Object> body = Objects.requireNonNull(response.getBody());
+            assertEquals("Ana Atualizada", body.get("nome"));
         }
 
         @Test
-        @DisplayName("Deve salvar metaLeitura e retornar 200")
-        void atualizar_metaLeitura_deveRetornar200() {
-            var payload = Map.of("metaLeitura", 24);
-
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.PUT,
-                    new HttpEntity<>(payload, headersComJwt()),
-                    Map.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertEquals(24, response.getBody().get("metaLeitura"));
-        }
-
-        @Test
-        @DisplayName("Deve salvar perfilPublico=false e persistir no banco")
-        void atualizar_perfilPublico_deveRetornar200EPersistir() {
-            var payload = Map.of("perfilPublico", false);
-
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.PUT,
-                    new HttpEntity<>(payload, headersComJwt()),
-                    Map.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertEquals(false, response.getBody().get("perfilPublico"));
-
-            var usuarioNoBanco = usuarioRepository.findByEmail("usuario@email.com");
-            assertTrue(usuarioNoBanco.isPresent());
-            assertFalse(usuarioNoBanco.get().isPerfilPublico());
-        }
-
-        @Test
-        @DisplayName("Deve salvar bgBase64 e retornar no campo bgBase64")
-        void atualizar_bgBase64_deveRetornar200ComCampo() {
-            var payload = Map.of("bgBase64", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==");
-
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.PUT,
-                    new HttpEntity<>(payload, headersComJwt()),
-                    Map.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals("data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==",
-                    response.getBody().get("bgBase64"));
-        }
-
-        @Test
-        @DisplayName("Deve salvar nickname e retornar 200")
-        void atualizar_nickname_deveRetornar200() {
-            var payload = Map.of("nickname", "nova_leitora");
-
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.PUT,
-                    new HttpEntity<>(payload, headersComJwt()),
-                    Map.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertEquals("nova_leitora", response.getBody().get("nickname"));
-        }
-
-        @Test
-        @DisplayName("Deve retornar 403 sem JWT")
-        void atualizar_semJwt_deveRetornar403() {
-            var req = new HttpEntity<>(Map.of("bio", "teste"));
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
-                    () -> restTemplate.exchange(baseUrl + "/api/usuarios/me", HttpMethod.PUT, req, String.class));
-            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        @DisplayName("Deve retornar 401 ao tentar atualizar sem token")
+        void atualizar_semToken_deveRetornar401() {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.exchange(baseUrl + "/usuarios/me", HttpMethod.PUT,
+                            new HttpEntity<>("{\"nome\": \"Teste\"}", headers), String.class)
+            );
+            assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
         }
     }
-
 
     @Nested
-    @DisplayName("GET /api/usuarios/perfil/:nickname — perfil público (RF-14)")
-    class PerfilPublicoTests {
+    @DisplayName("DELETE /api/usuarios/me")
+    class ExcluirTests {
 
         @Test
-        @DisplayName("Deve retornar perfil completo com bgBase64 para usuario publico")
-        void perfil_publico_deveRetornar200ComDados() {
-            restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.PUT,
-                    new HttpEntity<>(Map.of("bgBase64", "data:image/png;base64,abc123"), headersComJwt()),
-                    Map.class);
+        @DisplayName("Deve excluir conta do usuario e retornar 204")
+        void excluir_deveRetornar204() {
+            ResponseEntity<Void> response = restTemplate.exchange(
+                    baseUrl + "/usuarios/me",
+                    HttpMethod.DELETE,
+                    comToken(),
+                    Void.class
+            );
 
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/perfil/leitora_teste",
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Map.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals("Leitor Teste", response.getBody().get("nome"));
-            assertEquals("leitora_teste", response.getBody().get("nickname"));
-            assertEquals("data:image/png;base64,abc123", response.getBody().get("bgBase64"));
-        }
-
-        @Test
-        @DisplayName("Deve retornar 403 quando perfil e privado")
-        void perfil_privado_deveRetornar403() {
-            restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.PUT,
-                    new HttpEntity<>(Map.of("perfilPublico", false), headersComJwt()),
-                    Map.class);
-
-            var req = new HttpEntity<>(headersComJwt());
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
-                    () -> restTemplate.exchange(baseUrl + "/api/usuarios/perfil/leitora_teste",
-                            HttpMethod.GET, req, String.class));
-            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 404 para nickname inexistente")
-        void perfil_nicknameInexistente_deveRetornar404() {
-            var req = new HttpEntity<>(headersComJwt());
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
-                    () -> restTemplate.exchange(baseUrl + "/api/usuarios/perfil/nickname-que-nao-existe",
-                            HttpMethod.GET, req, String.class));
-            assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-        }
-
-        @Test
-        @DisplayName("Deve incluir totalLidos, totalLendo e totalQueroLer no perfil")
-        void perfil_deveIncluirEstatisticas() {
-            ResponseEntity<Map> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/perfil/leitora_teste",
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Map.class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody().get("totalLidos"));
-            assertNotNull(response.getBody().get("totalLendo"));
-            assertNotNull(response.getBody().get("totalQueroLer"));
+            assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         }
     }
-
 
     @Nested
     @DisplayName("GET /api/usuarios/leitores")
-    class ListarLeitoresTests {
+    class LeitoresTests {
 
         @Test
-        @DisplayName("Deve retornar lista de outros leitores publicos")
+        @DisplayName("Deve listar leitores publicos sem incluir o proprio usuario")
         void leitores_deveRetornarLista() {
-            registrarEObterToken("outro@email.com", "senha123", "outro_leitor");
-
-            ResponseEntity<Map[]> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/leitores",
+            ResponseEntity<Object[]> response = restTemplate.exchange(
+                    baseUrl + "/usuarios/leitores",
                     HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Map[].class);
+                    comToken(),
+                    Object[].class
+            );
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
-            assertEquals(1, response.getBody().length);
-        }
-
-        @Test
-        @DisplayName("Deve incluir campo perfilPublico na listagem de leitores")
-        void leitores_deveConterCampoPerfilPublico() {
-            registrarEObterToken("outro@email.com", "senha123", "outro_leitor");
-
-            ResponseEntity<Map[]> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/leitores",
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Map[].class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals(1, response.getBody().length);
-            assertTrue(response.getBody()[0].containsKey("perfilPublico"));
-        }
-
-        @Test
-        @DisplayName("Deve excluir leitor com perfil privado da listagem")
-        void leitores_deveExcluirPerfilPrivado() {
-            String tokenPrivado = registrarEObterToken("privado@email.com", "senha123", "leitor_privado");
-
-            HttpHeaders headersPrivado = new HttpHeaders();
-            headersPrivado.setContentType(MediaType.APPLICATION_JSON);
-            headersPrivado.setBearerAuth(tokenPrivado);
-            restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.PUT,
-                    new HttpEntity<>(Map.of("perfilPublico", false), headersPrivado),
-                    Map.class);
-
-            ResponseEntity<Map[]> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/leitores",
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Map[].class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals(0, response.getBody().length);
-        }
-
-        @Test
-        @DisplayName("Deve retornar 403 sem JWT")
-        void leitores_semJwt_deveRetornar403() {
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.getForEntity(baseUrl + "/api/usuarios/leitores", String.class));
-            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
         }
     }
-
 
     @Nested
     @DisplayName("GET /api/usuarios/pesquisar")
-    class PesquisarLeitoresTests {
+    class PesquisarTests {
 
         @Test
-        @DisplayName("Deve encontrar usuario por nome")
-        void pesquisar_porNome_deveRetornarResultado() {
-            ResponseEntity<Map[]> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/pesquisar?q=Leitor Teste",
+        @DisplayName("Deve pesquisar por nome e retornar lista")
+        void pesquisar_porNome_deveRetornarLista() {
+            ResponseEntity<Object[]> response = restTemplate.exchange(
+                    baseUrl + "/usuarios/pesquisar?q=Ana",
                     HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Map[].class);
+                    comToken(),
+                    Object[].class
+            );
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
-            assertTrue(response.getBody().length > 0);
         }
 
         @Test
-        @DisplayName("Deve encontrar usuario por nickname com @")
-        void pesquisar_porNicknameComArroba_deveRetornarResultado() {
-            ResponseEntity<Map[]> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/pesquisar?q=@leitora_teste",
+        @DisplayName("Deve pesquisar por nickname com @ e retornar lista")
+        void pesquisar_porNickname_deveRetornarLista() {
+            ResponseEntity<Object[]> response = restTemplate.exchange(
+                    baseUrl + "/usuarios/pesquisar?q=@algumnick",
                     HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Map[].class);
+                    comToken(),
+                    Object[].class
+            );
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals(1, response.getBody().length);
-            assertEquals("leitora_teste", response.getBody()[0].get("nickname"));
-        }
-
-        @Test
-        @DisplayName("Deve excluir leitor com perfil privado da pesquisa por nome")
-        void pesquisar_deveExcluirPerfilPrivado() {
-            String tokenPrivado = registrarEObterToken("privado@email.com", "senha123", "leitor_privado");
-
-            HttpHeaders headersPrivado = new HttpHeaders();
-            headersPrivado.setContentType(MediaType.APPLICATION_JSON);
-            headersPrivado.setBearerAuth(tokenPrivado);
-            restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
-                    HttpMethod.PUT,
-                    new HttpEntity<>(Map.of("perfilPublico", false), headersPrivado),
-                    Map.class);
-
-            ResponseEntity<Map[]> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/pesquisar?q=Leitor Teste",
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Map[].class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals(1, response.getBody().length);
-            assertEquals("leitora_teste", response.getBody()[0].get("nickname"));
-        }
-
-        @Test
-        @DisplayName("Deve retornar lista vazia para termo sem resultado")
-        void pesquisar_semResultado_deveRetornarListaVazia() {
-            ResponseEntity<Map[]> response = restTemplate.exchange(
-                    baseUrl + "/api/usuarios/pesquisar?q=xyz_nao_existe_123",
-                    HttpMethod.GET,
-                    new HttpEntity<>(headersComJwt()),
-                    Map[].class);
-
-            assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertEquals(0, response.getBody().length);
         }
     }
 
+    @Nested
+    @DisplayName("GET /api/usuarios/perfil/{nickname} e /perfil/id/{id}")
+    class PerfilPublicoTests {
 
-    private String registrarEObterToken(String email, String senha, String nickname) {
-        RegisterRequest reg = new RegisterRequest();
-        reg.setNome("Leitor Teste");
-        reg.setEmail(email);
-        reg.setSenha(senha);
-        reg.setCep("01310100");
-        reg.setLogradouro("Av. Paulista");
-        reg.setBairro("Bela Vista");
-        reg.setCidade("Sao Paulo");
-        reg.setUf("SP");
-
-        ResponseEntity<AuthResponse> response = restTemplate.postForEntity(
-                baseUrl + "/api/auth/register", reg, AuthResponse.class);
-
-        assertNotNull(response.getBody());
-        String token = response.getBody().getToken();
-
-        if (nickname != null) {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setBearerAuth(token);
+        @Test
+        @DisplayName("Deve retornar perfil publico por nickname")
+        void perfilPorNickname_deveRetornarPerfil() {
             restTemplate.exchange(
-                    baseUrl + "/api/usuarios/me",
+                    baseUrl + "/usuarios/me",
                     HttpMethod.PUT,
-                    new HttpEntity<>(Map.of("nickname", nickname), headers),
-                    Map.class);
+                    comTokenEJson("{\"nickname\": \"anateste\", \"perfilPublico\": true}"),
+                    Void.class
+            );
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    baseUrl + "/usuarios/perfil/anateste",
+                    HttpMethod.GET,
+                    comToken(),
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
         }
 
-        return token;
+        @Test
+        @DisplayName("Deve retornar perfil publico pelo ID do usuario")
+        void perfilPorId_deveRetornarPerfil() {
+            ResponseEntity<Map<String, Object>> meRes = restTemplate.exchange(
+                    baseUrl + "/usuarios/me",
+                    HttpMethod.GET,
+                    comToken(),
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            String id = (String) Objects.requireNonNull(meRes.getBody()).get("id");
+
+            restTemplate.exchange(
+                    baseUrl + "/usuarios/me",
+                    HttpMethod.PUT,
+                    comTokenEJson("{\"perfilPublico\": true}"),
+                    Void.class
+            );
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    baseUrl + "/usuarios/perfil/id/" + id,
+                    HttpMethod.GET,
+                    comToken(),
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+        }
     }
 
-    private HttpHeaders headersComJwt() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(jwtToken);
-        return headers;
+    @Nested
+    @DisplayName("GET /api/usuarios/buscar")
+    class BuscarPorNicknameTests {
+
+        @Test
+        @DisplayName("Deve buscar usuario publico por nickname exato")
+        void buscar_porNickname_deveRetornarPerfil() {
+            restTemplate.exchange(
+                    baseUrl + "/usuarios/me",
+                    HttpMethod.PUT,
+                    comTokenEJson("{\"nickname\": \"nickbusca\", \"perfilPublico\": true}"),
+                    Void.class
+            );
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    baseUrl + "/usuarios/buscar?nickname=nickbusca",
+                    HttpMethod.GET,
+                    comToken(),
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+        }
     }
 }

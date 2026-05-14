@@ -113,6 +113,7 @@ export default function EditarLivroPage() {
       };
 
       await api.put(`/livros/${id}`, payload);
+      localStorage.removeItem('lybre_livros_cache');
       setModal({
         title: 'Livro atualizado!',
         message: 'As alterações foram salvas com sucesso.',

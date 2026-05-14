@@ -127,11 +127,10 @@ export default function AppHeader() {
           </button>
         </div>
 
-        {/* ── Barra de pesquisa com dropdown ── */}
         <div className={styles.searchWrapper} ref={wrapperRef}>
           <div className={`${styles.searchBar} ${showDrop && sugestoes.length > 0 ? styles.searchBarOpen : ''}`}>
             <input
-              type="search"
+              type="text"
               className={styles.searchInput}
               placeholder="Título, autor ou categoria..."
               value={termo}

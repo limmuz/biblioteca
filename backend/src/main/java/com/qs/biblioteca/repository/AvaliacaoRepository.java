@@ -2,6 +2,7 @@ package com.qs.biblioteca.repository;
 
 import com.qs.biblioteca.model.Avaliacao;
 import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -16,4 +17,7 @@ public interface AvaliacaoRepository extends MongoRepository<Avaliacao, String> 
 
     Optional<Avaliacao> findByLivroTituloIgnoreCaseAndLivroAutorIgnoreCaseAndUsuarioEmail(
             String titulo, String autor, String email);
+
+    @Query(value = "{}", fields = "{'livroTitulo': 1, 'livroAutor': 1, 'rating': 1}")
+    List<Avaliacao> findAllParaMedias();
 }
