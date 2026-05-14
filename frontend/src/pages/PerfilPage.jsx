@@ -183,9 +183,6 @@ export default function PerfilPage() {
           if (u.bgBase64) {
             setBgImage(u.bgBase64);
             localStorage.setItem('lybre_bg', u.bgBase64);
-          } else if (u.bgBase64 === null || u.bgBase64 === '') {
-            setBgImage(null);
-            localStorage.removeItem('lybre_bg');
           }
           setPerfilForm({
             nome: u.nome || '',
@@ -293,7 +290,8 @@ export default function PerfilPage() {
         localStorage.setItem('lybre_avatar', data.url);
         setAvatarUrl(data.url);
         showToast('Foto atualizada com sucesso!');
-      } catch {
+      } catch (err) {
+        console.error('Erro upload foto:', err?.response?.data?.erro || err?.response?.data || err?.message || err);
         showToast('Erro ao atualizar foto.', 'error');
       }
     });
@@ -329,7 +327,8 @@ export default function PerfilPage() {
         localStorage.setItem('lybre_bg', data.url);
         setBgImage(data.url);
         showToast('Plano de fundo atualizado!');
-      } catch {
+      } catch (err) {
+        console.error('Erro upload fundo:', err?.response?.data?.erro || err?.response?.data || err?.message || err);
         showToast('Erro ao atualizar fundo.', 'error');
       }
     });
@@ -774,7 +773,7 @@ export default function PerfilPage() {
                   <option value="'Courier New', monospace">Mono</option>
                 </select>
               </div>
-              <button className={styles.btnPrimary} onClick={handleSalvarPerfil} disabled={salvandoPerfil} type="button">
+              <button className={styles.btnPrimary} style={{ alignSelf: 'flex-start' }} onClick={handleSalvarPerfil} disabled={salvandoPerfil} type="button">
                 {salvandoPerfil ? 'Salvando...' : 'Salvar Perfil'}
               </button>
             </div>
