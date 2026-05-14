@@ -1152,6 +1152,24 @@
   transform: translateY(-1px);
 }
 
+.btnSearch {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-cream-text);
+  background-color: var(--color-forest);
+  border: none;
+  border-radius: 6px;
+  padding: 7px 18px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+}
+
+.btnSearch:hover {
+  opacity: 0.88;
+}
+
 .btnDanger {
   font-family: var(--font-sans);
   font-size: 14px;
@@ -1225,6 +1243,24 @@
   border-radius: 10px;
   padding: 12px 14px;
   box-shadow: 0 2px 8px rgba(17,26,25,0.06);
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+  cursor: pointer;
+}
+
+.communityCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(17,26,25,0.13);
+}
+
+.communityCard:hover .communityIcon {
+  animation: iconPulse 0.5s ease;
+}
+
+@keyframes iconPulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.25); }
+  70%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
 }
 
 .communityIcon {
@@ -1279,14 +1315,14 @@
 .communitySearch {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   border-top: 1px solid rgba(17,26,25,0.08);
-  padding-top: 20px;
+  padding-top: 16px;
 }
 
 .communitySearchTitle {
   font-family: var(--font-serif);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 400;
   color: var(--color-ink);
   margin: 0;
@@ -1294,21 +1330,22 @@
 
 .searchForm {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
+  max-width: 480px;
 }
 
 .searchInput {
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 13px;
   color: var(--color-ink);
   background: #f7f4e8;
   border: 1.5px solid rgba(17,26,25,0.15);
-  border-radius: 8px;
-  padding: 10px 14px;
+  border-radius: 6px;
+  padding: 7px 12px;
   outline: none;
   flex: 1;
-  min-width: 180px;
+  min-width: 160px;
   transition: border-color 0.2s;
 }
 
@@ -1323,68 +1360,360 @@
   margin: 0;
 }
 
-.leitorCard {
+.leitorResultItem {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--color-forest);
+  animation: expandDown 0.2s ease;
+  transition: transform 0.15s;
+}
+
+.leitorResultItem:hover {
+  transform: translateY(-2px);
+}
+
+.leitorResultBg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--color-forest);
+}
+
+.leitorResultOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(17,26,25,0.6);
+}
+
+.leitorResultContent {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 14px;
-  background: #f0ede2;
-  border-radius: 10px;
   padding: 14px 16px;
-  animation: expandDown 0.2s ease;
 }
 
-.leitorAvatar {
+.leitorResultAvatar {
   flex-shrink: 0;
-}
-
-.leitorAvatarImg {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  object-fit: cover;
-}
-
-.leitorAvatarInitials {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.7);
   background: var(--color-forest);
-  color: var(--color-cream-text);
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #fff;
+  font-size: 18px;
   font-family: var(--font-serif);
-  font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
+  overflow: hidden;
 }
 
-.leitorInfo {
+.leitorResultAvatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.leitorResultInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.leitorResultNome {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leitorResultNickname {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: rgba(255,255,255,0.75);
+  margin: 2px 0 0;
+}
+
+.leitorResultBio {
+  font-family: var(--font-serif);
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+  font-style: italic;
+  margin: 2px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leitorResultAcoes {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.commentsSection {
+  background-color: var(--color-warm-beige);
+  border-radius: 12px;
+  padding: 28px 32px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 16px;
 }
 
-.leitorNome {
-  font-family: var(--font-sans);
+.commentsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.commentItem {
+  background: #f7f4e8;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.commentRow {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.commentCoverBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.commentCover {
+  width: 60px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  display: block;
+}
+
+.commentBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.commentBookInfo {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.commentBookTitle {
+  font-family: var(--font-serif);
   font-size: 15px;
   font-weight: 600;
   color: var(--color-ink);
   margin: 0;
 }
 
-.leitorNickname {
+.commentBookAuthor {
   font-family: var(--font-sans);
-  font-size: 13px;
-  color: var(--color-forest);
+  font-size: 12px;
+  color: var(--color-sage);
   margin: 0;
 }
 
-.leitorBio {
-  font-family: var(--font-serif);
+.commentStars {
+  display: flex;
+  gap: 1px;
+}
+
+.commentText {
+  font-family: var(--font-sans);
   font-size: 13px;
-  color: var(--color-sage);
-  font-style: italic;
+  color: var(--color-ink);
   margin: 0;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.commentMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.commentCurtidas {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: #c03030;
+}
+
+.commentData {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--color-sage);
+}
+
+.btnVerComentario {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--color-forest);
+  background: transparent;
+  border: 1px solid var(--color-forest);
+  border-radius: 20px;
+  padding: 3px 12px;
+  cursor: pointer;
+  margin-left: auto;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btnVerComentario:hover {
+  background: var(--color-forest);
+  color: var(--color-cream-text);
+}
+
+.btnVerLivroComment {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-cream-text);
+  background: var(--color-forest);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-top: 4px;
+  transition: opacity 0.15s;
+}
+
+.btnVerLivroComment:hover {
+  opacity: 0.85;
+}
+
+.topBooksGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.topBookItem {
+  background: #f7f4e8;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.topBookRank {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-forest);
+  min-width: 28px;
+  text-align: center;
+}
+
+.topBookCover {
+  width: 36px;
+  height: 52px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+  box-shadow: -2px 2px 6px rgba(17,26,25,0.12);
+}
+
+.topBookInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.topBookTitle {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topBookAuthor {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--color-sage);
+  margin: 0;
+}
+
+.topBookRatingRow {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.topBookStats {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--color-sage);
+  margin-left: 4px;
+}
+
+.btnAdicionarLeitor {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-forest);
+  background: transparent;
+  border: 1.5px solid var(--color-forest);
+  border-radius: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btnAdicionarLeitor:hover {
+  background: var(--color-forest);
+  color: #fff;
+}
+
+.btnAdicionadoLeitor {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-sage);
+  background: rgba(74,103,65,0.08);
+  border: 1.5px solid var(--color-sage);
+  border-radius: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.btnAdicionadoLeitor:hover {
+  background: rgba(74,103,65,0.15);
 }
 
 /* ── Estrelas nos favoritos ──────────────────────────────────── */

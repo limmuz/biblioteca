@@ -54,12 +54,14 @@ class AuthE2ETest extends BaseMongoTest {
             ResponseEntity<AuthResponse> response = restTemplate.postForEntity(
                     baseUrl + "/register", request, AuthResponse.class);
 
+            AuthResponse body = response.getBody();
+
             assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertNotNull(response.getBody().getToken(), "Token nao deve ser nulo");
-            assertFalse(response.getBody().getToken().isBlank(), "Token nao deve ser vazio");
-            assertEquals("Joao Silva",    response.getBody().getNome());
-            assertEquals("joao@email.com", response.getBody().getEmail());
+            assertNotNull(body, "O corpo da resposta nao deve ser nulo");
+            assertNotNull(body.getToken(), "Token nao deve ser nulo");
+            assertFalse(body.getToken().isBlank(), "Token nao deve ser vazio");
+            assertEquals("Joao Silva", body.getNome());
+            assertEquals("joao@email.com", body.getEmail());
         }
 
         @Test
@@ -192,12 +194,14 @@ class AuthE2ETest extends BaseMongoTest {
             ResponseEntity<AuthResponse> response = restTemplate.postForEntity(
                     baseUrl + "/login", request, AuthResponse.class);
 
+            AuthResponse body = response.getBody();
+
             assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertNotNull(response.getBody().getToken(), "JWT nao deve ser nulo");
-            assertFalse(response.getBody().getToken().isBlank());
-            assertEquals("Ana Pereira",  response.getBody().getNome());
-            assertEquals("ana@email.com", response.getBody().getEmail());
+            assertNotNull(body, "O corpo da resposta nao deve ser nulo");
+            assertNotNull(body.getToken(), "JWT nao deve ser nulo");
+            assertFalse(body.getToken().isBlank());
+            assertEquals("Ana Pereira", body.getNome());
+            assertEquals("ana@email.com", body.getEmail());
         }
 
         @Test
@@ -234,9 +238,11 @@ class AuthE2ETest extends BaseMongoTest {
             ResponseEntity<AuthResponse> response = restTemplate.postForEntity(
                     baseUrl + "/login", request, AuthResponse.class);
 
+            AuthResponse body = response.getBody();
+
             assertEquals(HttpStatus.OK, response.getStatusCode());
-            assertNotNull(response.getBody());
-            assertNotNull(response.getBody().getToken());
+            assertNotNull(body);
+            assertNotNull(body.getToken());
         }
 
         @Test

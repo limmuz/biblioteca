@@ -8,9 +8,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/livros")
+@SuppressWarnings("null")
 public class LivroController {
 
     private final LivroService livroService;
@@ -20,34 +22,68 @@ public class LivroController {
     }
 
     @GetMapping
-    public List<Livro> listarTodos(@RequestParam(required = false) String search, Authentication authentication) {
-        return livroService.listarTodos(search, authentication.getName());
+    public List<Livro> listarTodos(
+            @RequestParam(required = false) String search,
+            Authentication authentication
+    ) {
+
+        String email = Objects.requireNonNull(authentication.getName());
+
+        return livroService.listarTodos(search, email);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Livro> buscarPorId(@PathVariable String id) {
-        return ResponseEntity.ok(livroService.buscarPorId(id));
+
+        Livro livro = livroService.buscarPorId(id);
+
+        return ResponseEntity.ok(livro);
     }
 
     @PostMapping
-    public ResponseEntity<Livro> salvarLivro(@RequestBody LivroRequest request, Authentication authentication) {
-        Livro salvo = livroService.salvar(toEntity(request), authentication.getName());
+    public ResponseEntity<Livro> salvarLivro(
+            @RequestBody LivroRequest request,
+            Authentication authentication
+    ) {
+
+        String email = Objects.requireNonNull(authentication.getName());
+
+        Livro salvo = livroService.salvar(toEntity(request), email);
+
         return ResponseEntity.status(201).body(salvo);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Livro> atualizarLivro(@PathVariable String id, @RequestBody LivroRequest request, Authentication authentication) {
-        return ResponseEntity.ok(livroService.atualizar(id, toEntity(request), authentication.getName()));
+    public ResponseEntity<Livro> atualizarLivro(
+            @PathVariable String id,
+            @RequestBody LivroRequest request,
+            Authentication authentication
+    ) {
+
+        String email = Objects.requireNonNull(authentication.getName());
+
+        Livro atualizado = livroService.atualizar(id, toEntity(request), email);
+
+        return ResponseEntity.ok(atualizado);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> removerLivro(@PathVariable String id, Authentication authentication) {
-        livroService.deletar(id, authentication.getName());
+    public ResponseEntity<Void> removerLivro(
+            @PathVariable String id,
+            Authentication authentication
+    ) {
+
+        String email = Objects.requireNonNull(authentication.getName());
+
+        livroService.deletar(id, email);
+
         return ResponseEntity.noContent().build();
     }
 
     private static Livro toEntity(LivroRequest r) {
+
         Livro livro = new Livro();
+
         livro.setTitle(r.getTitle());
         livro.setAuthor(r.getAuthor());
         livro.setCover(r.getCover());
@@ -58,6 +94,7 @@ public class LivroController {
         livro.setCategories(r.getCategories());
         livro.setPublisher(r.getPublisher());
         livro.setPublishedDate(r.getPublishedDate());
+
         return livro;
     }
 }

@@ -17,6 +17,8 @@ export default function BookCardMini({ book, onAddToList, rating, totalRatings }
         src={book.cover}
         alt={`Capa do livro ${book.title}`}
         className={styles.cover}
+        loading="lazy"
+        onError={(e) => { e.target.src = '/books/book-sherlock.png'; }}
       />
       <div className={styles.info}>
         <p className={styles.title}>{book.title}</p>

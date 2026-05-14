@@ -5,6 +5,7 @@ import Footer from '../components/Footer/Footer';
 import Modal from '../components/shared/Modal';
 import api from '../services/api';
 import AdBanner from '../components/shared/AdBanner';
+import LoadingSpinner from '../components/shared/LoadingSpinner';
 import styles from './NovoLivroPage.module.css';
 
 const BG_COVERS = [
@@ -112,6 +113,7 @@ export default function EditarLivroPage() {
       };
 
       await api.put(`/livros/${id}`, payload);
+      localStorage.removeItem('lybre_livros_cache');
       setModal({
         title: 'Livro atualizado!',
         message: 'As alterações foram salvas com sucesso.',
@@ -149,9 +151,7 @@ export default function EditarLivroPage() {
     return (
       <div className={styles.page}>
         <AppHeader />
-        <main className={styles.main}>
-          <h2 className={styles.title}>Carregando...</h2>
-        </main>
+        <LoadingSpinner message="Carregando livro para edição..." />
       </div>
     );
   }
