@@ -21,9 +21,10 @@ function salvarCache(key, data) {
 }
 
 const STATUS_LABEL = {
-  'LIDO':      { label: 'Lido',      cls: 'lido' },
-  'LENDO':     { label: 'Lendo',     cls: 'lendo' },
-  'QUERO LER': { label: 'Quero ler', cls: 'quero' },
+  'LIDO':        { label: 'Lido',        cls: 'lido'  },
+  'LENDO':       { label: 'Lendo',       cls: 'lendo' },
+  'QUERO LER':   { label: 'Quero ler',   cls: 'quero' },
+  'RECOMENDADO': { label: 'Recomendado', cls: 'rec'   },
 };
 
 export default function PerfilPublicoPage() {
@@ -61,9 +62,10 @@ export default function PerfilPublicoPage() {
         ];
         const cachedLivros = loggedIn ? lerCache('lybre_livros_cache') : null;
         if (cachedLivros) {
-          const titulos = new Set(
-            cachedLivros.map(l => `${(l.title || '').toLowerCase()}||${(l.author || '').toLowerCase()}`)
-          );
+          const titulos = new Set();
+          cachedLivros.forEach(l => {
+            titulos.add(`${(l.title || '').toLowerCase()}||${(l.author || '').toLowerCase()}`);
+          });
           setLivrosNaBiblioteca(titulos);
         }
         if (loggedIn) {
@@ -75,9 +77,10 @@ export default function PerfilPublicoPage() {
         if (resMe) setMeNickname(resMe.data.nickname || null);
         if (resMeusLivros?.data) {
           salvarCache('lybre_livros_cache', resMeusLivros.data);
-          const titulos = new Set(
-            resMeusLivros.data.map(l => `${(l.title || '').toLowerCase()}||${(l.author || '').toLowerCase()}`)
-          );
+          const titulos = new Set();
+          resMeusLivros.data.forEach(l => {
+            titulos.add(`${(l.title || '').toLowerCase()}||${(l.author || '').toLowerCase()}`);
+          });
           setLivrosNaBiblioteca(titulos);
         }
         const map = {};
@@ -138,6 +141,7 @@ export default function PerfilPublicoPage() {
 
   const handleAdicionarLivro = async (livro) => {
     setAdicionandoLivro(livro.title);
+    const efetivoCriador = livro.criadorEmail || null;
     try {
       await api.post('/livros', {
         title: livro.title,
@@ -145,6 +149,7 @@ export default function PerfilPublicoPage() {
         cover: livro.cover,
         categories: livro.categories,
         status: 'QUERO LER',
+        ...(efetivoCriador ? { criadorEmail: efetivoCriador } : {}),
       });
       const chave = `${livro.title.toLowerCase()}||${livro.author.toLowerCase()}`;
       localStorage.removeItem('lybre_livros_cache');
@@ -153,6 +158,8 @@ export default function PerfilPublicoPage() {
       showToast(`"${livro.title}" adicionado à sua biblioteca!`);
     } catch (err) {
       if (err.response?.status === 409) {
+        const chave = `${livro.title.toLowerCase()}||${livro.author.toLowerCase()}`;
+        setLivrosAdicionados(prev => new Set([...prev, chave]));
         showToast('Este livro já está na sua biblioteca.', 'info');
       } else {
         showToast('Erro ao adicionar o livro. Tente novamente.', 'error');
@@ -209,11 +216,13 @@ export default function PerfilPublicoPage() {
     ? { backgroundImage: `url(${perfil.bgBase64})` }
     : null;
 
+  const temRecomendados = perfil.livros.some(l => l.status === 'RECOMENDADO');
   const FILTROS = [
-    { valor: 'TODOS', rotulo: 'Todos' },
-    { valor: 'LIDO',      rotulo: 'Lidos' },
-    { valor: 'LENDO',     rotulo: 'Lendo' },
-    { valor: 'QUERO LER', rotulo: 'Quero ler' },
+    { valor: 'TODOS',      rotulo: 'Todos'        },
+    { valor: 'LIDO',       rotulo: 'Lidos'        },
+    { valor: 'LENDO',      rotulo: 'Lendo'        },
+    { valor: 'QUERO LER',  rotulo: 'Quero ler'   },
+    ...(temRecomendados ? [{ valor: 'RECOMENDADO', rotulo: 'Recomendados' }] : []),
   ];
 
   return (
@@ -324,7 +333,11 @@ export default function PerfilPublicoPage() {
                 else if (adicionandoLivro === livro.title) btnTexto = 'Adicionando...';
                 return (
                   <div key={`${livro.title}||${livro.author}`} className={styles.bookCard}>
-                    <div className={styles.coverWrapper}>
+                    <button
+                      type="button"
+                      className={styles.coverWrapper}
+                      onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro, isFromPublicProfile: !ePerfilPropio, bookList: livrosFiltrados } })}
+                    >
                       <img
                         src={livro.cover}
                         alt={livro.title}
@@ -335,7 +348,7 @@ export default function PerfilPublicoPage() {
                       {infoStatus && (
                         <span className={badgeCls}>{infoStatus.label}</span>
                       )}
-                    </div>
+                    </button>
                     <div className={styles.bookInfo}>
                       <p className={styles.bookTitle}>{livro.title}</p>
                       <p className={styles.bookAuthor}>{livro.author}</p>
@@ -347,6 +360,13 @@ export default function PerfilPublicoPage() {
                           <span className={styles.ratingCount}>{r.media.toFixed(1)} ({r.total})</span>
                         </div>
                       )}
+                      <button
+                        type="button"
+                        className={styles.btnVerLivro}
+                        onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro, isFromPublicProfile: !ePerfilPropio, bookList: livrosFiltrados } })}
+                      >
+                        Ver livro →
+                      </button>
                       {loggedIn && !ePerfilPropio && (
                         <button
                           className={jaAdicionado ? styles.btnAddLivroFeito : styles.btnAddLivro}

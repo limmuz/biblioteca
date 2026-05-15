@@ -34,4 +34,6 @@ public interface UsuarioRepository extends MongoRepository<Usuario, String> {
 	@Query(value = "{'nickname': {$regex: ?0, $options: 'i'}, 'perfilPublico': true}",
 		   fields = "{'senhaHash': 0, 'enderecos': 0, 'telefones': 0, 'redesSociais': 0, 'cep': 0, 'logradouro': 0, 'bairro': 0, 'cidade': 0, 'uf': 0}")
 	List<Usuario> findByNicknameLeve(String nickname);
+
+	List<Usuario> findByLeitoresSeguidosContaining(String userId);
 }

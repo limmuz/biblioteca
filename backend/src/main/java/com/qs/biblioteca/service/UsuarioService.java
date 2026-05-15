@@ -6,6 +6,7 @@ import com.qs.biblioteca.dto.PerfilPublicoDetalhadoResponse;
 import com.qs.biblioteca.dto.PublicUsuarioResponse;
 import com.qs.biblioteca.dto.RegisterRequest;
 import com.qs.biblioteca.dto.UsuarioResponse;
+import com.qs.biblioteca.model.Livro;
 import com.qs.biblioteca.model.Role;
 import com.qs.biblioteca.model.Usuario;
 import com.qs.biblioteca.repository.LivroRepository;
@@ -286,10 +287,9 @@ public class UsuarioService {
             );
         }
 
-        return new PerfilPublicoDetalhadoResponse(
-                usuario,
-                livroRepository.findByUserEmail(usuario.getEmail())
-        );
+        List<Livro> livros = livroRepository.findByUserEmail(usuario.getEmail());
+        enriquecerLivros(livros, usuario.getEmail());
+        return new PerfilPublicoDetalhadoResponse(usuario, livros);
     }
 
     public List<PublicUsuarioResponse> buscarPublicoPorTermo(
@@ -301,7 +301,7 @@ public class UsuarioService {
         if (limpo.startsWith("@")) {
 
             return usuarioRepository
-                    .findByNicknameLeve(limpo.substring(1))
+                    .findByNicknameLeve("^" + limpo.substring(1))
                     .stream()
                     .limit(1)
                     .map(u -> new PublicUsuarioResponse(
@@ -311,7 +311,7 @@ public class UsuarioService {
         }
 
         List<Usuario> porNome = usuarioRepository
-                .findByNomeLeve(limpo);
+                .findByNomeLeve("(?:^|\\s)" + limpo);
 
         if (!porNome.isEmpty()) {
 
@@ -323,7 +323,7 @@ public class UsuarioService {
         }
 
         return usuarioRepository
-                .findByNicknameLeve(limpo)
+                .findByNicknameLeve("^" + limpo)
                 .stream()
                 .limit(1)
                 .map(u -> new PublicUsuarioResponse(
@@ -352,10 +352,9 @@ public class UsuarioService {
             );
         }
 
-        return new PerfilPublicoDetalhadoResponse(
-                usuario,
-                livroRepository.findByUserEmail(usuario.getEmail())
-        );
+        List<Livro> livros = livroRepository.findByUserEmail(usuario.getEmail());
+        enriquecerLivros(livros, usuario.getEmail());
+        return new PerfilPublicoDetalhadoResponse(usuario, livros);
     }
 
     public void redefinirSenha(
@@ -481,6 +480,57 @@ public class UsuarioService {
         }
 
         usuario.setEnderecos(enderecos);
+    }
+
+    private void enriquecerLivros(List<Livro> livros, String userEmail) {
+        for (Livro livro : livros) {
+            enriquecerUmLivro(livro, userEmail);
+        }
+    }
+
+    private void enriquecerUmLivro(Livro livro, String userEmail) {
+        if (metadadosCompletos(livro)) {
+            return;
+        }
+        List<Livro> outros = buscarCopias(livro, userEmail);
+        preencherMetadados(livro, outros);
+    }
+
+    private boolean metadadosCompletos(Livro livro) {
+        return tem(livro.getCover()) && tem(livro.getExcerpt()) && tem(livro.getLanguage())
+                && tem(livro.getPublisher()) && tem(livro.getPublishedDate()) && livro.getPages() != null;
+    }
+
+    private List<Livro> buscarCopias(Livro livro, String userEmail) {
+        if (tem(livro.getCriadorEmail())) {
+            return livroRepository.findByCriadorEmailAndUserEmailNot(livro.getCriadorEmail(), userEmail);
+        }
+        if (livro.getTitle() == null || livro.getAuthor() == null) {
+            return List.of();
+        }
+        return livroRepository.findOutrosLeitoresPorTituloEAutor(livro.getTitle(), livro.getAuthor(), userEmail);
+    }
+
+    private void preencherMetadados(Livro livro, List<Livro> outros) {
+        for (Livro outro : outros) {
+            preencherCamposDoOutro(livro, outro);
+            if (metadadosCompletos(livro)) {
+                return;
+            }
+        }
+    }
+
+    private void preencherCamposDoOutro(Livro livro, Livro outro) {
+        if (!tem(livro.getCover()) && tem(outro.getCover())) livro.setCover(outro.getCover());
+        if (!tem(livro.getExcerpt()) && tem(outro.getExcerpt())) livro.setExcerpt(outro.getExcerpt());
+        if (!tem(livro.getLanguage()) && tem(outro.getLanguage())) livro.setLanguage(outro.getLanguage());
+        if (!tem(livro.getPublisher()) && tem(outro.getPublisher())) livro.setPublisher(outro.getPublisher());
+        if (!tem(livro.getPublishedDate()) && tem(outro.getPublishedDate())) livro.setPublishedDate(outro.getPublishedDate());
+        if (livro.getPages() == null && outro.getPages() != null) livro.setPages(outro.getPages());
+    }
+
+    private static boolean tem(String valor) {
+        return valor != null && !valor.isBlank();
     }
 
     private AuthResponse gerarAuthResponse(

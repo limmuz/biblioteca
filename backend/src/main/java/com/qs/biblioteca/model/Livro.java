@@ -8,7 +8,10 @@ import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import org.springframework.data.annotation.Transient;
 
 @Getter
 @Setter
@@ -34,4 +37,12 @@ public class Livro {
     private List<String> categories;
     private String publisher;
     private String publishedDate;
+    private Set<String> camposProtegidos = new HashSet<>();
+    private String criadorEmail;
+
+    @Transient
+    private Set<String> camposProtegidosPorCriador = new HashSet<>();
+
+    @Transient
+    private String criadorNickname;
 }

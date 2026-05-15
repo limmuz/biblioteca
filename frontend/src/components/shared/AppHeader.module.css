@@ -98,18 +98,11 @@
 }
 
 .searchBarOpen {
-  border-radius: 10px 10px 0 0;
-  box-shadow: none;
-  border: 2px solid var(--color-forest);
-  border-bottom: none;
+  box-shadow: 0 0 0 2px var(--color-forest);
 }
 
 .searchBar:focus-within {
   box-shadow: 0 0 0 2px var(--color-forest);
-}
-
-.searchBarOpen:focus-within {
-  box-shadow: none;
 }
 
 .searchInput {
@@ -164,13 +157,12 @@
 /* ── Dropdown de sugestões ────────────────────────────────────── */
 .dropdown {
   position: absolute;
-  top: 100%;
-  left: -2px;
-  right: -2px;
+  top: calc(100% + 10px);
+  left: 0;
+  right: 0;
   background: var(--color-warm-beige);
   border: 2px solid var(--color-forest);
-  border-top: 1px solid rgba(74,103,65,0.2);
-  border-radius: 0 0 10px 10px;
+  border-radius: 12px;
   box-shadow: 0 8px 24px rgba(17,26,25,0.16);
   z-index: 2000;
   overflow: hidden;
@@ -276,6 +268,155 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+/* ── Notificações ────────────────────────────────────────────── */
+.notifWrapper {
+  position: relative;
+}
+
+.notifBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ink);
+  background: none;
+  border: none;
+  opacity: 0.8;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+  padding: 4px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.notifBtn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.notifBadge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  background: #c0392b;
+  color: #fff;
+  font-family: var(--font-poppins);
+  font-size: 9px;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.notifDropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 320px;
+  background: var(--color-warm-beige);
+  border: 2px solid var(--color-forest);
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(17,26,25,0.18);
+  z-index: 2000;
+  overflow: hidden;
+  animation: dropFadeIn 0.15s ease;
+}
+
+.notifHeader {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+  margin: 0;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid rgba(17,26,25,0.08);
+}
+
+.notifVazio {
+  font-family: var(--font-poppins);
+  font-size: 12px;
+  color: var(--color-sage);
+  text-align: center;
+  padding: 20px 16px;
+  margin: 0;
+}
+
+.notifList {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.notifItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(17,26,25,0.06);
+  transition: background 0.12s;
+}
+
+.notifItem:last-child {
+  border-bottom: none;
+}
+
+.notifItemBtn {
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.notifItemBtn:hover {
+  background: rgba(74,103,65,0.08);
+}
+
+.notifCover {
+  width: 28px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(17,26,25,0.2);
+}
+
+.notifContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.notifNaoLida {
+  background: rgba(74,103,65,0.07);
+}
+
+.notifTexto {
+  font-family: var(--font-poppins);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-ink);
+  margin: 0 0 2px;
+  line-height: 1.4;
+}
+
+.notifSub {
+  font-family: var(--font-poppins);
+  font-size: 11px;
+  color: var(--color-sage);
+  margin: 0 0 2px;
+}
+
+.notifData {
+  font-family: var(--font-poppins);
+  font-size: 10px;
+  color: var(--color-sage);
+  margin: 0;
 }
 
 .avatarBtn {

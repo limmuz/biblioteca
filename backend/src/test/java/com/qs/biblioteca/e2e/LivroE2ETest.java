@@ -60,8 +60,8 @@ class LivroE2ETest extends BaseMongoTest {
         @DisplayName("Deve criar livro e retornar 201 com o livro salvo")
         void criar_comDadosValidos_deveRetornar201() {
             ResponseEntity<Livro> response = restTemplate.exchange(
-                    Objects.requireNonNull(livrosUrl),
-                    Objects.requireNonNull(HttpMethod.POST),
+                    livrosUrl,
+                    HttpMethod.POST,
                     new HttpEntity<>(novoLivro("Dom Casmurro", "Machado de Assis"), headersComJwt()),
                     Livro.class
             );
@@ -205,6 +205,44 @@ class LivroE2ETest extends BaseMongoTest {
         }
     }
 
+    @Nested
+    @DisplayName("DELETE /api/livros/{id}/permanente")
+    class ExcluirPermanenteTests {
+
+        @Test
+        @DisplayName("Deve excluir permanentemente quando chamado pelo criador e retornar 204")
+        void excluirPermanente_peloCriador_deveRetornar204() {
+            ResponseEntity<Livro> criado = restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro Permanente", "Autor P"), headersComJwt()), Livro.class);
+            String id = Objects.requireNonNull(Objects.requireNonNull(criado.getBody()).getId());
+
+            ResponseEntity<Void> response = restTemplate.exchange(
+                    livrosUrl + "/" + id + "/permanente", HttpMethod.DELETE,
+                    new HttpEntity<>(headersComJwt()), Void.class);
+
+            assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 403 ao tentar excluir permanentemente livro de outro criador")
+        void excluirPermanente_porNaoCriador_deveRetornar403() {
+            ResponseEntity<Livro> criado = restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro Compartilhado", "Autor C"), headersComJwt()), Livro.class);
+            String id = Objects.requireNonNull(Objects.requireNonNull(criado.getBody()).getId());
+
+            String token2 = registrarEObterToken("outro@email.com", "senha456");
+            HttpHeaders headers2 = new HttpHeaders();
+            headers2.setContentType(MediaType.APPLICATION_JSON);
+            headers2.setBearerAuth(token2);
+
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
+                    restTemplate.exchange(livrosUrl + "/" + id + "/permanente", HttpMethod.DELETE,
+                            new HttpEntity<>(headers2), Void.class)
+            );
+            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        }
+    }
+
     private String registrarEObterToken(String email, String senha) {
         RegisterRequest reg = new RegisterRequest();
         reg.setNome("Usuario Teste E2E");
@@ -225,7 +263,7 @@ class LivroE2ETest extends BaseMongoTest {
     private HttpHeaders headersComJwt() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(Objects.requireNonNull(jwtToken));
+        headers.setBearerAuth(jwtToken);
         return headers;
     }
 

@@ -30,22 +30,25 @@ public class AvaliacaoService {
     private final AvaliacaoRepository avaliacaoRepository;
     private final LivroRepository livroRepository;
     private final UsuarioRepository usuarioRepository;
+    private final NotificacaoService notificacaoService;
 
     public AvaliacaoService(
             AvaliacaoRepository avaliacaoRepository,
             LivroRepository livroRepository,
-            UsuarioRepository usuarioRepository
+            UsuarioRepository usuarioRepository,
+            NotificacaoService notificacaoService
     ) {
         this.avaliacaoRepository = avaliacaoRepository;
         this.livroRepository = livroRepository;
         this.usuarioRepository = usuarioRepository;
+        this.notificacaoService = notificacaoService;
     }
 
     public List<AvaliacaoResponse> listarPorLivro(String livroId, String emailLogado) {
         Livro livro = livroRepository.findById(livroId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, LIVRO_NAO_ENCONTRADO));
-        String titulo = Objects.requireNonNull(livro.getTitle());
-        String autor = Objects.requireNonNull(livro.getAuthor());
+        String titulo = livro.getTitle() != null ? livro.getTitle() : "";
+        String autor = livro.getAuthor() != null ? livro.getAuthor() : "";
         return avaliacaoRepository
                 .findByLivroTituloIgnoreCaseAndLivroAutorIgnoreCase(titulo, autor)
                 .stream()
@@ -58,8 +61,8 @@ public class AvaliacaoService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, LIVRO_NAO_ENCONTRADO));
         Usuario usuario = usuarioRepository.findByEmailParaAvaliacao(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuário não encontrado"));
-        String titulo = Objects.requireNonNull(livro.getTitle());
-        String autor = Objects.requireNonNull(livro.getAuthor());
+        String titulo = livro.getTitle() != null ? livro.getTitle() : "";
+        String autor = livro.getAuthor() != null ? livro.getAuthor() : "";
         Avaliacao avaliacao = avaliacaoRepository
                 .findByLivroTituloIgnoreCaseAndLivroAutorIgnoreCaseAndUsuarioEmail(titulo, autor, email)
                 .orElse(new Avaliacao());
@@ -71,10 +74,13 @@ public class AvaliacaoService {
         avaliacao.setUsuarioNome(usuario.getNome());
         avaliacao.setUsuarioNickname(usuario.getNickname());
         avaliacao.setAvatarBase64(usuario.getAvatarBase64());
+        boolean ehNova = avaliacao.getId() == null;
         avaliacao.setRating(req.getRating());
         avaliacao.setComentario(req.getComentario());
         avaliacao.setCriadoEm(LocalDateTime.now());
         Avaliacao salva = avaliacaoRepository.save(avaliacao);
+        notificacaoService.notificarSeguidores(email,
+                ehNova ? "AVALIACAO_CRIADA" : "AVALIACAO_ATUALIZADA", titulo, autor, null, livroId, livro.getCover());
         return new AvaliacaoResponse(salva, email);
     }
 
@@ -108,6 +114,9 @@ public class AvaliacaoService {
         resposta.setTexto(texto.trim());
         avaliacao.getRespostas().add(resposta);
         Avaliacao salva = avaliacaoRepository.save(avaliacao);
+        notificacaoService.notificarSeguidores(email,
+                "COMENTARIO_ADICIONADO", avaliacao.getLivroTitulo(), avaliacao.getLivroAutor(), null,
+                avaliacao.getLivroId(), avaliacao.getLivroCover());
         return new AvaliacaoResponse(salva, email);
     }
 
@@ -123,15 +132,18 @@ public class AvaliacaoService {
         }
         avaliacao.getRespostas().removeIf(r -> r.getId().equals(respostaId));
         avaliacaoRepository.save(avaliacao);
+        notificacaoService.notificarSeguidores(email,
+                "COMENTARIO_EXCLUIDO", avaliacao.getLivroTitulo(), avaliacao.getLivroAutor(), null,
+                avaliacao.getLivroId(), avaliacao.getLivroCover());
     }
 
     public List<MediaAvaliacaoResponse> calcularMedias() {
         Map<String, List<Avaliacao>> agrupado = avaliacaoRepository.findAllParaMedias()
                 .stream()
                 .collect(Collectors.groupingBy(a ->
-                        Objects.requireNonNull(a.getLivroTitulo()).toLowerCase()
+                        (a.getLivroTitulo() != null ? a.getLivroTitulo() : "").toLowerCase()
                                 + "||"
-                                + Objects.requireNonNull(a.getLivroAutor()).toLowerCase()
+                                + (a.getLivroAutor() != null ? a.getLivroAutor() : "").toLowerCase()
                 ));
         return agrupado.entrySet()
                 .stream()
@@ -143,6 +155,14 @@ public class AvaliacaoService {
                     r.setLivroAutor(lista.get(0).getLivroAutor());
                     r.setMedia(Math.round(media * 10.0) / 10.0);
                     r.setTotal(lista.size());
+                    lista.stream().map(Avaliacao::getLivroId).filter(Objects::nonNull)
+                            .findFirst().ifPresent(r::setLivroId);
+                    List<Livro> capas = livroRepository.findCapasPorTituloEAutor(
+                            lista.get(0).getLivroTitulo(), lista.get(0).getLivroAutor());
+                    if (!capas.isEmpty()) {
+                        r.setLivroCover(capas.get(0).getCover());
+                        if (r.getLivroId() == null) r.setLivroId(capas.get(0).getId());
+                    }
                     return r;
                 })
                 .toList();
@@ -151,8 +171,8 @@ public class AvaliacaoService {
     public List<PublicUsuarioResponse> outrosLeitores(String livroId, String emailAtual) {
         Livro livro = livroRepository.findById(livroId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, LIVRO_NAO_ENCONTRADO));
-        String titulo = Objects.requireNonNull(livro.getTitle());
-        String autor = Objects.requireNonNull(livro.getAuthor());
+        String titulo = livro.getTitle() != null ? livro.getTitle() : "";
+        String autor = livro.getAuthor() != null ? livro.getAuthor() : "";
         return livroRepository
                 .findOutrosLeitoresPorTituloEAutor(titulo, autor, emailAtual)
                 .stream()
@@ -167,18 +187,32 @@ public class AvaliacaoService {
     public List<AvaliacaoResponse> listarMinhas(String email) {
         return avaliacaoRepository.findByUsuarioEmail(email)
                 .stream()
-                .map(a -> new AvaliacaoResponse(a, email))
+                .map(a -> {
+                    AvaliacaoResponse r = new AvaliacaoResponse(a, email);
+                    boolean semCover = r.getLivroCover() == null || r.getLivroCover().isBlank();
+                    boolean semId = r.getLivroId() == null || r.getLivroId().isBlank();
+                    if ((semCover || semId) && a.getLivroTitulo() != null && a.getLivroAutor() != null) {
+                        List<Livro> capas = livroRepository.findCapasPorTituloEAutor(
+                                a.getLivroTitulo(), a.getLivroAutor());
+                        if (!capas.isEmpty()) {
+                            if (semCover && capas.get(0).getCover() != null) r.setLivroCover(capas.get(0).getCover());
+                            if (semId) r.setLivroId(capas.get(0).getId());
+                        }
+                    }
+                    return r;
+                })
                 .toList();
     }
 
     public void excluir(String livroId, String email) {
         Livro livro = livroRepository.findById(livroId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, LIVRO_NAO_ENCONTRADO));
-        String titulo = Objects.requireNonNull(livro.getTitle());
-        String autor = Objects.requireNonNull(livro.getAuthor());
+        String titulo = livro.getTitle() != null ? livro.getTitle() : "";
+        String autor = livro.getAuthor() != null ? livro.getAuthor() : "";
         Avaliacao avaliacao = avaliacaoRepository
                 .findByLivroTituloIgnoreCaseAndLivroAutorIgnoreCaseAndUsuarioEmail(titulo, autor, email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, AVALIACAO_NAO_ENCONTRADA));
         avaliacaoRepository.delete(avaliacao);
+        notificacaoService.notificarSeguidores(email, "AVALIACAO_EXCLUIDA", titulo, autor, null, livroId, livro.getCover());
     }
 }
