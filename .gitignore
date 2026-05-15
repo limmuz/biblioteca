@@ -52,3 +52,5 @@ seed_livros.ps1
 *.txt
 backend-log*.txt
 backend-migr*.txt
+.claude/
+coverage/

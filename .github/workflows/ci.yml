@@ -11,6 +11,7 @@ env:
 jobs:
   backend:
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: backend
@@ -30,7 +31,7 @@ jobs:
         run: chmod +x mvnw
 
       - name: Build backend e rodar testes
-        run: ./mvnw -B clean verify
+        run: ./mvnw -B clean verify -e
 
       - name: Upload relatório de testes
         if: always()
@@ -44,6 +45,7 @@ jobs:
   frontend:
     runs-on: ubuntu-latest
     needs: backend
+
     defaults:
       run:
         working-directory: frontend
@@ -69,6 +71,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: backend
     if: github.event_name == 'push'
+
     defaults:
       run:
         working-directory: backend
@@ -101,7 +104,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          ./mvnw -B verify sonar:sonar \
+          ./mvnw -B verify sonar:sonar -e \
             -Dsonar.projectKey=AnaPaula2024_biblioteca \
             -Dsonar.organization=anapaula2024 \
             -Dsonar.host.url=https://sonarcloud.io \
