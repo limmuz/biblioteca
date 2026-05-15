@@ -31,7 +31,7 @@ jobs:
         run: chmod +x mvnw
 
       - name: Build backend e rodar testes
-        run: ./mvnw -B clean verify -e
+        run: ./mvnw -B clean verify -Pdocker-tests -X
 
       - name: Upload relatório de testes
         if: always()
