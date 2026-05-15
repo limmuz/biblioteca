@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import AppHeader from '../components/shared/AppHeader';
 import Footer from '../components/Footer/Footer';
 import api from '../services/api';
-import AdBanner from '../components/shared/AdBanner';
 import Modal from '../components/shared/Modal';
 import styles from './NovoLivroPage.module.css';
 
@@ -66,7 +65,6 @@ export default function NovoLivroPage() {
       localStorage.removeItem('lybre_livros_cache');
       navigate('/home');
     } catch (error) {
-      console.error("Erro ao salvar:", error);
       let mensagemErro = 'Erro ao salvar o livro. ';
       
       if (error.response?.status === 409) {
@@ -169,7 +167,6 @@ export default function NovoLivroPage() {
         </form>
         </div>
       </main>
-      <AdBanner variant="banner" />
       <div className={styles.footerWrap}>
         <Footer />
       </div>

@@ -1,11 +1,11 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import LoginPage from './pages/LoginPage';
 import CadastroPage from './pages/CadastroPage';
 import RedefinirSenhaPage from './pages/RedefinirSenhaPage';
 import HomePage from './pages/HomePage';
 import ListagemPage from './pages/ListagemPage';
 import DetalhesLivroPage from './pages/DetalhesLivroPage';
-import ReadingPage from './components/ReadingPage/ReadingPage';
 import NovoLivroPage from './pages/NovoLivroPage';
 import EditarLivroPage from './pages/EditarLivroPage';
 import PerfilPage from './pages/PerfilPage';
@@ -14,9 +14,18 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import { isAuthenticated } from './services/auth';
 import './index.css';
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [pathname]);
+  return null;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route
           path="/"
@@ -76,15 +85,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/leitura/:id"
-          element={
-            <ProtectedRoute>
-              <ReadingPage />
-            </ProtectedRoute>
-          }
-        />
-
         <Route
           path="/leitor/id/:userId"
           element={

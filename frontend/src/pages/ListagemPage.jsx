@@ -5,7 +5,6 @@ import Footer from '../components/Footer/Footer';
 import BookCardMini from '../components/shared/BookCardMini';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import api from '../services/api';
-import AdBanner from '../components/shared/AdBanner';
 import styles from './ListagemPage.module.css';
 
 const CACHE_TTL = 5 * 60 * 1000;
@@ -52,8 +51,7 @@ export default function ListagemPage() {
         });
         salvarCache('lybre_medias_cache', map);
         setMedias(map);
-      } catch (err) {
-        console.error("Erro ao carregar:", err);
+      } catch {
       } finally {
         setLoading(false);
       }
@@ -99,7 +97,6 @@ export default function ListagemPage() {
           </div>
         )}
       </main>
-      <AdBanner variant="banner" />
       <div className={styles.footerWrap}>
         <Footer />
       </div>

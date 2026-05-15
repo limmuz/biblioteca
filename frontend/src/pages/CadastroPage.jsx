@@ -61,8 +61,7 @@ export default function CadastroPage() {
             setUf(data.uf || '');
             document.getElementById('cadastro-numero')?.focus();
           }
-        } catch (err) {
-          console.error('Erro ao consultar CEP:', err);
+        } catch {
           setCepError('Falha ao consultar CEP.');
         } finally {
           setCepLoading(false);
@@ -132,7 +131,6 @@ export default function CadastroPage() {
       }
       
       setError(mensagemErro);
-      console.error('Erro no cadastro:', err);
     } finally {
       setLoading(false);
     }

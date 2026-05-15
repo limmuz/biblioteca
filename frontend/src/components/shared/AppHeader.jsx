@@ -9,6 +9,7 @@ import {
   BsSearch,
   BsBoxArrowRight,
   BsXCircle,
+  BsBell,
 } from "react-icons/bs";
 
 import LogoIcon from "../../assets/icon-logo.svg?react";
@@ -22,7 +23,11 @@ export default function AppHeader() {
   const [sugestoes, setSugestoes] = useState([]);
   const [showDrop, setShowDrop] = useState(false);
   const [buscando, setBuscando] = useState(false);
+  const [naoLidas, setNaoLidas] = useState(0);
+  const [showNotif, setShowNotif] = useState(false);
+  const [notificacoes, setNotificacoes] = useState([]);
   const wrapperRef = useRef(null);
+  const notifRef = useRef(null);
   const debounceRef = useRef(null);
   const user = getUser();
 
@@ -47,14 +52,28 @@ export default function AppHeader() {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
         setShowDrop(false);
       }
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setShowNotif(false);
+      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   useEffect(() => {
+    const buscarContagem = () => {
+      api.get('/notificacoes/contagem')
+        .then(res => setNaoLidas(res.data.naoLidas || 0))
+        .catch(() => {});
+    };
+    buscarContagem();
+    const intervalo = setInterval(buscarContagem, 60000);
+    return () => clearInterval(intervalo);
+  }, []);
+
+  useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (termo.trim().length < 2) {
+    if (termo.trim().length < 1) {
       setSugestoes([]);
       setShowDrop(false);
       return;
@@ -100,6 +119,46 @@ export default function AppHeader() {
   };
 
   const limpar = () => { setTermo(""); setSugestoes([]); setShowDrop(false); };
+
+  const abrirNotificacoes = async () => {
+    const abrindo = !showNotif;
+    setShowNotif(abrindo);
+    if (abrindo) {
+      try {
+        const res = await api.get('/notificacoes');
+        setNotificacoes(res.data);
+        if (naoLidas > 0) {
+          await api.put('/notificacoes/marcar-lidas');
+          setNaoLidas(0);
+        }
+      } catch {}
+    }
+  };
+
+  const TIPOS_NOTIF = {
+    LIVRO_CRIADO: 'adicionou o livro',
+    LIVRO_ATUALIZADO: 'atualizou o livro',
+    LIVRO_EXCLUIDO: 'removeu o livro',
+    LIVRO_EXCLUIDO_PERMANENTE: 'excluiu permanentemente o livro',
+    AVALIACAO_CRIADA: 'avaliou o livro',
+    AVALIACAO_ATUALIZADA: 'editou a avaliação de',
+    AVALIACAO_EXCLUIDA: 'excluiu a avaliação de',
+    COMENTARIO_ADICIONADO: 'comentou em',
+    COMENTARIO_EXCLUIDO: 'excluiu um comentário em',
+  };
+
+  const formatarNotif = (n) => {
+    const acao = TIPOS_NOTIF[n.tipo] || n.tipo;
+    if (n.tipo === 'LIVRO_EXCLUIDO_PERMANENTE') {
+      return `O livro "${n.livroTitulo}" foi excluído da sua biblioteca por ${n.remetente}`;
+    }
+    return `${n.remetente} ${acao} "${n.livroTitulo}"`;
+  };
+
+  const formatarData = (iso) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
 
   const STATUS_COR = {
     'LIDO':      '#2e6b3e',
@@ -191,6 +250,62 @@ export default function AppHeader() {
         </div>
 
         <div className={styles.userArea}>
+          <div className={styles.notifWrapper} ref={notifRef}>
+            <button className={styles.notifBtn} onClick={abrirNotificacoes} title="Notificações">
+              <BsBell className={styles.navIcon} />
+              {naoLidas > 0 && (
+                <span className={styles.notifBadge}>{naoLidas > 99 ? '99+' : naoLidas}</span>
+              )}
+            </button>
+            {showNotif && (
+              <div className={styles.notifDropdown}>
+                <p className={styles.notifHeader}>Notificações</p>
+                {notificacoes.length === 0 ? (
+                  <p className={styles.notifVazio}>Nenhuma notificação ainda.</p>
+                ) : (
+                  <div className={styles.notifList}>
+                    {notificacoes.map((n) => {
+                      const podeNavegar = n.livroId && n.livroId.length > 0;
+                      const conteudo = (
+                        <>
+                          {n.livroCover && (
+                            <img
+                              src={n.livroCover}
+                              alt=""
+                              className={styles.notifCover}
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          )}
+                          <div className={styles.notifContent}>
+                            <p className={styles.notifTexto}>{formatarNotif(n)}</p>
+                            {n.livroAutor && <p className={styles.notifSub}>por {n.livroAutor}</p>}
+                            <p className={styles.notifData}>{formatarData(n.criadaEm)}</p>
+                          </div>
+                        </>
+                      );
+                      if (podeNavegar) {
+                        return (
+                          <button
+                            key={n.id}
+                            type="button"
+                            className={`${styles.notifItem} ${styles.notifItemBtn} ${!n.lida ? styles.notifNaoLida : ''}`}
+                            onClick={() => { setShowNotif(false); navigate(`/livro/${n.livroId}`); }}
+                          >
+                            {conteudo}
+                          </button>
+                        );
+                      }
+                      return (
+                        <div key={n.id} className={`${styles.notifItem} ${!n.lida ? styles.notifNaoLida : ''}`}>
+                          {conteudo}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <button className={styles.avatarBtn} onClick={() => navigate('/perfil')} title={user.nome || "Usuário"}>
             {avatarUrl
               ? <img src={avatarUrl} alt="Avatar" className={styles.avatarImg} />

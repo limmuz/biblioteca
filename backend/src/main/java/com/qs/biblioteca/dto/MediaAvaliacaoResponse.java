@@ -8,4 +8,6 @@ public class MediaAvaliacaoResponse {
     private String livroAutor;
     private double media;
     private long total;
+    private String livroCover;
+    private String livroId;
 }

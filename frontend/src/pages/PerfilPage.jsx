@@ -35,7 +35,6 @@ import AppHeader from '../components/shared/AppHeader';
 import Footer from '../components/Footer/Footer';
 import api from '../services/api';
 import { getUser, clearSession } from '../services/auth';
-import AdBanner from '../components/shared/AdBanner';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import styles from './PerfilPage.module.css';
 
@@ -139,6 +138,7 @@ export default function PerfilPage() {
   const [leitoresEncontrados, setLeitoresEncontrados] = useState([]);
   const [buscandoLeitor, setBuscandoLeitor] = useState(false);
   const [buscaErro, setBuscaErro] = useState('');
+  const buscaDebounceRef = useRef(null);
 
   const [medias, setMedias] = useState(() => lerCache('lybre_medias_cache') || {});
   const [meusComentarios, setMeusComentarios] = useState([]);
@@ -249,8 +249,7 @@ export default function PerfilPage() {
           lendo: todosLivros.filter(l => l.status === 'LENDO').length,
           queroLer: queroLer.length,
         });
-      } catch (err) {
-        console.error('Erro ao carregar dados:', err);
+      } catch {
       } finally {
         setLoading(false);
       }
@@ -290,8 +289,7 @@ export default function PerfilPage() {
         localStorage.setItem('lybre_avatar', data.url);
         setAvatarUrl(data.url);
         showToast('Foto atualizada com sucesso!');
-      } catch (err) {
-        console.error('Erro upload foto:', err?.response?.data?.erro || err?.response?.data || err?.message || err);
+      } catch {
         showToast('Erro ao atualizar foto.', 'error');
       }
     });
@@ -327,8 +325,7 @@ export default function PerfilPage() {
         localStorage.setItem('lybre_bg', data.url);
         setBgImage(data.url);
         showToast('Plano de fundo atualizado!');
-      } catch (err) {
-        console.error('Erro upload fundo:', err?.response?.data?.erro || err?.response?.data || err?.message || err);
+      } catch {
         showToast('Erro ao atualizar fundo.', 'error');
       }
     });
@@ -380,8 +377,7 @@ export default function PerfilPage() {
       setUsuario(u => ({ ...u, ...perfilForm }));
       setEditandoPerfil(false);
       showToast('Perfil salvo com sucesso!');
-    } catch (err) {
-      console.error(err);
+    } catch {
       showToast('Erro ao salvar perfil.', 'error');
     } finally {
       setSalvandoPerfil(false);
@@ -406,7 +402,7 @@ export default function PerfilPage() {
             uf: data.uf || f.uf,
           }));
         }
-      } catch (err) { console.warn('ViaCEP lookup failed:', err); }
+      } catch { }
       finally { setCepLoading(false); }
     }
   };
@@ -430,8 +426,7 @@ export default function PerfilPage() {
       setUsuario(u => ({ ...u, enderecos: novosEnderecos }));
       setEditandoEnderecoIdx(null);
       showToast('Endereço salvo com sucesso!');
-    } catch (err) {
-      console.error(err);
+    } catch {
       showToast('Erro ao salvar endereço.', 'error');
     } finally {
       setSalvandoEndereco(false);
@@ -452,8 +447,7 @@ export default function PerfilPage() {
           setEnderecos(novosEnderecos);
           setUsuario(u => ({ ...u, enderecos: novosEnderecos }));
           showToast('Endereço excluído.');
-        } catch (err) {
-          console.error(err);
+        } catch {
           showToast('Erro ao excluir endereço.', 'error');
         }
       },
@@ -488,37 +482,57 @@ export default function PerfilPage() {
         await api.delete(`/livros/${livro.id}`);
         removerLivroDoEstado(livro.id, livro.status);
         showToast('Livro excluído com sucesso.');
-      } catch (err) { console.error(err); showToast('Erro ao excluir livro.', 'error'); }
+      } catch { showToast('Erro ao excluir livro.', 'error'); }
     };
     setConfirmModal({
-      title: 'Excluir Livro',
-      message: `Excluir "${livro.title}" permanentemente? Esta ação não pode ser desfeita.`,
+      title: 'Tirar da biblioteca',
+      message: `Remover "${livro.title}" da sua biblioteca? Outros leitores que têm este livro não serão afetados.`,
       danger: true,
-      confirmLabel: 'Excluir',
+      confirmLabel: 'Tirar',
       onConfirm: confirmarExclusao,
       onCancel: () => setConfirmModal(null),
     });
   };
 
-  const handleBuscarLeitor = async (e) => {
-    e.preventDefault();
-    const termo = buscaNickname.trim();
-    if (!termo) return;
+  const handleExcluirPermanente = (livro) => {
+    const confirmar = async () => {
+      setConfirmModal(null);
+      try {
+        await api.delete(`/livros/${livro.id}/permanente`);
+        removerLivroDoEstado(livro.id, livro.status);
+        showToast('Livro excluído permanentemente de todos os perfis.');
+      } catch (err) {
+        const msg = err?.response?.data?.message || 'Erro ao excluir permanentemente.';
+        showToast(msg, 'error');
+      }
+    };
+    setConfirmModal({
+      title: 'Excluir permanentemente',
+      message: `"${livro.title}" será excluído da biblioteca de TODOS os leitores que o adicionaram. Esta ação não pode ser desfeita.`,
+      danger: true,
+      confirmLabel: 'Excluir de todos',
+      onConfirm: confirmar,
+      onCancel: () => setConfirmModal(null),
+    });
+  };
+
+  const executarBuscaLeitor = async (termo) => {
+    if (!termo) { setLeitoresEncontrados([]); setBuscaErro(''); return; }
     setBuscandoLeitor(true);
     setBuscaErro('');
     setLeitoresEncontrados([]);
     try {
       const res = await api.get(`/usuarios/pesquisar?q=${encodeURIComponent(termo)}`);
-      if (res.data.length === 0) {
-        setBuscaErro('Nenhum leitor encontrado.');
-      } else {
-        setLeitoresEncontrados(res.data);
-      }
-    } catch {
-      setBuscaErro('Erro ao buscar leitor.');
-    } finally {
-      setBuscandoLeitor(false);
-    }
+      if (res.data.length === 0) setBuscaErro('Nenhum leitor encontrado.');
+      else setLeitoresEncontrados(res.data);
+    } catch { setBuscaErro('Erro ao buscar leitor.'); }
+    finally { setBuscandoLeitor(false); }
+  };
+
+  const handleBuscarLeitor = (e) => {
+    e.preventDefault();
+    if (buscaDebounceRef.current) clearTimeout(buscaDebounceRef.current);
+    executarBuscaLeitor(buscaNickname.trim());
   };
 
   const getRatingPerfil = (livro) => {
@@ -532,8 +546,7 @@ export default function PerfilPage() {
       await api.delete('/usuarios/me');
       clearSession();
       navigate('/cadastro');
-    } catch (err) {
-      console.error(err);
+    } catch {
       showToast('Erro ao excluir conta.', 'error');
     }
   };
@@ -830,7 +843,7 @@ export default function PerfilPage() {
                   {(todosPorStatus[statExpandida] || []).map(livro => (
                     <div key={livro.id} className={styles.statBookCard}>
                       <button type="button" className={styles.statBookBtn}
-                        onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro } })}>
+                        onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro, bookList: todosPorStatus[statExpandida] } })}>
                         <img src={livro.cover} alt={livro.title} className={styles.statBookCover}
                           onError={(e) => { e.target.src = '/books/book-sherlock.png'; }} />
                         <div className={styles.statBookInfo}>
@@ -838,12 +851,22 @@ export default function PerfilPage() {
                           <p className={styles.statBookAuthor}>{livro.author}</p>
                         </div>
                       </button>
-                      <button
-                        className={styles.statBookDelete}
-                        onClick={(e) => { e.stopPropagation(); handleExcluirLivro(livro); }}
-                        title="Excluir da biblioteca"
-                        type="button"
-                      >×</button>
+                      <div className={styles.statBookActions}>
+                        <button
+                          className={styles.statBookTirar}
+                          onClick={(e) => { e.stopPropagation(); handleExcluirLivro(livro); }}
+                          title="Tirar da biblioteca"
+                          type="button"
+                        >Tirar</button>
+                        {livro.criadorEmail === usuario?.email && (
+                          <button
+                            className={styles.statBookPermanente}
+                            onClick={(e) => { e.stopPropagation(); handleExcluirPermanente(livro); }}
+                            title="Excluir permanentemente de todos os perfis"
+                            type="button"
+                          >Excluir permanente</button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -854,10 +877,10 @@ export default function PerfilPage() {
           {statExpandida === 'total' && (
             <div className={styles.statBooks}>
               <div className={styles.statBookGrid}>
-                {[...todosPorStatus['LIDO'], ...todosPorStatus['LENDO'], ...todosPorStatus['QUERO LER'], ...todosPorStatus['RECOMENDADO']].map(livro => (
+                {[...todosPorStatus['LIDO'], ...todosPorStatus['LENDO'], ...todosPorStatus['QUERO LER'], ...todosPorStatus['RECOMENDADO']].map((livro, _i, allList) => (
                   <div key={livro.id} className={styles.statBookCard}>
                     <button type="button" className={styles.statBookBtn}
-                      onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro } })}>
+                      onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro, bookList: allList } })}>
                       <img src={livro.cover} alt={livro.title} className={styles.statBookCover}
                         onError={(e) => { e.target.src = '/books/book-sherlock.png'; }} />
                       <div className={styles.statBookInfo}>
@@ -865,12 +888,22 @@ export default function PerfilPage() {
                         <p className={styles.statBookAuthor}>{livro.author}</p>
                       </div>
                     </button>
-                    <button
-                      className={styles.statBookDelete}
-                      onClick={(e) => { e.stopPropagation(); handleExcluirLivro(livro); }}
-                      title="Excluir da biblioteca"
-                      type="button"
-                    >×</button>
+                      <div className={styles.statBookActions}>
+                        <button
+                          className={styles.statBookTirar}
+                          onClick={(e) => { e.stopPropagation(); handleExcluirLivro(livro); }}
+                          title="Tirar da biblioteca"
+                          type="button"
+                        >Tirar</button>
+                        {livro.criadorEmail === usuario?.email && (
+                          <button
+                            className={styles.statBookPermanente}
+                            onClick={(e) => { e.stopPropagation(); handleExcluirPermanente(livro); }}
+                            title="Excluir permanentemente de todos os perfis"
+                            type="button"
+                          >Excluir permanente</button>
+                        )}
+                      </div>
                   </div>
                 ))}
               </div>
@@ -1004,7 +1037,7 @@ export default function PerfilPage() {
                 return (
                   <div key={livro.id} className={styles.bookCardWrapper}>
                     <button type="button" className={styles.bookCoverBtn}
-                      onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro } })}>
+                      onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro, bookList: livrosFavoritos } })}>
                       <img src={livro.cover} alt={livro.title} className={styles.bookCover} />
                     </button>
                     <div className={styles.bookInfo}>
@@ -1019,8 +1052,11 @@ export default function PerfilPage() {
                         </div>
                       )}
                       <div className={styles.bookActions}>
-                        <button className={styles.btnSmallEdit} onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro } })} type="button">Ver</button>
-                        <button className={styles.btnSmallDelete} onClick={() => handleExcluirLivro(livro)} type="button">Excluir</button>
+                        <button className={styles.btnSmallEdit} onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro, bookList: livrosFavoritos } })} type="button">Ver</button>
+                        <button className={styles.btnSmallDelete} onClick={() => handleExcluirLivro(livro)} type="button">Tirar</button>
+                        {livro.criadorEmail === usuario?.email && (
+                          <button className={styles.btnSmallPermanente} onClick={() => handleExcluirPermanente(livro)} type="button">Excluir permanente</button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1044,16 +1080,18 @@ export default function PerfilPage() {
                 return (
                   <div key={av.id} className={styles.commentItem}>
                     <div className={styles.commentRow}>
-                      {cover && (
-                        <button
-                          type="button"
-                          className={styles.commentCoverBtn}
-                          onClick={() => livroId && navigate(`/livro/${livroId}`, { state: { bookData: livro } })}
-                        >
-                          <img src={cover} alt={av.livroTitulo} className={styles.commentCover}
-                            onError={e => { e.target.style.display = 'none'; }} />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className={styles.commentCoverBtn}
+                        onClick={() => livroId && navigate(`/livro/${livroId}`, { state: { bookData: livro } })}
+                        style={!livroId ? { cursor: 'default', pointerEvents: 'none' } : {}}
+                      >
+                        {cover
+                          ? <img src={cover} alt={av.livroTitulo} className={styles.commentCover}
+                              onError={e => { e.target.style.display = 'none'; }} />
+                          : <div className={styles.commentCoverPlaceholder}>{av.livroTitulo?.[0] || '?'}</div>
+                        }
+                      </button>
                       <div className={styles.commentBody}>
                         <div className={styles.commentBookInfo}>
                           <p className={styles.commentBookTitle}>{av.livroTitulo}</p>
@@ -1093,16 +1131,15 @@ export default function PerfilPage() {
             <div className={styles.topBooksGrid}>
               {livrosMaisComentados.map((m, idx) => {
                 const livro = livrosPorTituloAutor[`${m.livroTitulo?.toLowerCase()}||${m.livroAutor?.toLowerCase()}`];
+                const capa = livro?.cover || m.livroCover;
                 return (
                   <div
                     key={`${m.livroTitulo}||${m.livroAutor}`}
                     className={styles.topBookItem}
                   >
                     <span className={styles.topBookRank}>#{idx + 1}</span>
-                    {livro?.cover && (
-                      <img src={livro.cover} alt={m.livroTitulo} className={styles.topBookCover}
-                        onError={e => { e.target.style.display = 'none'; }} />
-                    )}
+                    <img src={capa || '/books/book-sherlock.png'} alt={m.livroTitulo} className={styles.topBookCover}
+                      onError={e => { e.target.src = '/books/book-sherlock.png'; }} />
                     <div className={styles.topBookInfo}>
                       <p className={styles.topBookTitle}>{m.livroTitulo}</p>
                       <p className={styles.topBookAuthor}>{m.livroAutor}</p>
@@ -1113,11 +1150,11 @@ export default function PerfilPage() {
                         <span className={styles.topBookStats}>{m.media.toFixed(1)} · {m.total} comentário{m.total !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
-                    {livro && (
+                    {(livro?.id || m.livroId) && (
                       <button
                         type="button"
                         className={styles.btnVerComentario}
-                        onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro } })}
+                        onClick={() => navigate(`/livro/${livro?.id || m.livroId}`, { state: { bookData: livro } })}
                       >
                         Ver
                       </button>
@@ -1237,26 +1274,6 @@ export default function PerfilPage() {
         )}
 
         <div className={styles.communitySection}>
-          <h2 className={styles.sectionTitle}>Comunidades de Leitura</h2>
-          <p className={styles.communitySubtitle}>Grupos do Facebook para leitores</p>
-          <div className={styles.communityGrid}>
-            {[
-              { nome: 'Leitores Brasileiros', membros: '1,2M membros', emoji: '📚', cor: '#1877f2' },
-              { nome: 'Ficção Científica Brasil', membros: '450K membros', emoji: '🔮', cor: '#6c5ce7' },
-              { nome: 'Clube do Livro Brasil', membros: '890K membros', emoji: '🏛️', cor: '#00b894' },
-              { nome: 'Romance & Amor em Livros', membros: '320K membros', emoji: '🌹', cor: '#e84393' },
-            ].map((g) => (
-              <div key={g.nome} className={styles.communityCard}>
-                <div className={styles.communityIcon} style={{ background: g.cor }}>{g.emoji}</div>
-                <div className={styles.communityInfo}>
-                  <p className={styles.communityName}>{g.nome}</p>
-                  <p className={styles.communityMembers}>{g.membros}</p>
-                </div>
-                <span className={styles.communityBadge}>Facebook</span>
-              </div>
-            ))}
-          </div>
-
           <div className={styles.communitySearch}>
             <h3 className={styles.communitySearchTitle}>Encontrar leitor</h3>
             <p className={styles.searchHint}>Busque por nome ou @nickname</p>
@@ -1265,7 +1282,17 @@ export default function PerfilPage() {
                 className={styles.searchInput}
                 type="text"
                 value={buscaNickname}
-                onChange={e => { setBuscaNickname(e.target.value); setBuscaErro(''); setLeitoresEncontrados([]); }}
+                onChange={e => {
+                  const val = e.target.value;
+                  setBuscaNickname(val);
+                  setBuscaErro('');
+                  if (buscaDebounceRef.current) clearTimeout(buscaDebounceRef.current);
+                  if (val.trim().length >= 1) {
+                    buscaDebounceRef.current = setTimeout(() => executarBuscaLeitor(val.trim()), 350);
+                  } else {
+                    setLeitoresEncontrados([]);
+                  }
+                }}
                 placeholder="Ex: Sofia ou @sofia_reads"
               />
               <button className={styles.btnSearch} type="submit" disabled={buscandoLeitor}>
@@ -1277,45 +1304,44 @@ export default function PerfilPage() {
               <div className={styles.leitorResultados}>
                 {leitoresEncontrados.map(leitor => {
                   const jaAdic = perfisAdicionados.some(p => p.id === leitor.id);
+                  const inicLetras = leitor.nome?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase() || '?';
                   return (
-                    <div key={leitor.id} className={styles.leitorResultItem}>
+                    <div key={leitor.id} className={`${styles.leitorCard} ${styles.leitorSearchCard}`}>
                       <div
-                        className={styles.leitorResultBg}
+                        className={styles.leitorCardBg}
                         style={leitor.bgBase64 ? { backgroundImage: `url(${leitor.bgBase64})` } : {}}
                         aria-hidden="true"
                       />
-                      <div className={styles.leitorResultOverlay} aria-hidden="true" />
-                      <div className={styles.leitorResultContent}>
-                        <div className={styles.leitorResultAvatar}>
-                          {leitor.avatarBase64
-                            ? <img src={leitor.avatarBase64} alt="avatar" className={styles.leitorResultAvatarImg} />
-                            : leitor.nome?.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
+                      <div className={styles.leitorCardOverlay} aria-hidden="true" />
+                      <div className={styles.leitorCardAvatar}>
+                        {leitor.avatarBase64
+                          ? <img src={leitor.avatarBase64} alt={leitor.nome} className={styles.leitorCardAvatarImg} />
+                          : inicLetras
+                        }
+                      </div>
+                      <div className={styles.leitorCardInfo}>
+                        <p className={styles.leitorCardNome}>{leitor.nome}</p>
+                        {leitor.nickname && <p className={styles.leitorCardNick}>@{leitor.nickname}</p>}
+                        {leitor.bio && <p className={styles.leitorCardBio}>"{leitor.bio}"</p>}
+                      </div>
+                      <div className={styles.leitorCardActions}>
+                        <button
+                          className={styles.btnVerPerfilCard}
+                          type="button"
+                          onClick={() => leitor.nickname
+                            ? navigate(`/leitor/${leitor.nickname}`)
+                            : navigate(`/leitor/id/${leitor.id}`)
                           }
-                        </div>
-                        <div className={styles.leitorResultInfo}>
-                          <p className={styles.leitorResultNome}>{leitor.nome}</p>
-                          {leitor.nickname && <p className={styles.leitorResultNickname}>@{leitor.nickname}</p>}
-                          {leitor.bio && <p className={styles.leitorResultBio}>"{leitor.bio}"</p>}
-                        </div>
-                        <div className={styles.leitorResultAcoes}>
-                          <button
-                            className={styles.btnVerPerfilCard}
-                            type="button"
-                            onClick={() => leitor.nickname
-                              ? navigate(`/leitor/${leitor.nickname}`)
-                              : navigate(`/leitor/id/${leitor.id}`)
-                            }
-                          >
-                            Ver Perfil
-                          </button>
-                          <button
-                            type="button"
-                            className={jaAdic ? styles.btnAdicionadoCard : styles.btnAdicionarCard}
-                            onClick={() => jaAdic ? handleRemoverLeitor(leitor.id) : handleAdicionarLeitor(leitor)}
-                          >
-                            {jaAdic ? '✓ Adicionado' : '+ Adicionar'}
-                          </button>
-                        </div>
+                        >
+                          Ver Perfil
+                        </button>
+                        <button
+                          type="button"
+                          className={jaAdic ? styles.btnAdicionadoCard : styles.btnAdicionarCard}
+                          onClick={() => jaAdic ? handleRemoverLeitor(leitor.id) : handleAdicionarLeitor(leitor)}
+                        >
+                          {jaAdic ? '✓ Adicionado' : '+ Adicionar'}
+                        </button>
                       </div>
                     </div>
                   );
@@ -1330,7 +1356,6 @@ export default function PerfilPage() {
           <button className={styles.btnDangerOutline} onClick={() => setShowDeleteModal(true)} type="button">Excluir Conta</button>
         </div>
 
-        <AdBanner variant="banner" />
         <div className={styles.footerWrap}><Footer /></div>
       </main>
 

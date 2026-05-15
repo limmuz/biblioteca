@@ -10,7 +10,7 @@
 | RF-04 | Listar livros | E2E / Integração | `LivroE2ETest.java` (`ListarLivrosTests`) + `LivroServiceIntegrationTest.java` | ✅ Implementado |
 | RF-05 | Buscar livro por ID | E2E / Integração | `LivroE2ETest.java` (`BuscarPorIdTests`) + `LivroServiceIntegrationTest.java` | ✅ Implementado |
 | RF-06 | Atualizar livro | E2E / Integração | `LivroE2ETest.java` (`AtualizarLivroTests`) + `LivroServiceIntegrationTest.java` | ✅ Implementado |
-| RF-07 | Excluir livro | E2E / Integração | `LivroE2ETest.java` (`RemoverLivroTests`) + `LivroServiceIntegrationTest.java` | ✅ Implementado |
+| RF-07 | Excluir livro (soft delete — remove apenas da biblioteca do usuário) | E2E / Integração | `LivroE2ETest.java` (`RemoverLivroTests`) + `LivroServiceIntegrationTest.java` | ✅ Implementado |
 | RF-08 | Gerenciar sessão (usuário autenticado) | E2E / Caixa Preta | `UsuarioE2ETest.java` (`MeTests`) — GET /me com token (200) e sem token (401) | ✅ Implementado |
 | RF-09 | Consultar CEP via API externa (ViaCEP) | Integração / API Real | `ViaCepIntegrationTest.java` — GET /api/cep/{cep} contra ViaCEP real; CEP válido (200) e inexistente (404) | ✅ Implementado |
 | RF-10 | Avaliar livro com estrelas e comentário | E2E / Caixa Preta | `AvaliacaoE2ETest.java` (`criarAvaliacao`) | ✅ Implementado |
@@ -24,6 +24,8 @@
 | RF-18 | Navegar entre livros e ver recomendações em DetalhesLivroPage | Frontend | `DetalhesLivroPage.jsx` — setas prev/next; seção "Você também pode gostar" por autor ou categoria | ✅ Implementado |
 | RF-19 | Visualizar próprios comentários e livros mais comentados no perfil | Frontend + Backend | `PerfilPage.jsx` + GET /api/avaliacoes/minhas — card de comentário exibe capa do livro e botão "Ver livro" para todos os comentários (livroId + livroCover armazenados na avaliação) | ✅ Implementado |
 | RF-20 | Upload de imagens via armazenamento externo (Cloudinary) | E2E / Caixa Preta | `ImagemE2ETest.java` — POST /api/imagens/upload: foto de perfil (pasta=avatares) e plano de fundo (pasta=fundos); 401 sem token; 503 sem Cloudinary configurado | ✅ Implementado |
+| RF-21 | Notificações de atividade para seguidores | E2E / Caixa Preta | `NotificacaoE2ETest.java` — GET /api/notificacoes (lista com notificação criada via avaliação), GET /api/notificacoes/contagem (naoLidas > 0), PUT /api/notificacoes/marcar-lidas (204 + contagem zera); 401 sem token em todos os endpoints | ✅ Implementado |
+| RF-22 | Excluir livro permanentemente (criador — cascata em todos os leitores) | E2E / Caixa Preta | `LivroE2ETest.java` (`ExcluirPermanenteTests`) — criador exclui (204); outro usuário tenta excluir (403) | ✅ Implementado |
 
 ---
 
@@ -757,6 +759,101 @@ sequenceDiagram
 
 ---
 
+### RF-21 — Notificações de Atividade para Seguidores
+
+```mermaid
+sequenceDiagram
+    actor A as Leitor Ator
+    actor S as Seguidor
+    participant F as Frontend (React)
+    participant AC as AvaliacaoController
+    participant AS as AvaliacaoService
+    participant NS as NotificacaoService
+    participant UR as UsuarioRepository
+    participant NR as NotificacaoRepository
+    participant M as MongoDB
+
+    A->>F: Avalia um livro (POST /api/avaliacoes/livro/{id})
+    F->>AC: POST /api/avaliacoes/livro/{livroId} {rating, comentario} + JWT
+    AC->>AS: criarOuAtualizar(emailAtor, livroId, request)
+    AS->>AS: salva avaliação
+    AS->>NS: notificarSeguidores(emailAtor, "AVALIACAO_CRIADA", titulo, autor, null)
+    NS->>UR: findByEmail(emailAtor)
+    UR->>M: query
+    M-->>NS: ator {id, nome, nickname}
+    NS->>UR: findByLeitoresSeguidosContaining(atorId)
+    UR->>M: query
+    M-->>NS: List<Usuario> seguidores
+    loop Para cada seguidor
+        NS->>NR: save(Notificacao{usuarioEmail=seguidor, tipo, livroTitulo, remetente, lida=false})
+        NR->>M: insert
+    end
+    AS-->>AC: AvaliacaoResponse
+    AC-->>F: 200 OK
+
+    S->>F: Acessa sino de notificações
+    F->>AC: GET /api/notificacoes/contagem + JWT (seguidor)
+    AC-->>F: 200 OK + {naoLidas: 1}
+    F->>F: Exibe badge vermelho no sino
+
+    S->>F: Abre lista de notificações
+    F->>AC: GET /api/notificacoes + JWT (seguidor)
+    AC-->>F: 200 OK + [notificação com tipo e livroTitulo]
+    F->>S: Exibe notificação "X avaliou Y"
+
+    S->>F: Clica em "Marcar todas como lidas"
+    F->>AC: PUT /api/notificacoes/marcar-lidas + JWT
+    AC-->>F: 204 No Content
+    F->>S: Badge some (contagem = 0)
+```
+
+---
+
+### RF-22 — Exclusão Permanente de Livro (Criador)
+
+```mermaid
+sequenceDiagram
+    actor C as Criador do Livro
+    actor L as Outro Leitor
+    participant F as Frontend (React)
+    participant LC as LivroController
+    participant LS as LivroService
+    participant LR as LivroRepository
+    participant AR as AvaliacaoRepository
+    participant NS as NotificacaoService
+    participant M as MongoDB
+
+    C->>F: Clica em "Excluir de todos" e confirma modal
+    F->>LC: DELETE /api/livros/{id}/permanente + JWT (criador)
+    LC->>LS: deletarPermanente(id, emailCriador)
+    LS->>LR: findById(id)
+    LR->>M: query
+    M-->>LS: livro {titulo, autor, criadorEmail}
+    alt Não é o criador
+        LS-->>LC: lança ResponseStatusException 403
+        LC-->>F: 403 Forbidden
+        F->>C: Exibe mensagem de erro
+    else É o criador
+        LS->>LR: findAllByTitleIgnoreCaseAndAuthorIgnoreCase(titulo, autor)
+        LR->>M: query — todas as cópias
+        M-->>LS: List<Livro> de todos os leitores
+        loop Para cada cópia
+            LS->>AR: findByLivroTituloAndLivroAutorAndUsuarioEmail(...) + ifPresent(delete)
+            AR->>M: delete avaliação
+            LS->>NS: notificarUsuario(emailCopia, "LIVRO_EXCLUIDO_PERMANENTE", ...)
+            NS->>M: insert notificação
+            LS->>LR: deleteById(copia.id)
+            LR->>M: delete
+        end
+        LS-->>LC: void
+        LC-->>F: 204 No Content
+        F->>C: Remove livro da tela e exibe confirmação
+        F->>L: Próximo acesso: livro não existe mais na biblioteca
+    end
+```
+
+---
+
 ## Estratégia de Testes
 
 | Tipo | Arquivo | Ferramenta | Descrição |
@@ -765,10 +862,11 @@ sequenceDiagram
 | Integração com banco real | `LivroServiceIntegrationTest.java` | Testcontainers + MongoDB 7.0 | Testa `LivroRepository` e `LivroService` com MongoDB real e efêmero |
 | Integração com API externa real | `ViaCepIntegrationTest.java` | Testcontainers + RestTemplate + ViaCEP real | Testa `GET /api/cep/{cep}` contra API ViaCEP real (integração real sem simulação): CEP válido (200) e inexistente (404) |
 | E2E / Caixa Preta | `AuthE2ETest.java` | Testcontainers + RestTemplate | Registro e login via HTTP: token gerado (200), credenciais inválidas (401), email duplicado (400) |
-| E2E / Caixa Preta | `LivroE2ETest.java` | Testcontainers + RestTemplate | CRUD completo: criar (201), listar (vazia, com livros, search), buscar por ID (200, 404), atualizar (200), remover (204, 404) |
+| E2E / Caixa Preta | `LivroE2ETest.java` | Testcontainers + RestTemplate | CRUD completo: criar (201), listar (vazia, com livros, search), buscar por ID (200, 404), atualizar (200), remover (204, 404), excluir permanente — criador (204), não-criador (403) |
 | E2E / Caixa Preta | `AvaliacaoE2ETest.java` | Testcontainers + RestTemplate | Criar avaliação, listar, excluir, curtir/descurtir (toggle com 2 usuários), responder e excluir resposta, médias, outros leitores |
 | E2E / Caixa Preta | `UsuarioE2ETest.java` | Testcontainers + RestTemplate | GET /me (200, 401), PUT /me (atualizar), DELETE /me (204), listar leitores, pesquisar por nome e @nickname, perfil público por nickname e por ID, buscar por nickname |
 | E2E / Caixa Preta | `ImagemE2ETest.java` | Testcontainers + RestTemplate | POST /api/imagens/upload: sem token (401), Cloudinary não configurado (503) |
+| E2E / Caixa Preta | `NotificacaoE2ETest.java` | Testcontainers + RestTemplate | GET /notificacoes (lista com notificação disparada por avaliação de seguido), GET /notificacoes/contagem (naoLidas), PUT /notificacoes/marcar-lidas (204 + zera contagem); 401 sem token em todos os endpoints |
 
 ---
 

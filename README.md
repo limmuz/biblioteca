@@ -155,10 +155,12 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | Testcontainers (sem Mocks) | Todos os testes usam MongoDB real |
 | Testes unitários parametrizados | `LivroValidatorParamTest.java` |
 | Testes de integração | `LivroServiceIntegrationTest.java` |
-| Testes E2E / Caixa Preta | `AuthE2ETest.java` + `LivroE2ETest.java` + `AvaliacaoE2ETest.java` + `UsuarioE2ETest.java` + `ImagemE2ETest.java` |
+| Testes E2E / Caixa Preta | `AuthE2ETest.java` + `LivroE2ETest.java` + `AvaliacaoE2ETest.java` + `UsuarioE2ETest.java` + `ImagemE2ETest.java` + `NotificacaoE2ETest.java` |
 | Integração com API externa real | ViaCEP (busca de CEP no cadastro) — teste real via `ViaCepIntegrationTest.java` |
 | Upload de imagem via Cloudinary | Avatar enviado para Cloudinary e URL armazenada no banco; endpoint `/api/imagens/upload` |
 | RF-20 (Upload de avatar) | Implementado com `ImagemController` + `CloudinaryService` |
+| RF-21 (Notificações de atividade) | Implementado com `NotificacaoController` + `NotificacaoService`; seguidores recebem notificação quando um leitor avalia um livro; contagem de não lidas e marcar como lidas |
+| RF-22 (Exclusão permanente de livro) | Criador pode excluir livro da biblioteca de todos os leitores; cascata: avaliações excluídas e notificação enviada a cada afetado |
 | Cobertura >= 80% (JaCoCo) | 88.3% no SonarCloud — check JaCoCo aprovado |
 | SonarCloud configurado | Rodando — https://sonarcloud.io/project/overview?id=AnaPaula2024_biblioteca |
 | CI com GitHub Actions | Pipeline configurado |
@@ -175,10 +177,14 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | Perfil público/privado | Toggle visível no perfil; perfil privado retorna 403 para outros usuários |
 | Conheça outros leitores | Carousel de perfis públicos com cards com fundo, avatar, bio e botões de ação |
 | Perfis adicionados | Seção para acompanhar leitores favoritados (persistido em localStorage) |
-| Perfil público detalhado | Ver livros, estatísticas e fundo de outro leitor; adicionar livros bem avaliados à própria biblioteca |
+| Perfil público detalhado | Ver livros, estatísticas e fundo de outro leitor; clicar em livro abre detalhes; adicionar livros à própria biblioteca a partir do perfil ou da página de detalhes |
 | Ver perfil por ID | Usuários sem nickname têm perfil acessível via `/leitor/id/{id}` |
 | Busca de leitores | Buscar por nome ou @nickname na seção social do perfil |
 | Estatísticas de leitura | Contadores de lidos, lendo e quero ler com mosaico visual |
+| Navegação por seção | Setas prev/next no detalhe do livro percorrem apenas os livros da seção de origem |
+| Propagação de metadados | Edição de capa/sinopse/editora por um usuário atualiza automaticamente as cópias de outros usuários com o mesmo livro |
+| Exclusão permanente | Criador do livro pode excluir de todas as bibliotecas ao mesmo tempo; avaliações são removidas em cascata e cada leitor afetado recebe notificação |
+| Notificações de atividade | Seguidores recebem notificação quando um leitor avalia um livro; contagem de não lidas exibida no ícone do sino; marcar todas como lidas |
 | Repositório no GitHub | https://github.com/AnaPaula2024/biblioteca |
 
 ---
@@ -192,6 +198,7 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | `AvaliacaoE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-10 a RF-12 (criar, listar, excluir avaliações; curtir/descurtir e responder comentários) |
 | `UsuarioE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-13 a RF-16 (perfil, personalização, perfil público, busca e listagem de leitores — inclui exclusão de perfis privados) |
 | `ImagemE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-20 (upload de avatar: sem token → 401; Cloudinary não configurado no perfil de teste → 503) |
+| `NotificacaoE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-21 (notificações: listar, contagem, marcar como lidas; 401 sem token em cada endpoint) |
 | `LivroServiceIntegrationTest.java` | `backend/src/test/java/com/qs/biblioteca/integration/` | RF-04 a RF-07 (integração com MongoDB) |
 | `ViaCepIntegrationTest.java` | `backend/src/test/java/com/qs/biblioteca/integration/` | RF-09 (integração real com API ViaCEP — sem mocks) |
 | `LivroValidatorParamTest.java` | `backend/src/test/java/com/qs/biblioteca/unit/` | Validações de negócio (unitário parametrizado — caixa branca) |
@@ -202,9 +209,10 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 
 | Coleção | Campos principais |
 |---|---|
-| `livros` | `title`, `author`, `cover`, `excerpt`, `status`, `language`, `pages`, `categories`, `publisher`, `publishedDate` |
-| `usuarios` | `nome`, `email`, `senhaHash`, `role`, `cep`, `logradouro`, `bairro`, `cidade`, `uf`, `enderecos`, `telefones`, `redesSociais`, `avatarBase64` (URL Cloudinary), `bgBase64`, `bio`, `nickname`, `perfilPublico` |
-| `avaliacoes` | `livroTitulo`, `livroAutor`, `usuarioEmail`, `usuarioNome`, `usuarioNickname`, `avatarBase64` (URL Cloudinary), `rating`, `comentario`, `criadoEm`, `curtidas` (lista de emails), `respostas` (lista de objetos com `id`, `usuarioEmail`, `texto`, `criadoEm`) |
+| `livros` | `title`, `author`, `cover`, `excerpt`, `status`, `language`, `pages`, `categories`, `publisher`, `publishedDate`, `userEmail` |
+| `usuarios` | `nome`, `email`, `senhaHash`, `role`, `cep`, `logradouro`, `bairro`, `cidade`, `uf`, `enderecos`, `telefones`, `redesSociais`, `avatarBase64` (URL Cloudinary), `bgBase64`, `bio`, `nickname`, `perfilPublico`, `leitoresSeguidos` (lista de IDs), `metaLeitura` |
+| `avaliacoes` | `livroTitulo`, `livroAutor`, `livroId`, `livroCover`, `usuarioEmail`, `usuarioNome`, `usuarioNickname`, `avatarBase64` (URL Cloudinary), `rating`, `comentario`, `criadoEm`, `curtidas` (lista de emails), `respostas` (lista de objetos com `id`, `usuarioEmail`, `usuarioNome`, `usuarioNickname`, `avatarBase64`, `texto`, `criadoEm`, `minha`) |
+| `notificacoes` | `usuarioEmail`, `tipo` (ex: `AVALIACAO_CRIADA`, `LIVRO_EXCLUIDO_PERMANENTE`), `livroTitulo`, `livroAutor`, `remetente`, `atorEmail`, `detalhe`, `lida` (boolean), `criadaEm` |
 
 ---
 
@@ -237,4 +245,4 @@ O pipeline roda automaticamente a cada push:
 
 ---
 
-*Última atualização: 14/05/2026*
+*Última atualização: 15/05/2026*

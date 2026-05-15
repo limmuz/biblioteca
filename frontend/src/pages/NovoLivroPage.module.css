@@ -135,3 +135,62 @@
 .footerWrap {
   margin-top: 40px;
 }
+
+.inputWrapper {
+  position: relative;
+}
+
+.inputWithLock {
+  padding-right: 32px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.inputLocked {
+  cursor: not-allowed;
+  background-color: rgba(74, 103, 65, 0.04);
+  color: var(--color-forest);
+}
+
+.lockIconInInput {
+  position: absolute;
+  right: 8px;
+  top: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px;
+  color: var(--color-forest);
+  transition: opacity 0.15s;
+}
+
+.lockIconInInput:hover {
+  opacity: 1 !important;
+}
+
+.lockIconVisible {
+  opacity: 0.55;
+}
+
+.lockIconHidden {
+  opacity: 0;
+}
+
+.inputWrapper:hover .lockIconHidden,
+.inputWrapper:focus-within .lockIconHidden {
+  opacity: 0.25;
+}
+
+.criadorAviso {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--color-forest);
+  opacity: 0.8;
+  margin: -8px 0 12px 0;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.04);
+  border-left: 3px solid var(--color-forest);
+  border-radius: 0 4px 4px 0;
+}

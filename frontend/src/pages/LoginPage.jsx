@@ -38,7 +38,6 @@ export default function LoginPage() {
       } else {
         setError('Erro ao fazer login. Tente novamente em instantes.');
       }
-      console.error('Erro no login:', err);
     } finally {
       setLoading(false);
     }
