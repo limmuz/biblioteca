@@ -49,3 +49,6 @@ desktop.ini
 # ── Scripts locais com dados sensíveis (não subir) ───────────
 seed_livros.ps1
 *.mjs
+*.txt
+backend-log*.txt
+backend-migr*.txt
