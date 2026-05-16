@@ -80,7 +80,7 @@ public class AvaliacaoService {
         avaliacao.setCriadoEm(LocalDateTime.now());
         Avaliacao salva = avaliacaoRepository.save(avaliacao);
         notificacaoService.notificarSeguidores(email,
-                ehNova ? "AVALIACAO_CRIADA" : "AVALIACAO_ATUALIZADA", titulo, autor, null, livroId, livro.getCover());
+                ehNova ? "AVALIACAO_CRIADA" : "AVALIACAO_ATUALIZADA", titulo, autor, livroId, livro.getCover());
         return new AvaliacaoResponse(salva, email);
     }
 
@@ -115,7 +115,7 @@ public class AvaliacaoService {
         avaliacao.getRespostas().add(resposta);
         Avaliacao salva = avaliacaoRepository.save(avaliacao);
         notificacaoService.notificarSeguidores(email,
-                "COMENTARIO_ADICIONADO", avaliacao.getLivroTitulo(), avaliacao.getLivroAutor(), null,
+                "COMENTARIO_ADICIONADO", avaliacao.getLivroTitulo(), avaliacao.getLivroAutor(),
                 avaliacao.getLivroId(), avaliacao.getLivroCover());
         return new AvaliacaoResponse(salva, email);
     }
@@ -133,55 +133,59 @@ public class AvaliacaoService {
         avaliacao.getRespostas().removeIf(r -> r.getId().equals(respostaId));
         avaliacaoRepository.save(avaliacao);
         notificacaoService.notificarSeguidores(email,
-                "COMENTARIO_EXCLUIDO", avaliacao.getLivroTitulo(), avaliacao.getLivroAutor(), null,
+                "COMENTARIO_EXCLUIDO", avaliacao.getLivroTitulo(), avaliacao.getLivroAutor(),
                 avaliacao.getLivroId(), avaliacao.getLivroCover());
+    }
+
+    private String chaveAgrupamento(Avaliacao a) {
+        return (a.getLivroTitulo() != null ? a.getLivroTitulo() : "").toLowerCase()
+                + "||"
+                + (a.getLivroAutor() != null ? a.getLivroAutor() : "").toLowerCase();
+    }
+
+    private void enriquecerCapaMedia(MediaAvaliacaoResponse r, List<Avaliacao> lista) {
+        List<Livro> capas = livroRepository.findCapasPorTituloEAutor(
+                lista.get(0).getLivroTitulo(), lista.get(0).getLivroAutor());
+        if (!capas.isEmpty()) {
+            r.setLivroCover(capas.get(0).getCover());
+            if (r.getLivroId() == null) r.setLivroId(capas.get(0).getId());
+        }
+        if (r.getLivroCover() == null) {
+            lista.stream().map(Avaliacao::getLivroCover)
+                    .filter(c -> c != null && !c.isBlank())
+                    .findFirst().ifPresent(r::setLivroCover);
+        }
+        if (r.getLivroId() == null) {
+            lista.stream().map(Avaliacao::getLivroId)
+                    .filter(Objects::nonNull)
+                    .findFirst().ifPresent(r::setLivroId);
+            if (r.getLivroId() == null) {
+                livroRepository.findIdsPorTituloEAutor(
+                        lista.get(0).getLivroTitulo(), lista.get(0).getLivroAutor())
+                        .stream().findFirst()
+                        .ifPresent(l -> r.setLivroId(l.getId()));
+            }
+        }
+    }
+
+    private MediaAvaliacaoResponse toMediaResponse(List<Avaliacao> lista) {
+        double media = lista.stream().mapToInt(Avaliacao::getRating).average().orElse(0);
+        MediaAvaliacaoResponse r = new MediaAvaliacaoResponse();
+        r.setLivroTitulo(lista.get(0).getLivroTitulo());
+        r.setLivroAutor(lista.get(0).getLivroAutor());
+        r.setMedia(Math.round(media * 10.0) / 10.0);
+        r.setTotal(lista.size());
+        lista.stream().map(Avaliacao::getLivroId).filter(Objects::nonNull)
+                .findFirst().ifPresent(r::setLivroId);
+        enriquecerCapaMedia(r, lista);
+        return r;
     }
 
     public List<MediaAvaliacaoResponse> calcularMedias() {
         Map<String, List<Avaliacao>> agrupado = avaliacaoRepository.findAllParaMedias()
                 .stream()
-                .collect(Collectors.groupingBy(a ->
-                        (a.getLivroTitulo() != null ? a.getLivroTitulo() : "").toLowerCase()
-                                + "||"
-                                + (a.getLivroAutor() != null ? a.getLivroAutor() : "").toLowerCase()
-                ));
-        return agrupado.entrySet()
-                .stream()
-                .map(e -> {
-                    List<Avaliacao> lista = e.getValue();
-                    double media = lista.stream().mapToInt(Avaliacao::getRating).average().orElse(0);
-                    MediaAvaliacaoResponse r = new MediaAvaliacaoResponse();
-                    r.setLivroTitulo(lista.get(0).getLivroTitulo());
-                    r.setLivroAutor(lista.get(0).getLivroAutor());
-                    r.setMedia(Math.round(media * 10.0) / 10.0);
-                    r.setTotal(lista.size());
-                    lista.stream().map(Avaliacao::getLivroId).filter(Objects::nonNull)
-                            .findFirst().ifPresent(r::setLivroId);
-                    List<Livro> capas = livroRepository.findCapasPorTituloEAutor(
-                            lista.get(0).getLivroTitulo(), lista.get(0).getLivroAutor());
-                    if (!capas.isEmpty()) {
-                        r.setLivroCover(capas.get(0).getCover());
-                        if (r.getLivroId() == null) r.setLivroId(capas.get(0).getId());
-                    }
-                    if (r.getLivroCover() == null) {
-                        lista.stream().map(Avaliacao::getLivroCover)
-                                .filter(c -> c != null && !c.isBlank())
-                                .findFirst().ifPresent(r::setLivroCover);
-                    }
-                    if (r.getLivroId() == null) {
-                        lista.stream().map(Avaliacao::getLivroId)
-                                .filter(Objects::nonNull)
-                                .findFirst().ifPresent(r::setLivroId);
-                        if (r.getLivroId() == null) {
-                            livroRepository.findIdsPorTituloEAutor(
-                                    lista.get(0).getLivroTitulo(), lista.get(0).getLivroAutor())
-                                    .stream().findFirst()
-                                    .ifPresent(l -> r.setLivroId(l.getId()));
-                        }
-                    }
-                    return r;
-                })
-                .toList();
+                .collect(Collectors.groupingBy(this::chaveAgrupamento));
+        return agrupado.values().stream().map(this::toMediaResponse).toList();
     }
 
     public List<PublicUsuarioResponse> outrosLeitores(String livroId, String emailAtual) {
@@ -200,31 +204,39 @@ public class AvaliacaoService {
                 .toList();
     }
 
+    private void aplicarCoverFallback(AvaliacaoResponse r, Avaliacao a) {
+        if ((r.getLivroCover() == null || r.getLivroCover().isBlank())
+                && a.getLivroCover() != null && !a.getLivroCover().isBlank()) {
+            r.setLivroCover(a.getLivroCover());
+        }
+    }
+
+    private void enriquecerComCapas(AvaliacaoResponse r, Avaliacao a, boolean semCover, boolean semId) {
+        List<Livro> capas = livroRepository.findCapasPorTituloEAutor(a.getLivroTitulo(), a.getLivroAutor());
+        if (!capas.isEmpty()) {
+            if (semCover && capas.get(0).getCover() != null) r.setLivroCover(capas.get(0).getCover());
+            if (semId) r.setLivroId(capas.get(0).getId());
+        }
+        if (semId && (r.getLivroId() == null || r.getLivroId().isBlank())) {
+            livroRepository.findIdsPorTituloEAutor(a.getLivroTitulo(), a.getLivroAutor())
+                    .stream().findFirst().ifPresent(l -> r.setLivroId(l.getId()));
+        }
+        if (semCover) aplicarCoverFallback(r, a);
+    }
+
+    private void enriquecerAvaliacaoResponse(Avaliacao a, AvaliacaoResponse r) {
+        if (a.getLivroTitulo() == null || a.getLivroAutor() == null) return;
+        boolean semCover = r.getLivroCover() == null || r.getLivroCover().isBlank();
+        boolean semId = r.getLivroId() == null || r.getLivroId().isBlank();
+        if (semCover || semId) enriquecerComCapas(r, a, semCover, semId);
+    }
+
     public List<AvaliacaoResponse> listarMinhas(String email) {
         return avaliacaoRepository.findByUsuarioEmail(email)
                 .stream()
                 .map(a -> {
                     AvaliacaoResponse r = new AvaliacaoResponse(a, email);
-                    boolean semCover = r.getLivroCover() == null || r.getLivroCover().isBlank();
-                    boolean semId = r.getLivroId() == null || r.getLivroId().isBlank();
-                    if ((semCover || semId) && a.getLivroTitulo() != null && a.getLivroAutor() != null) {
-                        List<Livro> capas = livroRepository.findCapasPorTituloEAutor(
-                                a.getLivroTitulo(), a.getLivroAutor());
-                        if (!capas.isEmpty()) {
-                            if (semCover && capas.get(0).getCover() != null) r.setLivroCover(capas.get(0).getCover());
-                            if (semId) r.setLivroId(capas.get(0).getId());
-                        }
-                        if (r.getLivroId() == null || r.getLivroId().isBlank()) {
-                            livroRepository.findIdsPorTituloEAutor(a.getLivroTitulo(), a.getLivroAutor())
-                                    .stream().findFirst()
-                                    .ifPresent(l -> r.setLivroId(l.getId()));
-                        }
-                        if (r.getLivroCover() == null || r.getLivroCover().isBlank()) {
-                            if (a.getLivroCover() != null && !a.getLivroCover().isBlank()) {
-                                r.setLivroCover(a.getLivroCover());
-                            }
-                        }
-                    }
+                    enriquecerAvaliacaoResponse(a, r);
                     return r;
                 })
                 .toList();
@@ -239,6 +251,6 @@ public class AvaliacaoService {
                 .findByLivroTituloIgnoreCaseAndLivroAutorIgnoreCaseAndUsuarioEmail(titulo, autor, email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, AVALIACAO_NAO_ENCONTRADA));
         avaliacaoRepository.delete(avaliacao);
-        notificacaoService.notificarSeguidores(email, "AVALIACAO_EXCLUIDA", titulo, autor, null, livroId, livro.getCover());
+        notificacaoService.notificarSeguidores(email, "AVALIACAO_EXCLUIDA", titulo, autor, livroId, livro.getCover());
     }
 }

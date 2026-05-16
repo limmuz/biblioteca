@@ -17,6 +17,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Service
@@ -63,7 +64,7 @@ public class LivroService {
         }
 
         Livro salvo = livroRepository.save(livro);
-        notificacaoService.notificarSeguidores(userEmail, "LIVRO_CRIADO", salvo.getTitle(), salvo.getAuthor(), null, salvo.getId(), salvo.getCover());
+        notificacaoService.notificarSeguidores(userEmail, "LIVRO_CRIADO", salvo.getTitle(), salvo.getAuthor(), salvo.getId(), salvo.getCover());
         return salvo;
     }
 
@@ -94,7 +95,7 @@ public class LivroService {
         boolean criadorEraNulo = livro.getCriadorEmail() == null;
         inferirCriadorEmailSeNecessario(livro, outrosCopias, emailDono);
         if (criadorEraNulo && livro.getCriadorEmail() != null) {
-            Livro paraGravar = livroRepository.findById(livro.getId()).orElse(livro);
+            Livro paraGravar = livroRepository.findById(id).orElse(livro);
             paraGravar.setCriadorEmail(livro.getCriadorEmail());
             livroRepository.save(paraGravar);
             String criadorInferido = livro.getCriadorEmail();
@@ -173,21 +174,25 @@ public class LivroService {
                 .toLowerCase().trim();
     }
 
+    private void enriquecerCampo(Livro destino, Livro fonte) {
+        if (isBlank(destino.getExcerpt()) && !isBlank(fonte.getExcerpt()))
+            destino.setExcerpt(fonte.getExcerpt());
+        if (isBlank(destino.getLanguage()) && !isBlank(fonte.getLanguage()))
+            destino.setLanguage(fonte.getLanguage());
+        if (isBlank(destino.getPublisher()) && !isBlank(fonte.getPublisher()))
+            destino.setPublisher(fonte.getPublisher());
+        if (isBlank(destino.getPublishedDate()) && !isBlank(fonte.getPublishedDate()))
+            destino.setPublishedDate(fonte.getPublishedDate());
+        if (isBlank(destino.getCover()) && !isBlank(fonte.getCover()))
+            destino.setCover(fonte.getCover());
+        if ((destino.getCategories() == null || destino.getCategories().isEmpty())
+                && fonte.getCategories() != null && !fonte.getCategories().isEmpty())
+            destino.setCategories(fonte.getCategories());
+    }
+
     private void enriquecerMetadata(Livro destino, List<Livro> fontes) {
         for (Livro fonte : fontes) {
-            if (isBlank(destino.getExcerpt()) && !isBlank(fonte.getExcerpt()))
-                destino.setExcerpt(fonte.getExcerpt());
-            if (isBlank(destino.getLanguage()) && !isBlank(fonte.getLanguage()))
-                destino.setLanguage(fonte.getLanguage());
-            if (isBlank(destino.getPublisher()) && !isBlank(fonte.getPublisher()))
-                destino.setPublisher(fonte.getPublisher());
-            if (isBlank(destino.getPublishedDate()) && !isBlank(fonte.getPublishedDate()))
-                destino.setPublishedDate(fonte.getPublishedDate());
-            if (isBlank(destino.getCover()) && !isBlank(fonte.getCover()))
-                destino.setCover(fonte.getCover());
-            if ((destino.getCategories() == null || destino.getCategories().isEmpty())
-                    && fonte.getCategories() != null && !fonte.getCategories().isEmpty())
-                destino.setCategories(fonte.getCategories());
+            enriquecerCampo(destino, fonte);
             if (!metadataIncompleta(destino)) break;
         }
     }
@@ -233,7 +238,7 @@ public class LivroService {
         Livro salvo = livroRepository.save(livro);
 
         propagarMetadata(salvo, userEmail, tituloAntes, autorAntes);
-        notificacaoService.notificarSeguidores(userEmail, "LIVRO_ATUALIZADO", salvo.getTitle(), salvo.getAuthor(), null, salvo.getId(), salvo.getCover());
+        notificacaoService.notificarSeguidores(userEmail, "LIVRO_ATUALIZADO", salvo.getTitle(), salvo.getAuthor(), salvo.getId(), salvo.getCover());
 
         return salvo;
     }
@@ -279,43 +284,39 @@ public class LivroService {
                 .toList();
     }
 
+    private boolean atualizarStringSePermitido(Set<String> prot, String campo, String valorNovo, String valorAtual, Consumer<String> setter) {
+        if (!prot.contains(campo) && !isBlank(valorNovo) && !valorNovo.equals(valorAtual)) {
+            setter.accept(valorNovo);
+            return true;
+        }
+        return false;
+    }
+
+    private boolean propagarParaCopia(Livro salvo, Livro copia) {
+        Set<String> prot = copia.getCamposProtegidos() != null ? copia.getCamposProtegidos() : Set.of();
+        boolean alterou = atualizarStringSePermitido(prot, "cover", salvo.getCover(), copia.getCover(), copia::setCover);
+        alterou |= atualizarStringSePermitido(prot, "excerpt", salvo.getExcerpt(), copia.getExcerpt(), copia::setExcerpt);
+        alterou |= atualizarStringSePermitido(prot, "language", salvo.getLanguage(), copia.getLanguage(), copia::setLanguage);
+        alterou |= atualizarStringSePermitido(prot, "publisher", salvo.getPublisher(), copia.getPublisher(), copia::setPublisher);
+        alterou |= atualizarStringSePermitido(prot, "publishedDate", salvo.getPublishedDate(), copia.getPublishedDate(), copia::setPublishedDate);
+        if (!prot.contains("pages") && salvo.getPages() != null && !salvo.getPages().equals(copia.getPages())) {
+            copia.setPages(salvo.getPages());
+            alterou = true;
+        }
+        if (!prot.contains("categories") && salvo.getCategories() != null && !salvo.getCategories().isEmpty()
+                && !salvo.getCategories().equals(copia.getCategories())) {
+            copia.setCategories(salvo.getCategories());
+            alterou = true;
+        }
+        return alterou;
+    }
+
+    @SuppressWarnings("null")
     private void propagarMetadata(Livro salvo, String emailEditor, String tituloOriginal, String autorOriginal) {
         List<Livro> copias = copiasDaMesmaObra(salvo, emailEditor, tituloOriginal, autorOriginal);
         if (copias.isEmpty()) return;
         for (Livro copia : copias) {
-            boolean alterou = false;
-            java.util.Set<String> prot = copia.getCamposProtegidos() != null
-                    ? copia.getCamposProtegidos() : java.util.Set.of();
-            if (!prot.contains("cover") && !isBlank(salvo.getCover()) && !salvo.getCover().equals(copia.getCover())) {
-                copia.setCover(salvo.getCover());
-                alterou = true;
-            }
-            if (!prot.contains("excerpt") && !isBlank(salvo.getExcerpt()) && !salvo.getExcerpt().equals(copia.getExcerpt())) {
-                copia.setExcerpt(salvo.getExcerpt());
-                alterou = true;
-            }
-            if (!prot.contains("language") && !isBlank(salvo.getLanguage()) && !salvo.getLanguage().equals(copia.getLanguage())) {
-                copia.setLanguage(salvo.getLanguage());
-                alterou = true;
-            }
-            if (!prot.contains("pages") && salvo.getPages() != null && !salvo.getPages().equals(copia.getPages())) {
-                copia.setPages(salvo.getPages());
-                alterou = true;
-            }
-            if (!prot.contains("categories") && salvo.getCategories() != null && !salvo.getCategories().isEmpty()
-                    && !salvo.getCategories().equals(copia.getCategories())) {
-                copia.setCategories(salvo.getCategories());
-                alterou = true;
-            }
-            if (!prot.contains("publisher") && !isBlank(salvo.getPublisher()) && !salvo.getPublisher().equals(copia.getPublisher())) {
-                copia.setPublisher(salvo.getPublisher());
-                alterou = true;
-            }
-            if (!prot.contains("publishedDate") && !isBlank(salvo.getPublishedDate()) && !salvo.getPublishedDate().equals(copia.getPublishedDate())) {
-                copia.setPublishedDate(salvo.getPublishedDate());
-                alterou = true;
-            }
-            if (alterou) livroRepository.save(copia);
+            if (propagarParaCopia(salvo, copia)) livroRepository.save(copia);
         }
     }
 
@@ -396,7 +397,7 @@ public class LivroService {
                 && livroRepository.findIdsPorTituloEAutor(titulo, autor).isEmpty()) {
             avaliacaoRepository.deleteByLivroTituloIgnoreCaseAndLivroAutorIgnoreCase(titulo, autor);
         }
-        notificacaoService.notificarSeguidores(userEmail, "LIVRO_EXCLUIDO", titulo, autor, null, null, cover);
+        notificacaoService.notificarSeguidores(userEmail, "LIVRO_EXCLUIDO", titulo, autor, null, cover);
     }
 
     public void deletarPermanente(
@@ -438,13 +439,13 @@ public class LivroService {
             if (emailCopia != null && !userEmail.equals(emailCopia)) {
                 notificacaoService.notificarUsuario(
                         emailCopia, "LIVRO_EXCLUIDO_PERMANENTE",
-                        titulo, autor, nomeAtor, userEmail, null, null, cover);
+                        titulo, autor, nomeAtor, userEmail, cover);
             }
             String copiaId = copia.getId();
             if (copiaId != null) livroRepository.deleteById(copiaId);
         }
 
-        notificacaoService.notificarSeguidores(userEmail, "LIVRO_EXCLUIDO", titulo, autor, null, null, cover);
+        notificacaoService.notificarSeguidores(userEmail, "LIVRO_EXCLUIDO", titulo, autor, null, cover);
     }
 
     private void validarLivro(@NonNull Livro livro) {

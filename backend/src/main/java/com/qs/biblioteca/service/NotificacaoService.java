@@ -6,6 +6,7 @@ import com.qs.biblioteca.model.Usuario;
 import com.qs.biblioteca.repository.LivroRepository;
 import com.qs.biblioteca.repository.NotificacaoRepository;
 import com.qs.biblioteca.repository.UsuarioRepository;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -26,37 +27,43 @@ public class NotificacaoService {
     }
 
     public void notificarSeguidores(String atorEmail, String tipo, String livroTitulo, String livroAutor,
-            String detalhe, String livroId, String livroCover) {
+            String livroId, String livroCover) {
         usuarioRepository.findByEmail(atorEmail).ifPresent(ator -> {
             String atorId = ator.getId();
             String nomeAtor = ator.getNickname() != null && !ator.getNickname().isBlank()
                     ? "@" + ator.getNickname() : ator.getNome();
             List<Usuario> seguidores = usuarioRepository.findByLeitoresSeguidosContaining(atorId);
             for (Usuario seguidor : seguidores) {
-                salvar(seguidor.getEmail(), tipo, livroTitulo, livroAutor, nomeAtor, atorEmail, detalhe, livroId, livroCover);
+                Notificacao n = new Notificacao();
+                n.setUsuarioEmail(seguidor.getEmail());
+                n.setTipo(tipo);
+                n.setLivroTitulo(livroTitulo);
+                n.setLivroAutor(livroAutor);
+                n.setRemetente(nomeAtor);
+                n.setAtorEmail(atorEmail);
+                n.setLivroId(livroId);
+                n.setLivroCover(livroCover);
+                salvar(n);
             }
         });
     }
 
     public void notificarUsuario(String usuarioEmail, String tipo, String livroTitulo, String livroAutor,
-            String remetente, String atorEmail, String detalhe, String livroId, String livroCover) {
-        salvar(usuarioEmail, tipo, livroTitulo, livroAutor, remetente, atorEmail, detalhe, livroId, livroCover);
+            String remetente, String atorEmail, String livroCover) {
+        Notificacao n = new Notificacao();
+        n.setUsuarioEmail(usuarioEmail);
+        n.setTipo(tipo);
+        n.setLivroTitulo(livroTitulo);
+        n.setLivroAutor(livroAutor);
+        n.setRemetente(remetente);
+        n.setAtorEmail(atorEmail);
+        n.setLivroCover(livroCover);
+        salvar(n);
     }
 
     public List<Notificacao> listarParaUsuario(String usuarioEmail) {
         List<Notificacao> lista = notificacaoRepository.findByUsuarioEmailOrderByCriadaEmDesc(usuarioEmail);
-        for (Notificacao n : lista) {
-            boolean semCover = n.getLivroCover() == null || n.getLivroCover().isBlank();
-            boolean semId = n.getLivroId() == null || n.getLivroId().isBlank();
-            if ((semCover || semId) && n.getLivroTitulo() != null && n.getLivroAutor() != null) {
-                List<Livro> capas = livroRepository.findCapasPorTituloEAutor(n.getLivroTitulo(), n.getLivroAutor());
-                if (!capas.isEmpty()) {
-                    Livro capa = capas.get(0);
-                    if (semCover && capa.getCover() != null) n.setLivroCover(capa.getCover());
-                    if (semId) n.setLivroId(capa.getId());
-                }
-            }
-        }
+        lista.forEach(this::enriquecerCapa);
         return lista;
     }
 
@@ -70,7 +77,7 @@ public class NotificacaoService {
         notificacaoRepository.saveAll(naoLidas);
     }
 
-    public void excluir(String id, String usuarioEmail) {
+    public void excluir(@NonNull String id, String usuarioEmail) {
         notificacaoRepository.findById(id).ifPresent(n -> {
             if (usuarioEmail.equalsIgnoreCase(n.getUsuarioEmail())) {
                 notificacaoRepository.delete(n);
@@ -78,18 +85,18 @@ public class NotificacaoService {
         });
     }
 
-    private void salvar(String usuarioEmail, String tipo, String livroTitulo, String livroAutor,
-            String remetente, String atorEmail, String detalhe, String livroId, String livroCover) {
-        Notificacao n = new Notificacao();
-        n.setUsuarioEmail(usuarioEmail);
-        n.setTipo(tipo);
-        n.setLivroTitulo(livroTitulo);
-        n.setLivroAutor(livroAutor);
-        n.setRemetente(remetente);
-        n.setAtorEmail(atorEmail);
-        n.setDetalhe(detalhe);
-        n.setLivroId(livroId);
-        n.setLivroCover(livroCover);
+    private void enriquecerCapa(Notificacao n) {
+        boolean semCover = n.getLivroCover() == null || n.getLivroCover().isBlank();
+        boolean semId = n.getLivroId() == null || n.getLivroId().isBlank();
+        if ((!semCover && !semId) || n.getLivroTitulo() == null || n.getLivroAutor() == null) return;
+        List<Livro> capas = livroRepository.findCapasPorTituloEAutor(n.getLivroTitulo(), n.getLivroAutor());
+        if (capas.isEmpty()) return;
+        Livro capa = capas.get(0);
+        if (semCover && capa.getCover() != null) n.setLivroCover(capa.getCover());
+        if (semId) n.setLivroId(capa.getId());
+    }
+
+    private void salvar(Notificacao n) {
         n.setLida(false);
         n.setCriadaEm(Instant.now());
         notificacaoRepository.save(n);

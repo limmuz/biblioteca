@@ -3,6 +3,7 @@ package com.qs.biblioteca.controller;
 import com.qs.biblioteca.model.Notificacao;
 import com.qs.biblioteca.service.NotificacaoService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,7 +38,7 @@ public class NotificacaoController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> excluir(@PathVariable String id, Authentication authentication) {
+    public ResponseEntity<Void> excluir(@PathVariable @NonNull String id, Authentication authentication) {
         notificacaoService.excluir(id, authentication.getName());
         return ResponseEntity.noContent().build();
     }
