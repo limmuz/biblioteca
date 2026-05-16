@@ -122,10 +122,10 @@ class UsuarioE2ETest extends BaseMongoTest {
         void atualizar_semToken_deveRetornar401() {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(baseUrl + "/usuarios/me", HttpMethod.PUT,
-                            new HttpEntity<>("{\"nome\": \"Teste\"}", headers), String.class)
-            );
+            String url = baseUrl + "/usuarios/me";
+            HttpEntity<String> entity = new HttpEntity<>("{\"nome\": \"Teste\"}", headers);
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.PUT, entity, String.class));
             assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
         }
     }

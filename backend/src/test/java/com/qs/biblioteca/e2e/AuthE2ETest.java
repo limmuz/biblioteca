@@ -272,13 +272,11 @@ class AuthE2ETest extends BaseMongoTest {
         void requisicao_comJwtMalformado_deveRetornar401() {
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth("token.invalido.malformado");
+            String url = "http://localhost:" + port + "/api/livros";
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(
-                            "http://localhost:" + port + "/api/livros",
-                            HttpMethod.GET,
-                            new HttpEntity<>(headers),
-                            String.class));
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.GET, entity, String.class));
 
             assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
         }

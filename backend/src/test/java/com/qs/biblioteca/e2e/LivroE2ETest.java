@@ -146,10 +146,10 @@ class LivroE2ETest extends BaseMongoTest {
         @Test
         @DisplayName("Deve retornar 404 para ID inexistente")
         void buscarPorId_inexistente_deveRetornar404() {
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/id-inexistente-xyz", HttpMethod.GET,
-                            new HttpEntity<>(headersComJwt()), Livro.class)
-            );
+            String url = livrosUrl + "/id-inexistente-xyz";
+            HttpEntity<Void> entity = new HttpEntity<>(headersComJwt());
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.GET, entity, Livro.class));
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
         }
     }
@@ -198,10 +198,10 @@ class LivroE2ETest extends BaseMongoTest {
         @Test
         @DisplayName("Deve retornar 404 ao tentar remover livro inexistente")
         void remover_inexistente_deveRetornar404() {
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/id-inexistente-xyz", HttpMethod.DELETE,
-                            new HttpEntity<>(headersComJwt()), Void.class)
-            );
+            String url = livrosUrl + "/id-inexistente-xyz";
+            HttpEntity<Void> entity = new HttpEntity<>(headersComJwt());
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.DELETE, entity, Void.class));
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
         }
     }
@@ -309,10 +309,10 @@ class LivroE2ETest extends BaseMongoTest {
             headers2.setContentType(MediaType.APPLICATION_JSON);
             headers2.setBearerAuth(token2);
 
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/" + id + "/permanente", HttpMethod.DELETE,
-                            new HttpEntity<>(headers2), Void.class)
-            );
+            String url = livrosUrl + "/" + id + "/permanente";
+            HttpEntity<Void> entity2 = new HttpEntity<>(headers2);
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.DELETE, entity2, Void.class));
             assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
         }
     }
