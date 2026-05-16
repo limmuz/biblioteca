@@ -5,7 +5,6 @@ import RedefinirSenhaPage from './pages/RedefinirSenhaPage';
 import HomePage from './pages/HomePage';
 import ListagemPage from './pages/ListagemPage';
 import DetalhesLivroPage from './pages/DetalhesLivroPage';
-import ReadingPage from './components/ReadingPage/ReadingPage';
 import NovoLivroPage from './pages/NovoLivroPage';
 import EditarLivroPage from './pages/EditarLivroPage';
 import PerfilPage from './pages/PerfilPage';
@@ -76,15 +75,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/leitura/:id"
-          element={
-            <ProtectedRoute>
-              <ReadingPage />
-            </ProtectedRoute>
-          }
-        />
-
         <Route
           path="/leitor/id/:userId"
           element={
