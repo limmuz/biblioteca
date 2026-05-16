@@ -106,7 +106,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          ./mvnw -B verify sonar:sonar -e \
+          ./mvnw -B verify sonar:sonar \
             -Dsonar.projectKey=AnaPaula2024_biblioteca \
             -Dsonar.organization=anapaula2024 \
             -Dsonar.host.url=https://sonarcloud.io \
