@@ -18,6 +18,8 @@ public interface AvaliacaoRepository extends MongoRepository<Avaliacao, String> 
     Optional<Avaliacao> findByLivroTituloIgnoreCaseAndLivroAutorIgnoreCaseAndUsuarioEmail(
             String titulo, String autor, String email);
 
+    void deleteByLivroTituloIgnoreCaseAndLivroAutorIgnoreCase(String titulo, String autor);
+
     @Query(value = "{}", fields = "{'livroTitulo': 1, 'livroAutor': 1, 'rating': 1}")
     List<Avaliacao> findAllParaMedias();
 }

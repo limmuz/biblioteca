@@ -8,11 +8,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/livros")
-@SuppressWarnings("null")
 public class LivroController {
 
     private final LivroService livroService;
@@ -26,18 +24,36 @@ public class LivroController {
             @RequestParam(required = false) String search,
             Authentication authentication
     ) {
+        return livroService.listarTodos(search, authentication.getName());
+    }
 
-        String email = Objects.requireNonNull(authentication.getName());
+    @GetMapping("/descobrir")
+    public List<Livro> descobrir(Authentication authentication) {
+        return livroService.descobrir(authentication.getName());
+    }
 
-        return livroService.listarTodos(search, email);
+    @GetMapping("/comunidade")
+    public List<Livro> comunidade(Authentication authentication) {
+        return livroService.comunidade(authentication.getName());
+    }
+
+    @GetMapping("/nao-tenho")
+    public List<Livro> naoTenho(Authentication authentication) {
+        return livroService.naoTenho(authentication.getName());
+    }
+
+    @GetMapping("/recomendados")
+    public List<Livro> buscarRecomendados(
+            @RequestParam(required = false) String autor,
+            @RequestParam(required = false) List<String> categorias,
+            @RequestParam(required = false) String titulo
+    ) {
+        return livroService.buscarRecomendados(autor, categorias, titulo);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Livro> buscarPorId(@PathVariable String id) {
-
-        Livro livro = livroService.buscarPorId(id);
-
-        return ResponseEntity.ok(livro);
+        return ResponseEntity.ok(livroService.buscarPorId(id));
     }
 
     @PostMapping
@@ -45,12 +61,10 @@ public class LivroController {
             @RequestBody LivroRequest request,
             Authentication authentication
     ) {
-
-        String email = Objects.requireNonNull(authentication.getName());
-
-        Livro salvo = livroService.salvar(toEntity(request), email);
-
-        return ResponseEntity.status(201).body(salvo);
+        String email = authentication.getName();
+        Livro entity = toEntity(request);
+        if (entity.getCriadorEmail() == null) entity.setCriadorEmail(email);
+        return ResponseEntity.status(201).body(livroService.salvar(entity, email));
     }
 
     @PutMapping("/{id}")
@@ -59,12 +73,7 @@ public class LivroController {
             @RequestBody LivroRequest request,
             Authentication authentication
     ) {
-
-        String email = Objects.requireNonNull(authentication.getName());
-
-        Livro atualizado = livroService.atualizar(id, toEntity(request), email);
-
-        return ResponseEntity.ok(atualizado);
+        return ResponseEntity.ok(livroService.atualizar(id, toEntity(request), authentication.getName()));
     }
 
     @DeleteMapping("/{id}")
@@ -72,18 +81,21 @@ public class LivroController {
             @PathVariable String id,
             Authentication authentication
     ) {
+        livroService.deletar(id, authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
 
-        String email = Objects.requireNonNull(authentication.getName());
-
-        livroService.deletar(id, email);
-
+    @DeleteMapping("/{id}/permanente")
+    public ResponseEntity<Void> excluirPermanente(
+            @PathVariable String id,
+            Authentication authentication
+    ) {
+        livroService.deletarPermanente(id, authentication.getName());
         return ResponseEntity.noContent().build();
     }
 
     private static Livro toEntity(LivroRequest r) {
-
         Livro livro = new Livro();
-
         livro.setTitle(r.getTitle());
         livro.setAuthor(r.getAuthor());
         livro.setCover(r.getCover());
@@ -94,7 +106,8 @@ public class LivroController {
         livro.setCategories(r.getCategories());
         livro.setPublisher(r.getPublisher());
         livro.setPublishedDate(r.getPublishedDate());
-
+        if (r.getCamposProtegidos() != null) livro.setCamposProtegidos(r.getCamposProtegidos());
+        if (r.getCriadorEmail() != null) livro.setCriadorEmail(r.getCriadorEmail());
         return livro;
     }
 }

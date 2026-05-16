@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 
@@ -19,7 +19,7 @@ import Footer from '../components/Footer/Footer';
 import LoadingSpinner from '../components/shared/LoadingSpinner';
 import Modal from '../components/shared/Modal';
 import api from '../services/api';
-import AdBanner from '../components/shared/AdBanner';
+import { getUser } from '../services/auth';
 import styles from './DetalhesLivroPage.module.css';
 
 function StarRating({ value, onChange, readonly }) {
@@ -59,8 +59,8 @@ export default function DetalhesLivroPage() {
   const [error, setError] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
   const [atualizandoStatus, setAtualizandoStatus] = useState(false);
-  const [toastVisible, setToastVisible] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmPermanente, setConfirmPermanente] = useState(false);
 
   const [avaliacoes, setAvaliacoes] = useState([]);
   const [minhaAvaliacao, setMinhaAvaliacao] = useState(null);
@@ -75,15 +75,31 @@ export default function DetalhesLivroPage() {
   const [enviandoResposta, setEnviandoResposta] = useState(false);
 
   const [allBooks, setAllBooks] = useState(() => lerCache('lybre_livros_cache') || []);
+  const [recoBooks, setRecoBooks] = useState([]);
+  const [adicionadoDaPublica, setAdicionadoDaPublica] = useState(() => {
+    if (!location.state?.isFromPublicProfile) return false;
+    const bd = location.state?.bookData;
+    if (!bd) return false;
+    const cache = lerCache('lybre_livros_cache') || [];
+    return cache.some(c =>
+      bd.title && bd.author &&
+      c.title?.toLowerCase() === bd.title.toLowerCase() &&
+      c.author?.toLowerCase() === bd.author.toLowerCase()
+    );
+  });
+
+  const isFromPublicProfile = location.state?.isFromPublicProfile ?? false;
 
   useEffect(() => {
     setError(false);
-    setToastVisible(false);
     setRespostaAberta(null);
     const fromState = location.state?.bookData;
     if (fromState && fromState.id === id) {
       setBook(fromState);
       setLoading(false);
+      api.get(`/livros/${id}`)
+        .then(res => setBook(res.data))
+        .catch(() => {});
       return;
     }
     setBook(null);
@@ -124,19 +140,55 @@ export default function DetalhesLivroPage() {
       .catch(() => {});
   }, []);
 
-  const currentIdx = allBooks.findIndex(b => b.id === id);
-  const prevBook = currentIdx > 0 ? allBooks[currentIdx - 1] : null;
-  const nextBook = currentIdx >= 0 && currentIdx < allBooks.length - 1 ? allBooks[currentIdx + 1] : null;
+  useEffect(() => {
+    if (!isFromPublicProfile || adicionadoDaPublica || allBooks.length === 0) return;
+    const bd = location.state?.bookData || book;
+    if (!bd?.title || !bd?.author) return;
+    const norm = s => s?.toLowerCase().trim() ?? '';
+    if (allBooks.some(b => norm(b.title) === norm(bd.title) && norm(b.author) === norm(bd.author))) {
+      setAdicionadoDaPublica(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allBooks, book]);
 
-  const recoBooks = useMemo(() => {
-    if (!book || allBooks.length === 0) return [];
-    const cats = new Set((book.categories || []).map(c => c.toLowerCase()));
-    return allBooks
-      .filter(b => b.id !== id && (
-        b.author?.toLowerCase() === book.author?.toLowerCase() ||
-        (b.categories || []).some(c => cats.has(c.toLowerCase()))
-      ));
-  }, [allBooks, book, id]);
+  useEffect(() => {
+    if (!book?.title) return;
+    setRecoBooks([]);
+    const params = new URLSearchParams();
+    if (book.author) params.append('autor', book.author);
+    (book.categories || []).forEach(c => params.append('categorias', c));
+    params.append('titulo', book.title);
+    const norm = s => s?.toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '') ?? '';
+    const chave = l => norm(l?.title) + '||' + norm(l?.author);
+    const livroAtualChave = chave(book);
+    const minhaBiblioteca = new Set([...allBooks.map(chave), livroAtualChave]);
+    const fetchRecs = async () => {
+      const resRecs = await api.get(`/livros/recomendados?${params}`).catch(() => ({ data: [] }));
+      let naoTenhoData = [];
+      try {
+        const resNaoTenho = await api.get('/livros/nao-tenho');
+        naoTenhoData = resNaoTenho.data;
+      } catch {
+        const resDescobrir = await api.get('/livros/descobrir').catch(() => ({ data: [] }));
+        naoTenhoData = resDescobrir.data.filter(l => l.cover && !minhaBiblioteca.has(chave(l)));
+      }
+      const vistos = new Set([livroAtualChave]);
+      setRecoBooks([...resRecs.data, ...naoTenhoData].filter(l => {
+        if (!l.cover) return false;
+        const k = chave(l);
+        if (minhaBiblioteca.has(k) || vistos.has(k)) return false;
+        vistos.add(k);
+        return true;
+      }));
+    };
+    fetchRecs().catch(() => {});
+  }, [book?.id, allBooks]);
+
+  const navList = location.state?.bookList || allBooks;
+  const currentIdx = navList.findIndex(b => b.id === id);
+  const prevBook = currentIdx > 0 ? navList[currentIdx - 1] : null;
+  const nextBook = currentIdx >= 0 && currentIdx < navList.length - 1 ? navList[currentIdx + 1] : null;
+
 
   const recoCarouselRef = React.useRef(null);
   const scrollReco = (dir) => {
@@ -159,7 +211,7 @@ export default function DetalhesLivroPage() {
         return [res.data, ...sem];
       });
       setEditandoAvaliacao(false);
-    } catch (err) { console.error(err); }
+    } catch { }
     finally { setSalvandoAvaliacao(false); }
   };
 
@@ -170,7 +222,7 @@ export default function DetalhesLivroPage() {
       setRatingForm(0);
       setComentarioForm('');
       setAvaliacoes(prev => prev.filter(a => !a.minha));
-    } catch (err) { console.error(err); }
+    } catch { }
   };
 
   const handleAdicionarFavoritos = async () => {
@@ -184,9 +236,8 @@ export default function DetalhesLivroPage() {
         publisher: book.publisher, publishedDate: book.publishedDate,
       });
       setBook({ ...book, status: 'QUERO LER' });
-      setToastVisible(true);
-    } catch (err) {
-      console.error(err);
+      localStorage.removeItem('lybre_livros_cache');
+    } catch {
     } finally {
       setAdicionando(false);
     }
@@ -198,20 +249,10 @@ export default function DetalhesLivroPage() {
     try {
       await api.put(`/livros/${book.id}`, { ...book, status: novoStatus });
       setBook({ ...book, status: novoStatus });
-    } catch (err) {
-      console.error(err);
+      localStorage.removeItem('lybre_livros_cache');
+    } catch {
     } finally {
       setAtualizandoStatus(false);
-    }
-  };
-
-  const handleRemoverFavoritos = async () => {
-    setToastVisible(false);
-    try {
-      await api.put(`/livros/${book.id}`, { ...book, status: 'LIDO' });
-      navigate('/home');
-    } catch (err) {
-      console.error(err);
     }
   };
 
@@ -219,11 +260,12 @@ export default function DetalhesLivroPage() {
     navigate(`/editar-livro/${book.id}`, { state: { bookData: book } });
   };
 
+
   const handleCurtir = async (avaliacaoId) => {
     try {
       const res = await api.post(`/avaliacoes/${avaliacaoId}/curtir`);
       setAvaliacoes(prev => prev.map(a => a.id === avaliacaoId ? { ...a, ...res.data } : a));
-    } catch (err) { console.error(err); }
+    } catch { }
   };
 
   const handleResponder = async (avaliacaoId) => {
@@ -234,7 +276,7 @@ export default function DetalhesLivroPage() {
       setAvaliacoes(prev => prev.map(a => a.id === avaliacaoId ? { ...a, ...res.data } : a));
       setTextoResposta('');
       setRespostaAberta(null);
-    } catch (err) { console.error(err); }
+    } catch { }
     finally { setEnviandoResposta(false); }
   };
 
@@ -245,21 +287,59 @@ export default function DetalhesLivroPage() {
         ? { ...a, respostas: (a.respostas || []).filter(r => r.id !== respostaId) }
         : a
       ));
-    } catch (err) { console.error(err); }
+    } catch { }
   };
 
-  const handleExcluirPermanente = async () => {
+  const handleAdicionarDaBibliotecaPublica = async () => {
+    if (!book || adicionando) return;
+    setAdicionando(true);
+    try {
+      await api.post('/livros', {
+        title: book.title,
+        author: book.author,
+        cover: book.cover,
+        excerpt: book.excerpt,
+        status: 'QUERO LER',
+        pages: book.pages,
+        language: book.language,
+        categories: book.categories,
+        publisher: book.publisher,
+        publishedDate: book.publishedDate,
+        criadorEmail: book.criadorEmail || book.userEmail,
+      });
+      setAdicionadoDaPublica(true);
+      localStorage.removeItem('lybre_livros_cache');
+    } catch (err) {
+      if (err?.response?.status === 409) setAdicionadoDaPublica(true);
+    } finally {
+      setAdicionando(false);
+    }
+  };
+
+  const handleTirarDaBiblioteca = async () => {
     try {
       await api.delete(`/livros/${book.id}`);
       localStorage.removeItem('lybre_livros_cache');
       navigate('/home');
-    } catch (err) {
-      console.error(err);
+    } catch {
     }
     setConfirmDelete(false);
   };
 
-  const goToBook = (b) => navigate(`/livro/${b.id}`, { state: { bookData: b } });
+  const handleExcluirPermanente = async () => {
+    try {
+      await api.delete(`/livros/${book.id}/permanente`);
+      localStorage.removeItem('lybre_livros_cache');
+      navigate('/home');
+    } catch {
+    }
+    setConfirmPermanente(false);
+  };
+
+  const goToBook = (b, fromPublic = isFromPublicProfile) => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    navigate(`/livro/${b.id}`, { state: { bookData: b, bookList: navList, isFromPublicProfile: fromPublic } });
+  };
 
   if (loading) {
     return (
@@ -316,24 +396,39 @@ export default function DetalhesLivroPage() {
           <div className={styles.heroInfo}>
             <h1 className={styles.bookTitle}>{book.title}</h1>
             <p className={styles.bookAuthor}>por {book.author}</p>
+            {book.criadorNickname && book.criadorEmail !== getUser().email && (
+              <p className={styles.bookCriador}>Cadastrado por {book.criadorNickname}</p>
+            )}
             <div className={styles.heroButtons}>
-              {!['QUERO LER', 'LENDO', 'LIDO', 'RECOMENDADO'].includes(book.status) && (
-                <button className={styles.btnAdicionar} onClick={handleAdicionarFavoritos} disabled={adicionando}>
-                  {adicionando ? 'Adicionando...' : 'Adicionar à lista'}
-                </button>
-              )}
-              {statusInfo && (
-                <select
-                  className={styles.statusSelect}
-                  value={book.status}
-                  onChange={e => handleAtualizarStatus(e.target.value)}
-                  disabled={atualizandoStatus}
+              {isFromPublicProfile ? (
+                <button
+                  className={styles.btnAdicionar}
+                  onClick={handleAdicionarDaBibliotecaPublica}
+                  disabled={adicionando || adicionadoDaPublica}
                 >
-                  <option value="QUERO LER">📚 Quero Ler</option>
-                  <option value="LENDO">📖 Lendo</option>
-                  <option value="LIDO">✅ Lido</option>
-                  <option value="RECOMENDADO">⭐ Recomendado</option>
-                </select>
+                  {adicionadoDaPublica ? '✓ Adicionado à sua biblioteca' : adicionando ? 'Adicionando...' : '+ Adicionar à minha biblioteca'}
+                </button>
+              ) : (
+                <>
+                  {!['QUERO LER', 'LENDO', 'LIDO', 'RECOMENDADO'].includes(book.status) && (
+                    <button className={styles.btnAdicionar} onClick={handleAdicionarFavoritos} disabled={adicionando}>
+                      {adicionando ? 'Adicionando...' : '+ Adicionar à lista'}
+                    </button>
+                  )}
+                  {statusInfo && (
+                    <select
+                      className={styles.statusSelect}
+                      value={book.status}
+                      onChange={e => handleAtualizarStatus(e.target.value)}
+                      disabled={atualizandoStatus}
+                    >
+                      <option value="QUERO LER">📚 Quero Ler</option>
+                      <option value="LENDO">📖 Lendo</option>
+                      <option value="LIDO">✅ Lido</option>
+                      <option value="RECOMENDADO">⭐ Recomendado</option>
+                    </select>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -371,10 +466,19 @@ export default function DetalhesLivroPage() {
               <span className={styles.metaLabel}>Páginas</span>
               <span className={styles.metaValue}>{paginas}</span>
             </div>
-            <div className={styles.metaButtons}>
-              <button className={styles.btnEditar} onClick={handleEditar}>Editar</button>
-              <button className={styles.btnExcluir} onClick={() => setConfirmDelete(true)}>Excluir</button>
-            </div>
+            {!isFromPublicProfile && book.userEmail === getUser().email && (
+              <div className={styles.metaButtons}>
+                <button className={styles.btnEditar} onClick={handleEditar}>Editar</button>
+                {book.criadorEmail === getUser().email && (
+                  <button className={styles.btnExcluir} onClick={() => setConfirmDelete(true)}>Tirar da biblioteca</button>
+                )}
+                {book.criadorEmail === getUser().email && (
+                  <button className={styles.btnExcluirPermanente} onClick={() => setConfirmPermanente(true)}>
+                    Excluir permanente
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -584,7 +688,7 @@ export default function DetalhesLivroPage() {
                     key={b.id}
                     type="button"
                     className={styles.recoCard}
-                    onClick={() => goToBook(b)}
+                    onClick={() => goToBook(b, true)}
                   >
                     <img
                       src={b.cover}
@@ -604,59 +708,48 @@ export default function DetalhesLivroPage() {
           </div>
         )}
 
-        <AdBanner variant="banner" />
         <div className={styles.footerWrap}>
           <Footer />
         </div>
       </main>
 
-      {toastVisible && (
-        <div className={styles.toast}>
-          <div className={styles.toastContent}>
-            <strong className={styles.toastTitle}>Adicionado!</strong>
-            <p className={styles.toastMsg}>O livro foi adicionado à sua lista de leituras</p>
-          </div>
-          <div className={styles.toastActions}>
-            <button className={styles.btnToastSecondary} onClick={handleRemoverFavoritos}>Remover da lista</button>
-          </div>
-        </div>
+      {prevBook && (
+        <button className={styles.navArrowLeft} type="button" onClick={() => goToBook(prevBook)}>
+          ‹
+          <span className={styles.navArrowLabel}>{prevBook.title}</span>
+        </button>
+      )}
+      {nextBook && (
+        <button className={styles.navArrowRight} type="button" onClick={() => goToBook(nextBook)}>
+          ›
+          <span className={styles.navArrowLabel}>{nextBook.title}</span>
+        </button>
       )}
 
       {confirmDelete && (
         <Modal
-          title="Excluir livro"
-          message={`Tem certeza que deseja excluir "${book.title}" permanentemente? Esta ação não pode ser desfeita.`}
-          onConfirm={handleExcluirPermanente}
+          title="Tirar da biblioteca"
+          message={`Deseja remover "${book.title}" da sua biblioteca? Outros leitores que têm este livro não serão afetados.`}
+          onConfirm={handleTirarDaBiblioteca}
           onCancel={() => setConfirmDelete(false)}
-          confirmLabel="Excluir"
+          confirmLabel="Tirar"
+          cancelLabel="Cancelar"
+          danger
+        />
+      )}
+      {confirmPermanente && (
+        <Modal
+          title="Excluir permanentemente"
+          message={`Tem certeza? "${book.title}" será excluído da biblioteca de TODOS os leitores que o adicionaram. Esta ação não pode ser desfeita.`}
+          onConfirm={handleExcluirPermanente}
+          onCancel={() => setConfirmPermanente(false)}
+          confirmLabel="Excluir de todos"
           cancelLabel="Cancelar"
           danger
         />
       )}
     </div>
 
-    {prevBook && (
-      <button
-        className={styles.navArrowLeft}
-        onClick={() => goToBook(prevBook)}
-        title={prevBook.title}
-        aria-label={`Livro anterior: ${prevBook.title}`}
-      >
-        ‹
-        <span className={styles.navArrowLabel}>{prevBook.title}</span>
-      </button>
-    )}
-    {nextBook && (
-      <button
-        className={styles.navArrowRight}
-        onClick={() => goToBook(nextBook)}
-        title={nextBook.title}
-        aria-label={`Próximo livro: ${nextBook.title}`}
-      >
-        ›
-        <span className={styles.navArrowLabel}>{nextBook.title}</span>
-      </button>
-    )}
     </>
   );
 }

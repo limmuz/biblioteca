@@ -4,8 +4,6 @@ import AppHeader from "../components/shared/AppHeader";
 import Footer from "../components/Footer/Footer";
 import BookCardMini from "../components/shared/BookCardMini";
 import LoadingSpinner from "../components/shared/LoadingSpinner";
-import Modal from "../components/shared/Modal";
-import AdBanner from "../components/shared/AdBanner";
 import styles from "./HomePage.module.css";
 import api from "../services/api";
 
@@ -27,9 +25,13 @@ export default function HomePage() {
   const [recentlyRead, setRecentlyRead] = useState([]);
   const [readingList, setReadingList] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
-  const [medias, setMedias] = useState(() => lerCache('lybre_medias_cache') || {});
+  const [medias, setMedias] = useState(() => {
+    const cached = lerCache('lybre_medias_cache') || {};
+    const vals = Object.values(cached);
+    const temLivroId = vals.length === 0 || vals.some(m => m.livroId);
+    return temLivroId ? cached : {};
+  });
   const [loading, setLoading] = useState(() => lerCache('lybre_livros_cache') === null);
-  const [errorModal, setErrorModal] = useState(null);
   const [showAllRecs, setShowAllRecs] = useState(false);
   const carouselRef = useRef(null);
   const autoScrollRef = useRef(null);
@@ -39,26 +41,6 @@ export default function HomePage() {
     recentlyRead.length === 0 &&
     readingList.length === 0 &&
     recommendations.length === 0;
-
-  const refreshLists = async () => {
-    const res = await api.get("/livros");
-    const all = res.data;
-    setRecentlyRead(all.filter((b) => b.status === "LIDO"));
-    setReadingList(all.filter((b) => b.status === "LENDO" || b.status === "QUERO LER"));
-    const recs = all.filter((b) => b.status === "RECOMENDADO");
-    const naLista = new Set(["LIDO", "LENDO", "QUERO LER"]);
-    setRecommendations(recs.length > 0 ? recs : all.filter((b) => !naLista.has(b.status)).slice(0, 4));
-  };
-
-  const handleAdicionarLivroNaLista = async (bookToAdd) => {
-    try {
-      await api.put(`/livros/${bookToAdd.id}`, { ...bookToAdd, status: "QUERO LER" });
-      await refreshLists();
-    } catch (err) {
-      console.error("Erro ao adicionar livro à lista de leitura:", err);
-      setErrorModal("Erro ao adicionar livro à lista de leitura. Tente novamente.");
-    }
-  };
 
   useEffect(() => {
     const el = carouselRef.current;
@@ -77,12 +59,11 @@ export default function HomePage() {
   useEffect(() => {
     const cachedLivros = lerCache('lybre_livros_cache');
     if (cachedLivros) {
-      const naLista = new Set(["LIDO", "LENDO", "QUERO LER"]);
       setRecentlyRead(cachedLivros.filter((b) => b.status === "LIDO"));
       setReadingList(cachedLivros.filter((b) => b.status === "LENDO" || b.status === "QUERO LER"));
-      const recs = cachedLivros.filter((b) => b.status === "RECOMENDADO");
-      setRecommendations(recs.length > 0 ? recs : cachedLivros.filter((b) => !naLista.has(b.status)).slice(0, 4));
     }
+    const norm = s => s?.toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '') ?? '';
+    const chaveRec = l => norm(l?.title) + '||' + norm(l?.author);
     const fetchData = async () => {
       try {
         const [resLivros, resMedias] = await Promise.all([
@@ -93,9 +74,23 @@ export default function HomePage() {
         salvarCache('lybre_livros_cache', all);
         setRecentlyRead(all.filter((b) => b.status === "LIDO"));
         setReadingList(all.filter((b) => b.status === "LENDO" || b.status === "QUERO LER"));
-        const recs = all.filter((b) => b.status === "RECOMENDADO");
-        const naLista = new Set(["LIDO", "LENDO", "QUERO LER"]);
-        setRecommendations(recs.length > 0 ? recs : all.filter((b) => !naLista.has(b.status)).slice(0, 4));
+        let recsRaw = [];
+        try {
+          const resNaoTenho = await api.get('/livros/nao-tenho');
+          recsRaw = resNaoTenho.data;
+        } catch {
+          const resDescobrir = await api.get('/livros/descobrir').catch(() => ({ data: [] }));
+          const minhasChaves = new Set(all.map(b => chaveRec(b)));
+          recsRaw = resDescobrir.data.filter(l => l.cover && !minhasChaves.has(chaveRec(l)));
+        }
+        const vistos = new Set();
+        setRecommendations(recsRaw.filter(l => {
+          if (!l.cover) return false;
+          const k = chaveRec(l);
+          if (vistos.has(k)) return false;
+          vistos.add(k);
+          return true;
+        }));
         const map = {};
         resMedias.data.forEach(m => {
           const key = `${(m.livroTitulo || '').toLowerCase()}||${(m.livroAutor || '').toLowerCase()}`;
@@ -103,8 +98,7 @@ export default function HomePage() {
         });
         salvarCache('lybre_medias_cache', map);
         setMedias(map);
-      } catch (err) {
-        console.error("Erro ao carregar dados:", err);
+      } catch {
       } finally {
         setLoading(false);
       }
@@ -151,7 +145,7 @@ export default function HomePage() {
                   <button
                     key={book.id}
                     className={styles.carouselRectCard}
-                    onClick={() => navigate(`/livro/${book.id}`)}
+                    onClick={() => navigate(`/livro/${book.id}`, { state: { bookData: book, bookList: recentlyRead } })}
                     type="button"
                   >
                     <img
@@ -184,7 +178,7 @@ export default function HomePage() {
             {readingList.length > 0 ? (
               readingList.map((book) => {
                 const r = getRating(book);
-                return <BookCardMini key={book.id} book={book} rating={r.media} totalRatings={r.total} />;
+                return <BookCardMini key={book.id} book={book} rating={r.media} totalRatings={r.total} bookList={readingList} />;
               })
             ) : (
               <div className={styles.emptyState}>
@@ -198,7 +192,7 @@ export default function HomePage() {
 
         {recommendations.length > 0 && (
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Recomendações</h2>
+            <h2 className={styles.sectionTitle}>{isLibraryEmpty ? 'Descubra livros' : 'Recomendações'}</h2>
             <div className={styles.bookGrid}>
               {(showAllRecs ? recommendations : recommendations.slice(0, 4)).map((book) => {
                 const r = getRating(book);
@@ -206,9 +200,10 @@ export default function HomePage() {
                   <BookCardMini
                     key={book.id + "-rec"}
                     book={book}
-                    onAddToList={handleAdicionarLivroNaLista}
+                    isFromPublicProfile={true}
                     rating={r.media}
                     totalRatings={r.total}
+                    bookList={recommendations}
                   />
                 );
               })}
@@ -238,21 +233,8 @@ export default function HomePage() {
         </div>
       </main>
 
-      <aside className={styles.sidebar}>
-        <AdBanner variant="sidebar" />
-        <AdBanner variant="sidebar" />
-      </aside>
       </div>
 
-      {errorModal && (
-        <Modal
-          title="Ops!"
-          message={errorModal}
-          onConfirm={() => setErrorModal(null)}
-          confirmLabel="Entendi"
-          singleButton
-        />
-      )}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import com.qs.biblioteca.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,10 +31,10 @@ import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Tag("docker")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @DisplayName("E2E – AvaliacaoController")
-@SuppressWarnings("null")
 class AvaliacaoE2ETest extends BaseMongoTest {
 
     @LocalServerPort
@@ -50,10 +51,10 @@ class AvaliacaoE2ETest extends BaseMongoTest {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    private String baseUrl = "";
-    private String jwtToken = "";
-    private String jwtToken2 = "";
-    private Livro livroSalvo = new Livro();
+    private String baseUrl;
+    private String jwtToken;
+    private String jwtToken2;
+    private Livro livroSalvo;
 
     @BeforeEach
     void setup() {
@@ -84,8 +85,8 @@ class AvaliacaoE2ETest extends BaseMongoTest {
         HttpEntity<String> request = new HttpEntity<>(payload, headersComJwt(jwtToken));
 
         ResponseEntity<String> response = restTemplate.exchange(
-                Objects.requireNonNull(url),
-                Objects.requireNonNull(HttpMethod.POST),
+                url,
+                HttpMethod.POST,
                 request,
                 String.class
         );
@@ -286,7 +287,7 @@ class AvaliacaoE2ETest extends BaseMongoTest {
 
         ResponseEntity<Livro> response = restTemplate.exchange(
                 baseUrl + "/api/livros",
-                Objects.requireNonNull(HttpMethod.POST),
+                HttpMethod.POST,
                 request,
                 Livro.class
         );
@@ -295,7 +296,7 @@ class AvaliacaoE2ETest extends BaseMongoTest {
     }
 
     @Test
-    @DisplayName("Deve retornar lista de medias de avaliacoes")
+    @DisplayName("Deve retornar lista de medias de avaliacoes com livroId e livroCover")
     void mediasDeveRetornarLista() {
         String idLivro = Objects.requireNonNull(livroSalvo.getId());
         String urlPost = baseUrl + "/api/avaliacoes/livro/" + idLivro;
@@ -311,7 +312,9 @@ class AvaliacaoE2ETest extends BaseMongoTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         String body = Objects.requireNonNull(response.getBody());
-        assertTrue(body.contains("Harry Potter"));
+        assertTrue(body.contains("Harry Potter"), "Deve conter título do livro");
+        assertTrue(body.contains("livroId"), "Deve conter o ID do livro para navegação");
+        assertTrue(body.contains("livroCover"), "Deve conter a capa do livro");
     }
 
     @Test

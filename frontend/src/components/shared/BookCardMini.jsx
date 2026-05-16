@@ -3,13 +3,13 @@ import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import styles from './BookCardMini.module.css';
 
-export default function BookCardMini({ book, onAddToList, rating, totalRatings }) {
+export default function BookCardMini({ book, onAddToList, rating, totalRatings, bookList, isFromPublicProfile }) {
   const navigate = useNavigate();
 
   return (
     <button
       className={styles.card}
-      onClick={() => navigate(`/livro/${book.id}`, { state: { bookData: book } })}
+      onClick={() => navigate(`/livro/${book.id}`, { state: { bookData: book, bookList, isFromPublicProfile } })}
       type="button"
       aria-label={`Ver detalhes de ${book.title}`}
     >
@@ -64,10 +64,14 @@ BookCardMini.propTypes = {
   onAddToList: PropTypes.func,
   rating: PropTypes.number,
   totalRatings: PropTypes.number,
+  bookList: PropTypes.array,
+  isFromPublicProfile: PropTypes.bool,
 };
 
 BookCardMini.defaultProps = {
   onAddToList: null,
   rating: 0,
   totalRatings: 0,
+  bookList: null,
+  isFromPublicProfile: false,
 };
