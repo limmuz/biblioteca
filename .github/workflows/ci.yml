@@ -102,8 +102,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           ./mvnw -B verify sonar:sonar \
-            -Dsonar.projectKey=AnaPaula2024_biblioteca \
-            -Dsonar.organization=anapaula2024 \
+            -Dsonar.projectKey=limmuz_biblioteca \
+            -Dsonar.organization=limmuz \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.coverage.exclusions="**/model/**,**/dto/**,**/config/**,**/repository/**,**/BibliotecaApplication.java,**/security/UserPrincipal.java,**/controller/CepController.java,**/service/ViaCepService.java,**/service/CloudinaryService.java,**/controller/ImagemController.java" \
             -Dsonar.cpd.exclusions="**/model/**,**/dto/**"
