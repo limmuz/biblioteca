@@ -91,14 +91,12 @@ public class LivroService {
         String emailDono = livro.getUserEmail() != null ? livro.getUserEmail() : "";
         List<Livro> outrosCopias = buscarOutrasCopias(livro, emailDono);
 
-        if (metadataIncompleta(livro)) {
-            enriquecerMetadata(livro, outrosCopias);
-        }
-
         boolean criadorEraNulo = livro.getCriadorEmail() == null;
         inferirCriadorEmailSeNecessario(livro, outrosCopias, emailDono);
         if (criadorEraNulo && livro.getCriadorEmail() != null) {
-            livroRepository.save(livro);
+            Livro paraGravar = livroRepository.findById(livro.getId()).orElse(livro);
+            paraGravar.setCriadorEmail(livro.getCriadorEmail());
+            livroRepository.save(paraGravar);
             String criadorInferido = livro.getCriadorEmail();
             for (Livro copia : outrosCopias) {
                 if (copia.getCriadorEmail() == null) {
@@ -106,6 +104,10 @@ public class LivroService {
                     livroRepository.save(copia);
                 }
             }
+        }
+
+        if (metadataIncompleta(livro)) {
+            enriquecerMetadata(livro, outrosCopias);
         }
 
         resolverCamposBloqueadosPorCriador(livro, outrosCopias);
@@ -342,7 +344,31 @@ public class LivroService {
                 .stream()
                 .filter(l -> l.getTitle() != null && l.getCover() != null)
                 .filter(l -> vistos.add(chaveIdentidade(l)))
-                .limit(12)
+                .limit(60)
+                .toList();
+    }
+
+    public List<Livro> comunidade(String userEmail) {
+        Set<String> vistos = new HashSet<>();
+        return livroRepository.findTodosDaComunidade(userEmail)
+                .stream()
+                .filter(l -> l.getTitle() != null && l.getCover() != null)
+                .filter(l -> vistos.add(chaveIdentidade(l)))
+                .toList();
+    }
+
+    public List<Livro> naoTenho(String userEmail) {
+        Set<String> meus = livroRepository.findByUserEmail(userEmail)
+                .stream()
+                .filter(l -> l.getTitle() != null && l.getAuthor() != null)
+                .map(this::chaveIdentidade)
+                .collect(Collectors.toSet());
+        Set<String> vistos = new HashSet<>();
+        return livroRepository.findTodosDaComunidade(userEmail)
+                .stream()
+                .filter(l -> l.getTitle() != null && l.getCover() != null)
+                .filter(l -> !meus.contains(chaveIdentidade(l)))
+                .filter(l -> vistos.add(chaveIdentidade(l)))
                 .toList();
     }
 
@@ -364,15 +390,12 @@ public class LivroService {
 
         String titulo = livro.getTitle();
         String autor = livro.getAuthor();
-
-        if (titulo != null && autor != null) {
-            avaliacaoRepository
-                    .findByLivroTituloIgnoreCaseAndLivroAutorIgnoreCaseAndUsuarioEmail(
-                            titulo, autor, userEmail)
-                    .ifPresent(avaliacaoRepository::delete);
-        }
         String cover = livro.getCover();
         livroRepository.deleteById(id);
+        if (titulo != null && autor != null
+                && livroRepository.findIdsPorTituloEAutor(titulo, autor).isEmpty()) {
+            avaliacaoRepository.deleteByLivroTituloIgnoreCaseAndLivroAutorIgnoreCase(titulo, autor);
+        }
         notificacaoService.notificarSeguidores(userEmail, "LIVRO_EXCLUIDO", titulo, autor, null, null, cover);
     }
 

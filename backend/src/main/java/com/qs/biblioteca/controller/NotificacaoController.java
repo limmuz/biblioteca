@@ -35,4 +35,10 @@ public class NotificacaoController {
         notificacaoService.marcarTodasLidas(authentication.getName());
         return ResponseEntity.noContent().build();
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> excluir(@PathVariable String id, Authentication authentication) {
+        notificacaoService.excluir(id, authentication.getName());
+        return ResponseEntity.noContent().build();
+    }
 }

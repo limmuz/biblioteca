@@ -37,7 +37,13 @@ public interface LivroRepository extends MongoRepository<Livro, String> {
 
     @Aggregation(pipeline = {
         "{ '$match': { 'userEmail': { '$ne': ?0 }, 'cover': { '$exists': true, '$nin': [null, ''] } } }",
-        "{ '$sample': { 'size': 20 } }"
+        "{ '$sample': { 'size': 120 } }"
     })
     List<Livro> findDescobrir(String userEmail);
+
+    @Query("{ 'userEmail': { '$ne': ?0 }, 'cover': { '$exists': true, '$nin': [null, ''] } }")
+    List<Livro> findTodosDaComunidade(String userEmail);
+
+    @Query(value = "{ 'title': { '$regex': ?0, '$options': 'i' }, 'author': { '$regex': ?1, '$options': 'i' } }", fields = "{ '_id': 1 }")
+    List<Livro> findIdsPorTituloEAutor(String titulo, String autor);
 }

@@ -70,6 +70,14 @@ public class NotificacaoService {
         notificacaoRepository.saveAll(naoLidas);
     }
 
+    public void excluir(String id, String usuarioEmail) {
+        notificacaoRepository.findById(id).ifPresent(n -> {
+            if (usuarioEmail.equalsIgnoreCase(n.getUsuarioEmail())) {
+                notificacaoRepository.delete(n);
+            }
+        });
+    }
+
     private void salvar(String usuarioEmail, String tipo, String livroTitulo, String livroAutor,
             String remetente, String atorEmail, String detalhe, String livroId, String livroCover) {
         Notificacao n = new Notificacao();

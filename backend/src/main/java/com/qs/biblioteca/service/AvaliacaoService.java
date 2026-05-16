@@ -163,6 +163,22 @@ public class AvaliacaoService {
                         r.setLivroCover(capas.get(0).getCover());
                         if (r.getLivroId() == null) r.setLivroId(capas.get(0).getId());
                     }
+                    if (r.getLivroCover() == null) {
+                        lista.stream().map(Avaliacao::getLivroCover)
+                                .filter(c -> c != null && !c.isBlank())
+                                .findFirst().ifPresent(r::setLivroCover);
+                    }
+                    if (r.getLivroId() == null) {
+                        lista.stream().map(Avaliacao::getLivroId)
+                                .filter(Objects::nonNull)
+                                .findFirst().ifPresent(r::setLivroId);
+                        if (r.getLivroId() == null) {
+                            livroRepository.findIdsPorTituloEAutor(
+                                    lista.get(0).getLivroTitulo(), lista.get(0).getLivroAutor())
+                                    .stream().findFirst()
+                                    .ifPresent(l -> r.setLivroId(l.getId()));
+                        }
+                    }
                     return r;
                 })
                 .toList();
@@ -197,6 +213,16 @@ public class AvaliacaoService {
                         if (!capas.isEmpty()) {
                             if (semCover && capas.get(0).getCover() != null) r.setLivroCover(capas.get(0).getCover());
                             if (semId) r.setLivroId(capas.get(0).getId());
+                        }
+                        if (r.getLivroId() == null || r.getLivroId().isBlank()) {
+                            livroRepository.findIdsPorTituloEAutor(a.getLivroTitulo(), a.getLivroAutor())
+                                    .stream().findFirst()
+                                    .ifPresent(l -> r.setLivroId(l.getId()));
+                        }
+                        if (r.getLivroCover() == null || r.getLivroCover().isBlank()) {
+                            if (a.getLivroCover() != null && !a.getLivroCover().isBlank()) {
+                                r.setLivroCover(a.getLivroCover());
+                            }
                         }
                     }
                     return r;

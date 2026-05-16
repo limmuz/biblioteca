@@ -208,6 +208,79 @@ class LivroE2ETest extends BaseMongoTest {
     }
 
     @Nested
+    @DisplayName("GET /api/livros/nao-tenho")
+    class NaoTenhoTests {
+
+        @Test
+        @DisplayName("Deve retornar livros da comunidade que o usuario nao possui")
+        void naoTenho_deveRetornarLivrosDeComunidade() {
+            String token2 = registrarEObterToken("outro@naotenho.com", "senha456");
+            HttpHeaders h2 = new HttpHeaders();
+            h2.setContentType(MediaType.APPLICATION_JSON);
+            h2.setBearerAuth(token2);
+            restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro Exclusivo Outro", "Autor X"), h2), Livro.class);
+
+            ResponseEntity<Livro[]> response = restTemplate.exchange(
+                    livrosUrl + "/nao-tenho", HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt()), Livro[].class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            Livro[] body = Objects.requireNonNull(response.getBody());
+            assertTrue(body.length > 0, "Deve retornar ao menos um livro da comunidade");
+            assertTrue(java.util.Arrays.stream(body)
+                    .anyMatch(l -> "Livro Exclusivo Outro".equals(l.getTitle())));
+        }
+
+        @Test
+        @DisplayName("Nao deve retornar livro que o proprio usuario ja possui")
+        void naoTenho_naoDeveRetornarLivroQueJaPossui() {
+            restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Meu Proprio Livro", "Autor M"), headersComJwt()), Livro.class);
+
+            String token2 = registrarEObterToken("outro2@naotenho.com", "senha789");
+            HttpHeaders h2 = new HttpHeaders();
+            h2.setContentType(MediaType.APPLICATION_JSON);
+            h2.setBearerAuth(token2);
+            restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Meu Proprio Livro", "Autor M"), h2), Livro.class);
+
+            ResponseEntity<Livro[]> response = restTemplate.exchange(
+                    livrosUrl + "/nao-tenho", HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt()), Livro[].class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            Livro[] body = Objects.requireNonNull(response.getBody());
+            assertTrue(java.util.Arrays.stream(body)
+                    .noneMatch(l -> "Meu Proprio Livro".equals(l.getTitle())),
+                    "Livro que o usuario ja possui nao deve aparecer em nao-tenho");
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/livros/descobrir")
+    class DescobrirTests {
+
+        @Test
+        @DisplayName("Deve retornar livros de outros usuarios com capa")
+        void descobrir_deveRetornarLivros() {
+            String token2 = registrarEObterToken("descobrir@email.com", "senha789");
+            HttpHeaders h2 = new HttpHeaders();
+            h2.setContentType(MediaType.APPLICATION_JSON);
+            h2.setBearerAuth(token2);
+            restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro Para Descobrir", "Autor D"), h2), Livro.class);
+
+            ResponseEntity<Livro[]> response = restTemplate.exchange(
+                    livrosUrl + "/descobrir", HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt()), Livro[].class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+        }
+    }
+
+    @Nested
     @DisplayName("DELETE /api/livros/{id}/permanente")
     class ExcluirPermanenteTests {
 

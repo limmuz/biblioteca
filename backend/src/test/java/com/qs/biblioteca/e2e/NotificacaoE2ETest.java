@@ -132,6 +132,44 @@ class NotificacaoE2ETest extends BaseMongoTest {
     }
 
     @Nested
+    @DisplayName("DELETE /api/notificacoes/{id}")
+    class ExcluirNotificacaoTests {
+
+        @Test
+        @DisplayName("Deve excluir notificacao pelo ID e retornar 204")
+        void excluir_notificacaoExistente_deveRetornar204() {
+            ResponseEntity<Object[]> listRes = restTemplate.exchange(
+                    baseUrl + "/notificacoes",
+                    HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt(tokenSeguidor)),
+                    Object[].class
+            );
+            Object[] notificacoes = Objects.requireNonNull(listRes.getBody());
+            assertTrue(notificacoes.length > 0, "Deve haver notificacoes para excluir");
+
+            @SuppressWarnings("unchecked")
+            String notifId = (String) ((java.util.LinkedHashMap<String, Object>) notificacoes[0]).get("id");
+
+            ResponseEntity<Void> deleteRes = restTemplate.exchange(
+                    baseUrl + "/notificacoes/" + notifId,
+                    HttpMethod.DELETE,
+                    new HttpEntity<>(headersComJwt(tokenSeguidor)),
+                    Void.class
+            );
+            assertEquals(HttpStatus.NO_CONTENT, deleteRes.getStatusCode());
+
+            ResponseEntity<Object[]> listResApos = restTemplate.exchange(
+                    baseUrl + "/notificacoes",
+                    HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt(tokenSeguidor)),
+                    Object[].class
+            );
+            Object[] apos = Objects.requireNonNull(listResApos.getBody());
+            assertTrue(apos.length < notificacoes.length, "Deve ter uma notificacao a menos apos excluir");
+        }
+    }
+
+    @Nested
     @DisplayName("PUT /api/notificacoes/marcar-lidas")
     class MarcarLidasTests {
 
