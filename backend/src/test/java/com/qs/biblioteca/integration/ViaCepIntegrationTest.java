@@ -80,4 +80,28 @@ class ViaCepIntegrationTest extends BaseMongoTest {
 
         assertEquals(404, ex.getStatusCode().value());
     }
+
+    @Test
+    @DisplayName("deve retornar 400 para CEP com formato inválido (sem traço)")
+    void buscarCep_formatoSemTraco_deveRetornar400() {
+        String url = "http://localhost:" + port + "/api/cep/01310100";
+
+        HttpClientErrorException ex = assertThrows(
+                HttpClientErrorException.class,
+                () -> restTemplate.getForEntity(url, Map.class));
+
+        assertEquals(400, ex.getStatusCode().value());
+    }
+
+    @Test
+    @DisplayName("deve retornar 400 para CEP com caracteres inválidos")
+    void buscarCep_comLetras_deveRetornar400() {
+        String url = "http://localhost:" + port + "/api/cep/ABCDE-123";
+
+        HttpClientErrorException ex = assertThrows(
+                HttpClientErrorException.class,
+                () -> restTemplate.getForEntity(url, Map.class));
+
+        assertEquals(400, ex.getStatusCode().value());
+    }
 }

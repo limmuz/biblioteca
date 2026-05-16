@@ -21,6 +21,10 @@ public class CepController {
 
     @GetMapping("/{cep}")
     public ResponseEntity<Map<String, Object>> buscarCep(@PathVariable String cep) {
+        if (cep == null || !cep.matches("^\\d{5}-\\d{3}$")) {
+            return ResponseEntity.badRequest().build();
+        }
+
         Map<String, Object> endereco = viaCepService.buscarEnderecoPorCep(cep);
         if (endereco == null || endereco.containsKey("erro")) {
             return ResponseEntity.notFound().build();

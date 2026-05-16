@@ -4,7 +4,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.Collections;
 import java.util.Map;
 
 @Service
@@ -15,16 +17,30 @@ public class ViaCepService {
 
     public ViaCepService(
             @Value("${viacep.base-url:https://viacep.com.br/ws}") String baseUrl) {
+
         this.baseUrl = baseUrl;
+
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(3000);
         factory.setReadTimeout(3000);
+
         this.restTemplate = new RestTemplate(factory);
     }
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> buscarEnderecoPorCep(String cep) {
-        String url = baseUrl + "/" + cep + "/json/";
+
+        if (cep == null || !cep.matches("^\\d{5}-?\\d{3}$")) {
+            return Collections.emptyMap();
+        }
+
+        String cepLimpo = cep.replace("-", "");
+
+        String url = UriComponentsBuilder
+                .fromUriString(baseUrl)
+                .pathSegment(cepLimpo, "json")
+                .toUriString();
+
         return restTemplate.getForObject(url, Map.class);
     }
 }
