@@ -77,6 +77,24 @@ class LivroE2ETest extends BaseMongoTest {
     }
 
     @Nested
+    @DisplayName("POST /api/livros – duplicado")
+    class CriarLivroDuplicadoTests {
+
+        @Test
+        @DisplayName("Deve retornar 409 ao criar livro com titulo e autor ja existentes")
+        void criar_livroDuplicado_deveRetornar409() {
+            restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro Unico", "Autor Unico"), headersComJwt()), Livro.class);
+
+            String url = livrosUrl;
+            HttpEntity<Livro> entity = new HttpEntity<>(novoLivro("Livro Unico", "Autor Unico"), headersComJwt());
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.POST, entity, Livro.class));
+            assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+        }
+    }
+
+    @Nested
     @DisplayName("GET /api/livros")
     class ListarLivrosTests {
 
@@ -178,6 +196,30 @@ class LivroE2ETest extends BaseMongoTest {
     }
 
     @Nested
+    @DisplayName("PUT /api/livros/{id} – acesso negado")
+    class AtualizarLivroAcessoNegadoTests {
+
+        @Test
+        @DisplayName("Deve retornar 403 ao tentar atualizar livro de outro usuario")
+        void atualizar_livroDeOutroUsuario_deveRetornar403() {
+            ResponseEntity<Livro> criado = restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro Alheio", "Autor X"), headersComJwt()), Livro.class);
+            String id = Objects.requireNonNull(Objects.requireNonNull(criado.getBody()).getId());
+
+            String token2 = registrarEObterToken("outro403@email.com", "senha456");
+            HttpHeaders h2 = new HttpHeaders();
+            h2.setContentType(MediaType.APPLICATION_JSON);
+            h2.setBearerAuth(token2);
+
+            String url = livrosUrl + "/" + id;
+            HttpEntity<Livro> entity = new HttpEntity<>(novoLivro("Titulo Alterado", "Autor X"), h2);
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.PUT, entity, Livro.class));
+            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        }
+    }
+
+    @Nested
     @DisplayName("DELETE /api/livros/{id}")
     class RemoverLivroTests {
 
@@ -203,6 +245,25 @@ class LivroE2ETest extends BaseMongoTest {
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
                     () -> restTemplate.exchange(url, HttpMethod.DELETE, entity, Void.class));
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 403 ao tentar remover livro de outro usuario")
+        void remover_livroDeOutroUsuario_deveRetornar403() {
+            ResponseEntity<Livro> criado = restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro Protegido", "Autor P"), headersComJwt()), Livro.class);
+            String id = Objects.requireNonNull(Objects.requireNonNull(criado.getBody()).getId());
+
+            String token2 = registrarEObterToken("deletar403@email.com", "senha456");
+            HttpHeaders h2 = new HttpHeaders();
+            h2.setContentType(MediaType.APPLICATION_JSON);
+            h2.setBearerAuth(token2);
+
+            String url = livrosUrl + "/" + id;
+            HttpEntity<Void> entity = new HttpEntity<>(h2);
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.DELETE, entity, Void.class));
+            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
         }
     }
 
