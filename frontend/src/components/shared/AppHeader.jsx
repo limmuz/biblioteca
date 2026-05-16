@@ -135,6 +135,14 @@ export default function AppHeader() {
     }
   };
 
+  const excluirNotificacao = async (e, notifId) => {
+    e.stopPropagation();
+    try {
+      await api.delete(`/notificacoes/${notifId}`);
+      setNotificacoes(prev => prev.filter(n => n.id !== notifId));
+    } catch {}
+  };
+
   const TIPOS_NOTIF = {
     LIVRO_CRIADO: 'adicionou o livro',
     LIVRO_ATUALIZADO: 'atualizou o livro',
@@ -281,6 +289,14 @@ export default function AppHeader() {
                             {n.livroAutor && <p className={styles.notifSub}>por {n.livroAutor}</p>}
                             <p className={styles.notifData}>{formatarData(n.criadaEm)}</p>
                           </div>
+                          <button
+                            type="button"
+                            className={styles.notifDeleteBtn}
+                            onClick={(e) => excluirNotificacao(e, n.id)}
+                            title="Excluir notificação"
+                          >
+                            ×
+                          </button>
                         </>
                       );
                       if (podeNavegar) {

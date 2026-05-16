@@ -396,6 +396,25 @@
   background: rgba(74,103,65,0.07);
 }
 
+.notifDeleteBtn {
+  flex-shrink: 0;
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0 2px;
+  cursor: pointer;
+  color: var(--color-sage);
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0.4;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.notifDeleteBtn:hover {
+  opacity: 1;
+  color: #c0392b;
+}
+
 .notifTexto {
   font-family: var(--font-poppins);
   font-size: 12px;

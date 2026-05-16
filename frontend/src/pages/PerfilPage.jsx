@@ -140,7 +140,12 @@ export default function PerfilPage() {
   const [buscaErro, setBuscaErro] = useState('');
   const buscaDebounceRef = useRef(null);
 
-  const [medias, setMedias] = useState(() => lerCache('lybre_medias_cache') || {});
+  const [medias, setMedias] = useState(() => {
+    const cached = lerCache('lybre_medias_cache') || {};
+    const vals = Object.values(cached);
+    const temLivroId = vals.length === 0 || vals.some(m => m.livroId);
+    return temLivroId ? cached : {};
+  });
   const [meusComentarios, setMeusComentarios] = useState([]);
 
   const [bgImage, setBgImage] = useState(() => localStorage.getItem('lybre_bg') || null);
@@ -481,6 +486,7 @@ export default function PerfilPage() {
       try {
         await api.delete(`/livros/${livro.id}`);
         removerLivroDoEstado(livro.id, livro.status);
+        localStorage.removeItem('lybre_livros_cache');
         showToast('Livro excluído com sucesso.');
       } catch { showToast('Erro ao excluir livro.', 'error'); }
     };
@@ -500,6 +506,7 @@ export default function PerfilPage() {
       try {
         await api.delete(`/livros/${livro.id}/permanente`);
         removerLivroDoEstado(livro.id, livro.status);
+        localStorage.removeItem('lybre_livros_cache');
         showToast('Livro excluído permanentemente de todos os perfis.');
       } catch (err) {
         const msg = err?.response?.data?.message || 'Erro ao excluir permanentemente.';
@@ -852,12 +859,14 @@ export default function PerfilPage() {
                         </div>
                       </button>
                       <div className={styles.statBookActions}>
-                        <button
-                          className={styles.statBookTirar}
-                          onClick={(e) => { e.stopPropagation(); handleExcluirLivro(livro); }}
-                          title="Tirar da biblioteca"
-                          type="button"
-                        >Tirar</button>
+                        {livro.criadorEmail === usuario?.email && (
+                          <button
+                            className={styles.statBookTirar}
+                            onClick={(e) => { e.stopPropagation(); handleExcluirLivro(livro); }}
+                            title="Tirar da biblioteca"
+                            type="button"
+                          >Tirar</button>
+                        )}
                         {livro.criadorEmail === usuario?.email && (
                           <button
                             className={styles.statBookPermanente}
@@ -889,12 +898,14 @@ export default function PerfilPage() {
                       </div>
                     </button>
                       <div className={styles.statBookActions}>
-                        <button
-                          className={styles.statBookTirar}
-                          onClick={(e) => { e.stopPropagation(); handleExcluirLivro(livro); }}
-                          title="Tirar da biblioteca"
-                          type="button"
-                        >Tirar</button>
+                        {livro.criadorEmail === usuario?.email && (
+                          <button
+                            className={styles.statBookTirar}
+                            onClick={(e) => { e.stopPropagation(); handleExcluirLivro(livro); }}
+                            title="Tirar da biblioteca"
+                            type="button"
+                          >Tirar</button>
+                        )}
                         {livro.criadorEmail === usuario?.email && (
                           <button
                             className={styles.statBookPermanente}
@@ -1053,7 +1064,9 @@ export default function PerfilPage() {
                       )}
                       <div className={styles.bookActions}>
                         <button className={styles.btnSmallEdit} onClick={() => navigate(`/livro/${livro.id}`, { state: { bookData: livro, bookList: livrosFavoritos } })} type="button">Ver</button>
-                        <button className={styles.btnSmallDelete} onClick={() => handleExcluirLivro(livro)} type="button">Tirar</button>
+                        {livro.criadorEmail === usuario?.email && (
+                          <button className={styles.btnSmallDelete} onClick={() => handleExcluirLivro(livro)} type="button">Tirar</button>
+                        )}
                         {livro.criadorEmail === usuario?.email && (
                           <button className={styles.btnSmallPermanente} onClick={() => handleExcluirPermanente(livro)} type="button">Excluir permanente</button>
                         )}
@@ -1083,7 +1096,7 @@ export default function PerfilPage() {
                       <button
                         type="button"
                         className={styles.commentCoverBtn}
-                        onClick={() => livroId && navigate(`/livro/${livroId}`, { state: { bookData: livro } })}
+                        onClick={() => livroId && navigate(`/livro/${livroId}`, { state: { bookData: livro, isFromPublicProfile: !livro } })}
                         style={!livroId ? { cursor: 'default', pointerEvents: 'none' } : {}}
                       >
                         {cover
@@ -1111,7 +1124,7 @@ export default function PerfilPage() {
                           <button
                             type="button"
                             className={styles.btnVerLivroComment}
-                            onClick={() => navigate(`/livro/${livroId}`, { state: { bookData: livro } })}
+                            onClick={() => navigate(`/livro/${livroId}`, { state: { bookData: livro, isFromPublicProfile: !livro } })}
                           >
                             Ver livro →
                           </button>
@@ -1154,7 +1167,7 @@ export default function PerfilPage() {
                       <button
                         type="button"
                         className={styles.btnVerComentario}
-                        onClick={() => navigate(`/livro/${livro?.id || m.livroId}`, { state: { bookData: livro } })}
+                        onClick={() => navigate(`/livro/${livro?.id || m.livroId}`, { state: { bookData: livro, isFromPublicProfile: !livro } })}
                       >
                         Ver
                       </button>

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.List;
 import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,8 +21,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag("docker")
 @SpringBootTest
 @ActiveProfiles("test")
-@DisplayName("Integração – LivroRepository com MongoDB real (Testcontainers)")
-class LivroRepositoryIntegrationTest extends BaseMongoTest {
+@DisplayName("Integração – LivroService com MongoDB real (Testcontainers)")
+class LivroServiceIntegrationTest extends BaseMongoTest {
 
     @Autowired
     private LivroRepository livroRepository;
@@ -102,6 +103,46 @@ class LivroRepositoryIntegrationTest extends BaseMongoTest {
         assertEquals("Português", resultado.getLanguage());
         assertEquals("Aleph", resultado.getPublisher());
         assertEquals("1965-08-01", resultado.getPublishedDate());
+    }
+
+    @Test
+    @DisplayName("Deve retornar apenas livros da comunidade que o usuario nao possui")
+    void naoTenho_deveRetornarSomenteOQueNaoPossui() {
+        Livro livroOutro = new Livro();
+        livroOutro.setUserEmail("comunidade@integracao.com");
+        livroOutro.setTitle("Livro Da Comunidade");
+        livroOutro.setAuthor("Autor Comunidade");
+        livroOutro.setStatus("LIDO");
+        livroOutro.setPages(300);
+        livroOutro.setCover("https://example.com/capa-comunidade.jpg");
+        livroOutro.setExcerpt("Sinopse comunidade");
+        livroRepository.save(livroOutro);
+
+        List<Livro> resultado = livroService.naoTenho("usuario@integracao.com");
+
+        assertFalse(resultado.isEmpty(), "Deve retornar ao menos um livro que o usuario nao possui");
+        assertTrue(resultado.stream().anyMatch(l -> "Livro Da Comunidade".equals(l.getTitle())));
+    }
+
+    @Test
+    @DisplayName("Deve excluir avaliacoes orfas quando ultimo dono de um livro o exclui")
+    void naoTenho_naoDeve_incluirLivroQueUsuarioJaPossui() {
+        livroRepository.save(Objects.requireNonNull(novoLivro("Duna", "Frank Herbert")));
+
+        Livro livroOutro = new Livro();
+        livroOutro.setUserEmail("outro@integracao.com");
+        livroOutro.setTitle("Duna");
+        livroOutro.setAuthor("Frank Herbert");
+        livroOutro.setStatus("LIDO");
+        livroOutro.setPages(600);
+        livroOutro.setCover("https://example.com/duna.jpg");
+        livroOutro.setExcerpt("Sinopse");
+        livroRepository.save(livroOutro);
+
+        List<Livro> resultado = livroService.naoTenho("teste@integracao.com");
+
+        assertTrue(resultado.stream().noneMatch(l -> "Duna".equals(l.getTitle())),
+                "Duna nao deve aparecer pois o usuario ja possui");
     }
 
     private static Livro novoLivro(String titulo, String autor) {

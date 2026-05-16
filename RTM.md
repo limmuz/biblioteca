@@ -26,6 +26,9 @@
 | RF-20 | Upload de imagens via armazenamento externo (Cloudinary) | E2E / Caixa Preta | `ImagemE2ETest.java` — POST /api/imagens/upload: foto de perfil (pasta=avatares) e plano de fundo (pasta=fundos); 401 sem token; 503 sem Cloudinary configurado | ✅ Implementado |
 | RF-21 | Notificações de atividade para seguidores | E2E / Caixa Preta | `NotificacaoE2ETest.java` — GET /api/notificacoes (lista com notificação criada via avaliação), GET /api/notificacoes/contagem (naoLidas > 0), PUT /api/notificacoes/marcar-lidas (204 + contagem zera); 401 sem token em todos os endpoints | ✅ Implementado |
 | RF-22 | Excluir livro permanentemente (criador — cascata em todos os leitores) | E2E / Caixa Preta | `LivroE2ETest.java` (`ExcluirPermanenteTests`) — criador exclui (204); outro usuário tenta excluir (403) | ✅ Implementado |
+| RF-23 | Recomendar livros da comunidade que o usuário ainda não possui (`/livros/nao-tenho`) | E2E / Integração | `LivroE2ETest.java` (`NaoTenhoTests`, `DescobrirTests`) + `LivroServiceIntegrationTest.java` (`naoTenho_*`) | ✅ Implementado |
+| RF-24 | Excluir notificação individual (`DELETE /api/notificacoes/{id}`) | E2E / Caixa Preta | `NotificacaoE2ETest.java` (`ExcluirNotificacaoTests`) — exclui notificação existente (204); lista fica menor após exclusão | ✅ Implementado |
+| RF-25 | Restringir exclusão de livro ao criador + limpeza automática de avaliações órfãs | E2E / Caixa Preta + Integração | `LivroE2ETest.java` (`ExcluirPermanenteTests`) — 403 para não-criador; `LivroService.deletar` remove avaliações quando último exemplar é excluído | ✅ Implementado |
 
 ---
 
@@ -859,14 +862,14 @@ sequenceDiagram
 | Tipo | Arquivo | Ferramenta | Descrição |
 |---|---|---|---|
 | Unitário / Caixa Branca parametrizado | `LivroValidatorParamTest.java` | JUnit 5 `@ParameterizedTest` | Valida regras de negócio do `LivroValidator` com 50+ cenários (`@CsvSource`, `@ValueSource`, `@MethodSource`, `@NullAndEmptySource`) |
-| Integração com banco real | `LivroServiceIntegrationTest.java` | Testcontainers + MongoDB 7.0 | Testa `LivroRepository` e `LivroService` com MongoDB real e efêmero |
+| Integração com banco real | `LivroServiceIntegrationTest.java` | Testcontainers + MongoDB 7.0 | Testa `LivroRepository` e `LivroService` com MongoDB real e efêmero; inclui cenários de `naoTenho` e enriquecimento de metadados |
 | Integração com API externa real | `ViaCepIntegrationTest.java` | Testcontainers + RestTemplate + ViaCEP real | Testa `GET /api/cep/{cep}` contra API ViaCEP real (integração real sem simulação): CEP válido (200) e inexistente (404) |
 | E2E / Caixa Preta | `AuthE2ETest.java` | Testcontainers + RestTemplate | Registro e login via HTTP: token gerado (200), credenciais inválidas (401), email duplicado (400) |
-| E2E / Caixa Preta | `LivroE2ETest.java` | Testcontainers + RestTemplate | CRUD completo: criar (201), listar (vazia, com livros, search), buscar por ID (200, 404), atualizar (200), remover (204, 404), excluir permanente — criador (204), não-criador (403) |
+| E2E / Caixa Preta | `LivroE2ETest.java` | Testcontainers + RestTemplate | CRUD completo: criar (201), listar (vazia, com livros, search), buscar por ID (200, 404), atualizar (200), remover (204, 404), excluir permanente — criador (204), não-criador (403), nao-tenho (livros da comunidade, exclusão do próprio livro), descobrir |
 | E2E / Caixa Preta | `AvaliacaoE2ETest.java` | Testcontainers + RestTemplate | Criar avaliação, listar, excluir, curtir/descurtir (toggle com 2 usuários), responder e excluir resposta, médias, outros leitores |
 | E2E / Caixa Preta | `UsuarioE2ETest.java` | Testcontainers + RestTemplate | GET /me (200, 401), PUT /me (atualizar), DELETE /me (204), listar leitores, pesquisar por nome e @nickname, perfil público por nickname e por ID, buscar por nickname |
 | E2E / Caixa Preta | `ImagemE2ETest.java` | Testcontainers + RestTemplate | POST /api/imagens/upload: sem token (401), Cloudinary não configurado (503) |
-| E2E / Caixa Preta | `NotificacaoE2ETest.java` | Testcontainers + RestTemplate | GET /notificacoes (lista com notificação disparada por avaliação de seguido), GET /notificacoes/contagem (naoLidas), PUT /notificacoes/marcar-lidas (204 + zera contagem); 401 sem token em todos os endpoints |
+| E2E / Caixa Preta | `NotificacaoE2ETest.java` | Testcontainers + RestTemplate | GET /notificacoes (lista com notificação disparada por avaliação de seguido), GET /notificacoes/contagem (naoLidas), PUT /notificacoes/marcar-lidas (204 + zera contagem), DELETE /notificacoes/{id} (204 + lista fica menor); 401 sem token em todos os endpoints |
 
 ---
 

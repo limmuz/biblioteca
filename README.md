@@ -161,6 +161,9 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | RF-20 (Upload de avatar) | Implementado com `ImagemController` + `CloudinaryService` |
 | RF-21 (Notificações de atividade) | Implementado com `NotificacaoController` + `NotificacaoService`; seguidores recebem notificação quando um leitor avalia um livro; contagem de não lidas e marcar como lidas |
 | RF-22 (Exclusão permanente de livro) | Criador pode excluir livro da biblioteca de todos os leitores; cascata: avaliações excluídas e notificação enviada a cada afetado |
+| RF-23 (Recomendações da comunidade) | Endpoint `/livros/nao-tenho` retorna livros que outros leitores possuem e o usuário ainda não tem; usado nas recomendações da HomePage e DetalhesLivroPage |
+| RF-24 (Excluir notificação individual) | Endpoint `DELETE /api/notificacoes/{id}` permite excluir uma notificação específica; retorna 204 |
+| RF-25 (Restrição de criador + limpeza de órfãos) | Botão "Tirar da biblioteca" exibido apenas para o criador do livro; ao excluir o último exemplar de um título, avaliações órfãs são removidas automaticamente |
 | Cobertura >= 80% (JaCoCo) | 88.3% no SonarCloud — check JaCoCo aprovado |
 | SonarCloud configurado | Rodando — https://sonarcloud.io/project/overview?id=AnaPaula2024_biblioteca |
 | CI com GitHub Actions | Pipeline configurado |
@@ -184,7 +187,10 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | Navegação por seção | Setas prev/next no detalhe do livro percorrem apenas os livros da seção de origem |
 | Propagação de metadados | Edição de capa/sinopse/editora por um usuário atualiza automaticamente as cópias de outros usuários com o mesmo livro |
 | Exclusão permanente | Criador do livro pode excluir de todas as bibliotecas ao mesmo tempo; avaliações são removidas em cascata e cada leitor afetado recebe notificação |
-| Notificações de atividade | Seguidores recebem notificação quando um leitor avalia um livro; contagem de não lidas exibida no ícone do sino; marcar todas como lidas |
+| Notificações de atividade | Seguidores recebem notificação quando um leitor avalia um livro; contagem de não lidas exibida no ícone do sino; marcar todas como lidas; excluir notificação individual |
+| Recomendações da comunidade | HomePage e DetalhesLivroPage sugerem livros que outros leitores possuem e o usuário ainda não tem (endpoint `/livros/nao-tenho`), com fallback para `/livros/descobrir` |
+| Restrição de criador | Botões "Tirar da biblioteca" e "Excluir permanente" aparecem apenas para o leitor que cadastrou o livro; outros leitores não veem as opções de exclusão |
+| Limpeza de avaliações órfãs | Ao excluir o último exemplar de um título+autor da plataforma, as avaliações desse livro são removidas automaticamente do banco |
 | Repositório no GitHub | https://github.com/AnaPaula2024/biblioteca |
 
 ---
@@ -194,12 +200,12 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | Arquivo | Localização | O que testa |
 |---|---|---|
 | `AuthE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-01 (Cadastro) e RF-02 (Login) |
-| `LivroE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-03 a RF-08 (CRUD de livros + sessão) |
+| `LivroE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-03 a RF-08 + RF-23 (CRUD de livros, sessão, nao-tenho e descobrir) |
 | `AvaliacaoE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-10 a RF-12 (criar, listar, excluir avaliações; curtir/descurtir e responder comentários) |
 | `UsuarioE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-13 a RF-16 (perfil, personalização, perfil público, busca e listagem de leitores — inclui exclusão de perfis privados) |
 | `ImagemE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-20 (upload de avatar: sem token → 401; Cloudinary não configurado no perfil de teste → 503) |
-| `NotificacaoE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-21 (notificações: listar, contagem, marcar como lidas; 401 sem token em cada endpoint) |
-| `LivroServiceIntegrationTest.java` | `backend/src/test/java/com/qs/biblioteca/integration/` | RF-04 a RF-07 (integração com MongoDB) |
+| `NotificacaoE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-21 + RF-24 (notificações: listar, contagem, marcar como lidas, excluir por ID; 401 sem token em cada endpoint) |
+| `LivroServiceIntegrationTest.java` | `backend/src/test/java/com/qs/biblioteca/integration/` | RF-04 a RF-07 + RF-23 (integração com MongoDB, incluindo naoTenho e enriquecimento de metadados) |
 | `ViaCepIntegrationTest.java` | `backend/src/test/java/com/qs/biblioteca/integration/` | RF-09 (integração real com API ViaCEP — sem mocks) |
 | `LivroValidatorParamTest.java` | `backend/src/test/java/com/qs/biblioteca/unit/` | Validações de negócio (unitário parametrizado — caixa branca) |
 

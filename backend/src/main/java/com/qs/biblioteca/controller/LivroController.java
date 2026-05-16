@@ -33,6 +33,16 @@ public class LivroController {
         return livroService.descobrir(authentication.getName());
     }
 
+    @GetMapping("/comunidade")
+    public List<Livro> comunidade(Authentication authentication) {
+        return livroService.comunidade(authentication.getName());
+    }
+
+    @GetMapping("/nao-tenho")
+    public List<Livro> naoTenho(Authentication authentication) {
+        return livroService.naoTenho(authentication.getName());
+    }
+
     @GetMapping("/recomendados")
     public List<Livro> buscarRecomendados(
             @RequestParam(required = false) String autor,

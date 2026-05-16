@@ -25,7 +25,12 @@ export default function HomePage() {
   const [recentlyRead, setRecentlyRead] = useState([]);
   const [readingList, setReadingList] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
-  const [medias, setMedias] = useState(() => lerCache('lybre_medias_cache') || {});
+  const [medias, setMedias] = useState(() => {
+    const cached = lerCache('lybre_medias_cache') || {};
+    const vals = Object.values(cached);
+    const temLivroId = vals.length === 0 || vals.some(m => m.livroId);
+    return temLivroId ? cached : {};
+  });
   const [loading, setLoading] = useState(() => lerCache('lybre_livros_cache') === null);
   const [showAllRecs, setShowAllRecs] = useState(false);
   const carouselRef = useRef(null);
@@ -69,21 +74,23 @@ export default function HomePage() {
         salvarCache('lybre_livros_cache', all);
         setRecentlyRead(all.filter((b) => b.status === "LIDO"));
         setReadingList(all.filter((b) => b.status === "LENDO" || b.status === "QUERO LER"));
-        const semente = all.find(b => b.status === "LIDO")
-          || all.find(b => b.status === "LENDO")
-          || all[0];
-        if (semente) {
-          const params = new URLSearchParams();
-          if (semente.author) params.append('autor', semente.author);
-          (semente.categories || []).forEach(c => params.append('categorias', c));
-          params.append('titulo', semente.title);
-          const resRecs = await api.get(`/livros/recomendados?${params}`).catch(() => ({ data: [] }));
-          const minhaChaves = new Set(all.map(chaveRec));
-          setRecommendations(resRecs.data.filter(l => !minhaChaves.has(chaveRec(l))));
-        } else {
-          const resDesc = await api.get('/livros/descobrir').catch(() => ({ data: [] }));
-          setRecommendations(resDesc.data);
+        let recsRaw = [];
+        try {
+          const resNaoTenho = await api.get('/livros/nao-tenho');
+          recsRaw = resNaoTenho.data;
+        } catch {
+          const resDescobrir = await api.get('/livros/descobrir').catch(() => ({ data: [] }));
+          const minhasChaves = new Set(all.map(b => chaveRec(b)));
+          recsRaw = resDescobrir.data.filter(l => l.cover && !minhasChaves.has(chaveRec(l)));
         }
+        const vistos = new Set();
+        setRecommendations(recsRaw.filter(l => {
+          if (!l.cover) return false;
+          const k = chaveRec(l);
+          if (vistos.has(k)) return false;
+          vistos.add(k);
+          return true;
+        }));
         const map = {};
         resMedias.data.forEach(m => {
           const key = `${(m.livroTitulo || '').toLowerCase()}||${(m.livroAutor || '').toLowerCase()}`;

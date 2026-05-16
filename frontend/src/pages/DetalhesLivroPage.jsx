@@ -141,16 +141,14 @@ export default function DetalhesLivroPage() {
 
   useEffect(() => {
     if (!isFromPublicProfile || adicionadoDaPublica || allBooks.length === 0) return;
-    const bd = location.state?.bookData;
-    if (!bd) return;
+    const bd = location.state?.bookData || book;
+    if (!bd?.title || !bd?.author) return;
     const norm = s => s?.toLowerCase().trim() ?? '';
-    if (allBooks.some(b =>
-      bd.title && bd.author && norm(b.title) === norm(bd.title) && norm(b.author) === norm(bd.author)
-    )) {
+    if (allBooks.some(b => norm(b.title) === norm(bd.title) && norm(b.author) === norm(bd.author))) {
       setAdicionadoDaPublica(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allBooks]);
+  }, [allBooks, book]);
 
   useEffect(() => {
     if (!book?.title) return;
@@ -159,20 +157,30 @@ export default function DetalhesLivroPage() {
     if (book.author) params.append('autor', book.author);
     (book.categories || []).forEach(c => params.append('categorias', c));
     params.append('titulo', book.title);
-    api.get(`/livros/recomendados?${params}`)
-      .then(res => {
-        const norm = s => s?.toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '') ?? '';
-        const chave = l => norm(l?.title) + '||' + norm(l?.author);
-        const livroAtualChave = chave(book);
-        const minhaBiblioteca = new Set([...allBooks.map(chave), livroAtualChave]);
-        const vistos = new Set();
-        setRecoBooks(res.data.filter(l => {
-          const k = chave(l);
-          if (minhaBiblioteca.has(k) || !vistos.add(k)) return false;
-          return true;
-        }));
-      })
-      .catch(() => {});
+    const norm = s => s?.toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '') ?? '';
+    const chave = l => norm(l?.title) + '||' + norm(l?.author);
+    const livroAtualChave = chave(book);
+    const minhaBiblioteca = new Set([...allBooks.map(chave), livroAtualChave]);
+    const fetchRecs = async () => {
+      const resRecs = await api.get(`/livros/recomendados?${params}`).catch(() => ({ data: [] }));
+      let naoTenhoData = [];
+      try {
+        const resNaoTenho = await api.get('/livros/nao-tenho');
+        naoTenhoData = resNaoTenho.data;
+      } catch {
+        const resDescobrir = await api.get('/livros/descobrir').catch(() => ({ data: [] }));
+        naoTenhoData = resDescobrir.data.filter(l => l.cover && !minhaBiblioteca.has(chave(l)));
+      }
+      const vistos = new Set([livroAtualChave]);
+      setRecoBooks([...resRecs.data, ...naoTenhoData].filter(l => {
+        if (!l.cover) return false;
+        const k = chave(l);
+        if (minhaBiblioteca.has(k) || vistos.has(k)) return false;
+        vistos.add(k);
+        return true;
+      }));
+    };
+    fetchRecs().catch(() => {});
   }, [book?.id, allBooks]);
 
   const navList = location.state?.bookList || allBooks;
@@ -384,7 +392,7 @@ export default function DetalhesLivroPage() {
           <div className={styles.heroInfo}>
             <h1 className={styles.bookTitle}>{book.title}</h1>
             <p className={styles.bookAuthor}>por {book.author}</p>
-            {!isFromPublicProfile && book.criadorNickname && book.criadorEmail !== getUser().email && (
+            {book.criadorNickname && book.criadorEmail !== getUser().email && (
               <p className={styles.bookCriador}>Cadastrado por {book.criadorNickname}</p>
             )}
             <div className={styles.heroButtons}>
@@ -453,7 +461,9 @@ export default function DetalhesLivroPage() {
             {!isFromPublicProfile && book.userEmail === getUser().email && (
               <div className={styles.metaButtons}>
                 <button className={styles.btnEditar} onClick={handleEditar}>Editar</button>
-                <button className={styles.btnExcluir} onClick={() => setConfirmDelete(true)}>Tirar da biblioteca</button>
+                {book.criadorEmail === getUser().email && (
+                  <button className={styles.btnExcluir} onClick={() => setConfirmDelete(true)}>Tirar da biblioteca</button>
+                )}
                 {book.criadorEmail === getUser().email && (
                   <button className={styles.btnExcluirPermanente} onClick={() => setConfirmPermanente(true)}>
                     Excluir permanente
