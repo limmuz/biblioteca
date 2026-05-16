@@ -512,6 +512,39 @@
   border: 1.5px solid #f5d97a;
 }
 
+.statusSelect {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-ink);
+  background: var(--color-cream, #faf8f4);
+  border: 1.5px solid var(--color-sage, #a8b89a);
+  border-radius: 10px;
+  padding: 8px 36px 8px 14px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.statusSelect:hover:not(:disabled) {
+  border-color: var(--color-forest, #3a5c3a);
+}
+
+.statusSelect:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(90, 130, 90, 0.18);
+  border-color: var(--color-forest, #3a5c3a);
+}
+
+.statusSelect:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @keyframes pageFadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
@@ -1178,4 +1211,3 @@
     display: none;
   }
 }
-

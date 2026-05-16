@@ -58,6 +58,7 @@ export default function DetalhesLivroPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
+  const [atualizandoStatus, setAtualizandoStatus] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmPermanente, setConfirmPermanente] = useState(false);
 
@@ -242,13 +243,16 @@ export default function DetalhesLivroPage() {
     }
   };
 
-  const handleMudarStatus = async (novoStatus) => {
-    if (!book || book.status === novoStatus) return;
+  const handleAtualizarStatus = async (novoStatus) => {
+    if (!book || atualizandoStatus) return;
+    setAtualizandoStatus(true);
     try {
       await api.put(`/livros/${book.id}`, { ...book, status: novoStatus });
       setBook({ ...book, status: novoStatus });
       localStorage.removeItem('lybre_livros_cache');
     } catch {
+    } finally {
+      setAtualizandoStatus(false);
     }
   };
 
@@ -404,23 +408,27 @@ export default function DetalhesLivroPage() {
                 >
                   {adicionadoDaPublica ? '✓ Adicionado à sua biblioteca' : adicionando ? 'Adicionando...' : '+ Adicionar à minha biblioteca'}
                 </button>
-              ) : ['QUERO LER', 'LENDO', 'LIDO'].includes(book.status) ? (
-                <div className={styles.statusSelector}>
-                  {['QUERO LER', 'LENDO', 'LIDO'].map(s => (
-                    <button
-                      key={s}
-                      type="button"
-                      className={`${styles.statusBtn} ${book.status === s ? styles.statusBtnAtivo : ''}`}
-                      onClick={() => handleMudarStatus(s)}
-                    >
-                      {s === 'QUERO LER' ? '📚 Quero Ler' : s === 'LENDO' ? '📖 Lendo' : '✅ Lido'}
-                    </button>
-                  ))}
-                </div>
               ) : (
-                <button className={styles.btnAdicionar} onClick={handleAdicionarFavoritos} disabled={adicionando}>
-                  {adicionando ? 'Adicionando...' : '+ Adicionar à lista'}
-                </button>
+                <>
+                  {!['QUERO LER', 'LENDO', 'LIDO', 'RECOMENDADO'].includes(book.status) && (
+                    <button className={styles.btnAdicionar} onClick={handleAdicionarFavoritos} disabled={adicionando}>
+                      {adicionando ? 'Adicionando...' : '+ Adicionar à lista'}
+                    </button>
+                  )}
+                  {statusInfo && (
+                    <select
+                      className={styles.statusSelect}
+                      value={book.status}
+                      onChange={e => handleAtualizarStatus(e.target.value)}
+                      disabled={atualizandoStatus}
+                    >
+                      <option value="QUERO LER">📚 Quero Ler</option>
+                      <option value="LENDO">📖 Lendo</option>
+                      <option value="LIDO">✅ Lido</option>
+                      <option value="RECOMENDADO">⭐ Recomendado</option>
+                    </select>
+                  )}
+                </>
               )}
             </div>
           </div>
