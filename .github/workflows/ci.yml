@@ -32,6 +32,11 @@ jobs:
       - name: Dar permissão ao mvnw
         run: chmod +x mvnw
 
+      - name: Setup Testcontainers Cloud
+        uses: atomicjar/testcontainers-cloud-setup-action@v1
+        with:
+          token: ${{ secrets.TC_CLOUD_TOKEN }}
+
       - name: Build backend e rodar testes
         run: ./mvnw -B clean verify -Pdocker-tests
 
