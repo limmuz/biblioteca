@@ -2,15 +2,15 @@ package com.qs.biblioteca;
 
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@Testcontainers
 public abstract class BaseMongoTest {
 
-    @Container
     @ServiceConnection
     static final MongoDBContainer mongoDBContainer =
             new MongoDBContainer(DockerImageName.parse("mongo:7.0"));
+
+    static {
+        mongoDBContainer.start();
+    }
 }
