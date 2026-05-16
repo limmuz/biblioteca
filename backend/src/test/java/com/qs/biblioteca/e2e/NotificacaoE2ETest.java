@@ -30,7 +30,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @DisplayName("E2E – NotificacaoController (/api/notificacoes)")
-@SuppressWarnings("null")
 class NotificacaoE2ETest extends BaseMongoTest {
 
     @LocalServerPort

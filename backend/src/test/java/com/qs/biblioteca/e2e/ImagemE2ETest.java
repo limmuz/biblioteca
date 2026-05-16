@@ -29,7 +29,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @DisplayName("E2E – ImagemController (POST /api/imagens/upload)")
-@SuppressWarnings("null")
 class ImagemE2ETest extends BaseMongoTest {
 
     @LocalServerPort

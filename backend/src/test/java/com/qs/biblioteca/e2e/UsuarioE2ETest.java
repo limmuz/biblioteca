@@ -26,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @DisplayName("E2E – UsuarioController (/me, /leitores, /pesquisar, /perfil)")
-@SuppressWarnings("null")
 class UsuarioE2ETest extends BaseMongoTest {
 
     @LocalServerPort
