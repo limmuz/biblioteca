@@ -21,7 +21,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
-@SuppressWarnings("null")
 public class AvaliacaoService {
 
     private static final String LIVRO_NAO_ENCONTRADO = "Livro não encontrado";
@@ -196,8 +195,7 @@ public class AvaliacaoService {
         return livroRepository
                 .findOutrosLeitoresPorTituloEAutor(titulo, autor, emailAtual)
                 .stream()
-                .map(l -> usuarioRepository.findByEmailParaAvaliacao(l.getUserEmail()).orElse(null))
-                .filter(Objects::nonNull)
+                .flatMap(l -> usuarioRepository.findByEmailParaAvaliacao(l.getUserEmail()).stream())
                 .distinct()
                 .map(PublicUsuarioResponse::new)
                 .limit(6)

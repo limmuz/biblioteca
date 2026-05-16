@@ -35,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @DisplayName("E2E – AvaliacaoController")
-@SuppressWarnings("null")
 class AvaliacaoE2ETest extends BaseMongoTest {
 
     @LocalServerPort

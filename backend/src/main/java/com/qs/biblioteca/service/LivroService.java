@@ -294,11 +294,12 @@ public class LivroService {
 
     private boolean propagarParaCopia(Livro salvo, Livro copia) {
         Set<String> prot = copia.getCamposProtegidos() != null ? copia.getCamposProtegidos() : Set.of();
-        boolean alterou = atualizarStringSePermitido(prot, "cover", salvo.getCover(), copia.getCover(), copia::setCover);
-        alterou |= atualizarStringSePermitido(prot, "excerpt", salvo.getExcerpt(), copia.getExcerpt(), copia::setExcerpt);
-        alterou |= atualizarStringSePermitido(prot, "language", salvo.getLanguage(), copia.getLanguage(), copia::setLanguage);
-        alterou |= atualizarStringSePermitido(prot, "publisher", salvo.getPublisher(), copia.getPublisher(), copia::setPublisher);
-        alterou |= atualizarStringSePermitido(prot, "publishedDate", salvo.getPublishedDate(), copia.getPublishedDate(), copia::setPublishedDate);
+        boolean c1 = atualizarStringSePermitido(prot, "cover", salvo.getCover(), copia.getCover(), copia::setCover);
+        boolean c2 = atualizarStringSePermitido(prot, "excerpt", salvo.getExcerpt(), copia.getExcerpt(), copia::setExcerpt);
+        boolean c3 = atualizarStringSePermitido(prot, "language", salvo.getLanguage(), copia.getLanguage(), copia::setLanguage);
+        boolean c4 = atualizarStringSePermitido(prot, "publisher", salvo.getPublisher(), copia.getPublisher(), copia::setPublisher);
+        boolean c5 = atualizarStringSePermitido(prot, "publishedDate", salvo.getPublishedDate(), copia.getPublishedDate(), copia::setPublishedDate);
+        boolean alterou = c1 || c2 || c3 || c4 || c5;
         if (!prot.contains("pages") && salvo.getPages() != null && !salvo.getPages().equals(copia.getPages())) {
             copia.setPages(salvo.getPages());
             alterou = true;
@@ -311,7 +312,6 @@ public class LivroService {
         return alterou;
     }
 
-    @SuppressWarnings("null")
     private void propagarMetadata(Livro salvo, String emailEditor, String tituloOriginal, String autorOriginal) {
         List<Livro> copias = copiasDaMesmaObra(salvo, emailEditor, tituloOriginal, autorOriginal);
         if (copias.isEmpty()) return;

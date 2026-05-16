@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/livros")
-@SuppressWarnings("null")
 public class LivroController {
 
     private final LivroService livroService;
