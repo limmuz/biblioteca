@@ -58,6 +58,7 @@ export default function DetalhesLivroPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [adicionando, setAdicionando] = useState(false);
+  const [atualizandoStatus, setAtualizandoStatus] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -191,14 +192,17 @@ export default function DetalhesLivroPage() {
     }
   };
 
-  const handleComecarLer = async () => {
-    setToastVisible(false);
+  const handleAtualizarStatus = async (novoStatus) => {
+    if (!book || atualizandoStatus) return;
+    setAtualizandoStatus(true);
     try {
-      await api.put(`/livros/${book.id}`, { ...book, status: 'LENDO' });
+      await api.put(`/livros/${book.id}`, { ...book, status: novoStatus });
+      setBook({ ...book, status: novoStatus });
     } catch (err) {
       console.error(err);
+    } finally {
+      setAtualizandoStatus(false);
     }
-    navigate(`/leitura/${book.id}`);
   };
 
   const handleRemoverFavoritos = async () => {
@@ -313,18 +317,23 @@ export default function DetalhesLivroPage() {
             <h1 className={styles.bookTitle}>{book.title}</h1>
             <p className={styles.bookAuthor}>por {book.author}</p>
             <div className={styles.heroButtons}>
-              <button className={styles.btnLer} onClick={handleComecarLer}>
-                Ler
-              </button>
-              {!['QUERO LER', 'LENDO', 'LIDO'].includes(book.status) && (
+              {!['QUERO LER', 'LENDO', 'LIDO', 'RECOMENDADO'].includes(book.status) && (
                 <button className={styles.btnAdicionar} onClick={handleAdicionarFavoritos} disabled={adicionando}>
                   {adicionando ? 'Adicionando...' : 'Adicionar à lista'}
                 </button>
               )}
               {statusInfo && (
-                <span className={`${styles.statusBadge} ${statusInfo.cls}`}>
-                  {statusInfo.icon} {statusInfo.label}
-                </span>
+                <select
+                  className={styles.statusSelect}
+                  value={book.status}
+                  onChange={e => handleAtualizarStatus(e.target.value)}
+                  disabled={atualizandoStatus}
+                >
+                  <option value="QUERO LER">📚 Quero Ler</option>
+                  <option value="LENDO">📖 Lendo</option>
+                  <option value="LIDO">✅ Lido</option>
+                  <option value="RECOMENDADO">⭐ Recomendado</option>
+                </select>
               )}
             </div>
           </div>
@@ -608,7 +617,6 @@ export default function DetalhesLivroPage() {
             <p className={styles.toastMsg}>O livro foi adicionado à sua lista de leituras</p>
           </div>
           <div className={styles.toastActions}>
-            <button className={styles.btnToastPrimary} onClick={handleComecarLer}>Começar a ler</button>
             <button className={styles.btnToastSecondary} onClick={handleRemoverFavoritos}>Remover da lista</button>
           </div>
         </div>
