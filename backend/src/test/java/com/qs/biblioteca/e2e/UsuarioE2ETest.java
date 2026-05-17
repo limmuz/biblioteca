@@ -20,8 +20,6 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Map;
 import java.util.Objects;
 
-import org.springframework.web.client.HttpClientErrorException;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("docker")
