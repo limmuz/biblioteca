@@ -157,6 +157,7 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | Testes de integração | `LivroServiceIntegrationTest.java` |
 | Testes E2E / Caixa Preta | `AuthE2ETest.java` + `LivroE2ETest.java` + `AvaliacaoE2ETest.java` + `UsuarioE2ETest.java` + `ImagemE2ETest.java` + `NotificacaoE2ETest.java` |
 | Integração com API externa real | ViaCEP (busca de CEP no cadastro) — teste real via `ViaCepIntegrationTest.java` |
+| VCR (Video Cassette Recorder) | Respostas reais do ViaCEP gravadas em cassetes JSON; WireMock reproduz sem rede no CI — `ViaCepServiceVcrTest.java` |
 | Upload de imagem via Cloudinary | Avatar enviado para Cloudinary e URL armazenada no banco; endpoint `/api/imagens/upload` |
 | RF-20 (Upload de avatar) | Implementado com `ImagemController` + `CloudinaryService` |
 | RF-21 (Notificações de atividade) | Implementado com `NotificacaoController` + `NotificacaoService`; seguidores recebem notificação quando um leitor avalia um livro; contagem de não lidas e marcar como lidas |
@@ -207,7 +208,10 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | `NotificacaoE2ETest.java` | `backend/src/test/java/com/qs/biblioteca/e2e/` | RF-21 + RF-24 (notificações: listar, contagem, marcar como lidas, excluir por ID; 401 sem token em cada endpoint) |
 | `LivroServiceIntegrationTest.java` | `backend/src/test/java/com/qs/biblioteca/integration/` | RF-04 a RF-07 + RF-23 (integração com MongoDB, incluindo naoTenho e enriquecimento de metadados) |
 | `ViaCepIntegrationTest.java` | `backend/src/test/java/com/qs/biblioteca/integration/` | RF-09 (integração real com API ViaCEP — sem mocks) |
+| `ViaCepServiceVcrTest.java` | `backend/src/test/java/com/qs/biblioteca/integration/` | RF-09 — padrão VCR: cassetes gravados da API real reproduzidos via WireMock (sem rede, sem mocks) |
 | `LivroValidatorParamTest.java` | `backend/src/test/java/com/qs/biblioteca/unit/` | Validações de negócio (unitário parametrizado — caixa branca) |
+| `UsuarioValidatorTest.java` | `backend/src/test/java/com/qs/biblioteca/unit/` | Regras de validação do cadastro de usuário (nome, e-mail, senha) |
+| `GlobalExceptionHandlerTest.java` | `backend/src/test/java/com/qs/biblioteca/unit/` | Handler global de exceções: ResourceNotFoundException → 404, ResponseStatusException → status correto, exceção genérica → 500 |
 
 ---
 
@@ -235,6 +239,7 @@ Se todos os testes passarem, você verá `BUILD SUCCESS`. O relatório de cobert
 | Testcontainers | 1.21.3 | MongoDB real nos testes |
 | JaCoCo | 0.8.12 | Relatório de cobertura de testes |
 | ViaCEP | API pública | API externa real de consulta de CEP (integração real nos testes) |
+| WireMock | 3.9.1 | Servidor HTTP local para reproduzir cassetes VCR nos testes (sem rede) |
 | Cloudinary | SDK v1.39.0 | Hospedagem de imagens (avatar do perfil) |
 | SonarCloud | - | Análise de qualidade de código |
 | GitHub Actions | - | CI/CD automatizado |
@@ -251,4 +256,4 @@ O pipeline roda automaticamente a cada push:
 
 ---
 
-*Última atualização: 15/05/2026*
+*Última atualização: 16/05/2026*

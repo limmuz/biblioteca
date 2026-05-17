@@ -69,11 +69,10 @@ class ImagemE2ETest extends BaseMongoTest {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
 
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(uploadUrl, HttpMethod.POST,
-                            new HttpEntity<>(body, headers), String.class)
-            );
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(uploadUrl, HttpMethod.POST, entity, String.class));
             assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
         }
 
@@ -87,11 +86,10 @@ class ImagemE2ETest extends BaseMongoTest {
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(jwtToken);
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            HttpEntity<MultiValueMap<String, Object>> entity = new HttpEntity<>(body, headers);
 
-            HttpServerErrorException ex = assertThrows(HttpServerErrorException.class, () ->
-                    restTemplate.exchange(uploadUrl, HttpMethod.POST,
-                            new HttpEntity<>(body, headers), String.class)
-            );
+            HttpServerErrorException ex = assertThrows(HttpServerErrorException.class,
+                    () -> restTemplate.exchange(uploadUrl, HttpMethod.POST, entity, String.class));
             assertEquals(HttpStatus.SERVICE_UNAVAILABLE, ex.getStatusCode());
         }
     }

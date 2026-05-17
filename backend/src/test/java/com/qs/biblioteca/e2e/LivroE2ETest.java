@@ -77,6 +77,24 @@ class LivroE2ETest extends BaseMongoTest {
     }
 
     @Nested
+    @DisplayName("POST /api/livros – duplicado")
+    class CriarLivroDuplicadoTests {
+
+        @Test
+        @DisplayName("Deve retornar 409 ao criar livro com titulo e autor ja existentes")
+        void criar_livroDuplicado_deveRetornar409() {
+            restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro Unico", "Autor Unico"), headersComJwt()), Livro.class);
+
+            String url = livrosUrl;
+            HttpEntity<Livro> entity = new HttpEntity<>(novoLivro("Livro Unico", "Autor Unico"), headersComJwt());
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.POST, entity, Livro.class));
+            assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+        }
+    }
+
+    @Nested
     @DisplayName("GET /api/livros")
     class ListarLivrosTests {
 
@@ -146,10 +164,10 @@ class LivroE2ETest extends BaseMongoTest {
         @Test
         @DisplayName("Deve retornar 404 para ID inexistente")
         void buscarPorId_inexistente_deveRetornar404() {
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/id-inexistente-xyz", HttpMethod.GET,
-                            new HttpEntity<>(headersComJwt()), Livro.class)
-            );
+            String url = livrosUrl + "/id-inexistente-xyz";
+            HttpEntity<Void> entity = new HttpEntity<>(headersComJwt());
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.GET, entity, Livro.class));
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
         }
     }
@@ -178,6 +196,30 @@ class LivroE2ETest extends BaseMongoTest {
     }
 
     @Nested
+    @DisplayName("PUT /api/livros/{id} – acesso negado")
+    class AtualizarLivroAcessoNegadoTests {
+
+        @Test
+        @DisplayName("Deve retornar 403 ao tentar atualizar livro de outro usuario")
+        void atualizar_livroDeOutroUsuario_deveRetornar403() {
+            ResponseEntity<Livro> criado = restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro Alheio", "Autor X"), headersComJwt()), Livro.class);
+            String id = Objects.requireNonNull(Objects.requireNonNull(criado.getBody()).getId());
+
+            String token2 = registrarEObterToken("outro403@email.com", "senha456");
+            HttpHeaders h2 = new HttpHeaders();
+            h2.setContentType(MediaType.APPLICATION_JSON);
+            h2.setBearerAuth(token2);
+
+            String url = livrosUrl + "/" + id;
+            HttpEntity<Livro> entity = new HttpEntity<>(novoLivro("Titulo Alterado", "Autor X"), h2);
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.PUT, entity, Livro.class));
+            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        }
+    }
+
+    @Nested
     @DisplayName("DELETE /api/livros/{id}")
     class RemoverLivroTests {
 
@@ -198,11 +240,30 @@ class LivroE2ETest extends BaseMongoTest {
         @Test
         @DisplayName("Deve retornar 404 ao tentar remover livro inexistente")
         void remover_inexistente_deveRetornar404() {
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/id-inexistente-xyz", HttpMethod.DELETE,
-                            new HttpEntity<>(headersComJwt()), Void.class)
-            );
+            String url = livrosUrl + "/id-inexistente-xyz";
+            HttpEntity<Void> entity = new HttpEntity<>(headersComJwt());
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.DELETE, entity, Void.class));
             assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 403 ao tentar remover livro de outro usuario")
+        void remover_livroDeOutroUsuario_deveRetornar403() {
+            ResponseEntity<Livro> criado = restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro Protegido", "Autor P"), headersComJwt()), Livro.class);
+            String id = Objects.requireNonNull(Objects.requireNonNull(criado.getBody()).getId());
+
+            String token2 = registrarEObterToken("deletar403@email.com", "senha456");
+            HttpHeaders h2 = new HttpHeaders();
+            h2.setContentType(MediaType.APPLICATION_JSON);
+            h2.setBearerAuth(token2);
+
+            String url = livrosUrl + "/" + id;
+            HttpEntity<Void> entity = new HttpEntity<>(h2);
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.DELETE, entity, Void.class));
+            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
         }
     }
 
@@ -280,6 +341,62 @@ class LivroE2ETest extends BaseMongoTest {
     }
 
     @Nested
+    @DisplayName("GET /api/livros/comunidade")
+    class ComunidadeTests {
+
+        @Test
+        @DisplayName("Deve retornar livros da comunidade de outros usuarios")
+        void comunidade_deveRetornarLivros() {
+            String token2 = registrarEObterToken("comunidade@email.com", "senha456");
+            HttpHeaders h2 = new HttpHeaders();
+            h2.setContentType(MediaType.APPLICATION_JSON);
+            h2.setBearerAuth(token2);
+            restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro da Comunidade", "Autor Comun"), h2), Livro.class);
+
+            ResponseEntity<Livro[]> response = restTemplate.exchange(
+                    livrosUrl + "/comunidade", HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt()), Livro[].class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/livros/recomendados")
+    class RecomendadosTests {
+
+        @Test
+        @DisplayName("Deve retornar lista vazia quando autor e categorias estao ausentes")
+        void recomendados_semParams_deveRetornarListaVazia() {
+            ResponseEntity<Livro[]> response = restTemplate.exchange(
+                    livrosUrl + "/recomendados", HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt()), Livro[].class);
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertEquals(0, Objects.requireNonNull(response.getBody()).length);
+        }
+
+        @Test
+        @DisplayName("Deve retornar recomendados quando autor e titulo sao fornecidos")
+        void recomendados_comAutor_deveRetornarLista() {
+            String token2 = registrarEObterToken("recom@email.com", "senha456");
+            HttpHeaders h2 = new HttpHeaders();
+            h2.setContentType(MediaType.APPLICATION_JSON);
+            h2.setBearerAuth(token2);
+            restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro do Autor Recom", "Autor Recom"), h2), Livro.class);
+
+            ResponseEntity<Livro[]> response = restTemplate.exchange(
+                    livrosUrl + "/recomendados?autor=Autor+Recom&titulo=Outro+Titulo", HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt()), Livro[].class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+        }
+    }
+
+    @Nested
     @DisplayName("DELETE /api/livros/{id}/permanente")
     class ExcluirPermanenteTests {
 
@@ -309,10 +426,10 @@ class LivroE2ETest extends BaseMongoTest {
             headers2.setContentType(MediaType.APPLICATION_JSON);
             headers2.setBearerAuth(token2);
 
-            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
-                    restTemplate.exchange(livrosUrl + "/" + id + "/permanente", HttpMethod.DELETE,
-                            new HttpEntity<>(headers2), Void.class)
-            );
+            String url = livrosUrl + "/" + id + "/permanente";
+            HttpEntity<Void> entity2 = new HttpEntity<>(headers2);
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.DELETE, entity2, Void.class));
             assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
         }
     }

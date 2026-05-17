@@ -21,6 +21,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
@@ -230,6 +231,50 @@ class AvaliacaoE2ETest extends BaseMongoTest {
         );
 
         assertEquals(HttpStatus.NO_CONTENT, deleteRespostaRes.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("Nao deve curtir a propria avaliacao — deve retornar 400")
+    void curtir_propriaAvaliacao_deveRetornar400() {
+        String idLivro = Objects.requireNonNull(livroSalvo.getId());
+        String urlPost = baseUrl + "/api/avaliacoes/livro/" + idLivro;
+        ResponseEntity<String> avaliacaoRes = restTemplate.exchange(
+                urlPost, HttpMethod.POST,
+                new HttpEntity<>("{\"rating\": 5, \"comentario\": \"Meu comentario\"}", headersComJwt(jwtToken)),
+                String.class
+        );
+        String avaliacaoId = extractId(Objects.requireNonNull(avaliacaoRes.getBody()));
+
+        String url = baseUrl + "/api/avaliacoes/" + avaliacaoId + "/curtir";
+        HttpEntity<Void> entity = new HttpEntity<>(headersComJwt(jwtToken));
+        HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                () -> restTemplate.exchange(url, HttpMethod.POST, entity, String.class));
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("Nao deve excluir resposta de outro usuario — deve retornar 403")
+    void excluirResposta_deOutroUsuario_deveRetornar403() {
+        String idLivro = Objects.requireNonNull(livroSalvo.getId());
+        ResponseEntity<String> avaliacaoRes = restTemplate.exchange(
+                baseUrl + "/api/avaliacoes/livro/" + idLivro, HttpMethod.POST,
+                new HttpEntity<>("{\"rating\": 4, \"comentario\": \"Comentario\"}", headersComJwt(jwtToken)),
+                String.class
+        );
+        String avaliacaoId = extractId(Objects.requireNonNull(avaliacaoRes.getBody()));
+
+        ResponseEntity<String> respostaRes = restTemplate.exchange(
+                baseUrl + "/api/avaliacoes/" + avaliacaoId + "/responder", HttpMethod.POST,
+                new HttpEntity<>("{\"texto\": \"Resposta do usuario2\"}", headersComJwt(jwtToken2)),
+                String.class
+        );
+        String respostaId = extractRespostaId(Objects.requireNonNull(respostaRes.getBody()));
+
+        String url = baseUrl + "/api/avaliacoes/" + avaliacaoId + "/resposta/" + respostaId;
+        HttpEntity<Void> entity = new HttpEntity<>(headersComJwt(jwtToken));
+        HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                () -> restTemplate.exchange(url, HttpMethod.DELETE, entity, Void.class));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
     }
 
     private String extractId(String json) {

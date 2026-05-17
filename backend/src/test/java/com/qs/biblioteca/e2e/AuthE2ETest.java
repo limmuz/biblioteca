@@ -16,6 +16,9 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
 
@@ -257,6 +260,25 @@ class AuthE2ETest extends BaseMongoTest {
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class, () ->
                     restTemplate.postForEntity(baseUrl + "/login", request, String.class));
             assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        }
+    }
+
+    @Nested
+    @DisplayName("JWT filter")
+    class JwtFilterTests {
+
+        @Test
+        @DisplayName("Deve retornar 401 para token JWT malformado")
+        void requisicao_comJwtMalformado_deveRetornar401() {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth("token.invalido.malformado");
+            String url = "http://localhost:" + port + "/api/livros";
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.GET, entity, String.class));
+
+            assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
         }
     }
 

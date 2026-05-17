@@ -3,8 +3,10 @@ package com.qs.biblioteca.integration;
 import com.qs.biblioteca.BaseMongoTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
@@ -69,15 +71,20 @@ class ViaCepIntegrationTest extends BaseMongoTest {
         assertEquals("SP", body.get("uf"));
     }
 
-    @Test
-    @DisplayName("deve retornar 404 para CEP inexistente")
-    void buscarCep_invalido_deveRetornar404() {
-        String url = "http://localhost:" + port + "/api/cep/00000-000";
+    @ParameterizedTest(name = "[{index}] {0} deve retornar HTTP {1}")
+    @CsvSource({
+        "00000-000, 404",
+        "01310100,  400",
+        "ABCDE-123, 400"
+    })
+    @DisplayName("deve retornar erro para CEP inexistente ou com formato inválido")
+    void buscarCep_invalido_deveRetornarErroCorrerto(String cep, int expectedStatus) {
+        String url = "http://localhost:" + port + "/api/cep/" + cep;
 
         HttpClientErrorException ex = assertThrows(
                 HttpClientErrorException.class,
                 () -> restTemplate.getForEntity(url, Map.class));
 
-        assertEquals(404, ex.getStatusCode().value());
+        assertEquals(expectedStatus, ex.getStatusCode().value());
     }
 }

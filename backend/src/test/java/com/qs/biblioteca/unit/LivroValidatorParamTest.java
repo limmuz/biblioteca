@@ -131,9 +131,11 @@ class LivroValidatorParamTest {
         @ValueSource(strings = {
                 "https://example.com/capa.jpg",
                 "http://cdn.livros.com/img/abc.png",
-                "https://books.google.com/thumbnail?id=123"
+                "https://books.google.com/thumbnail?id=123",
+                "/capas/livro.jpg",
+                "/imagens/capa.png"
         })
-        @DisplayName("URL de capa com protocolo http/https deve ser válida")
+        @DisplayName("URL de capa com protocolo http/https ou caminho local deve ser válida")
         void coverComProtocolo_deveSerValida(String cover) {
             assertTrue(LivroValidator.isCoverValido(cover));
         }
