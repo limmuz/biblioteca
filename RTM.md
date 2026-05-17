@@ -1070,7 +1070,7 @@ Teste → ViaCepService → WireMock (lê o cassete) → resposta real gravada
 - Relatório gerado com: `./mvnw clean verify`
 - Abrir localmente: `backend/target/site/jacoco/index.html`
 
-![Relatório JaCoCo](./img/jacoco.png)
+![Relatório JaCoCo](./img/Jacoco.png)
 
 ---
 
