@@ -20,6 +20,8 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Map;
 import java.util.Objects;
 
+import org.springframework.web.client.HttpClientErrorException;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag("docker")
@@ -115,6 +117,35 @@ class UsuarioE2ETest extends BaseMongoTest {
             assertEquals(HttpStatus.OK, response.getStatusCode());
             Map<String, Object> body = Objects.requireNonNull(response.getBody());
             assertEquals("Ana Atualizada", body.get("nome"));
+        }
+
+        @Test
+        @DisplayName("Deve atualizar nickname, metaLeitura e perfilPublico")
+        void atualizar_camposExtras_deveAtualizarTodos() {
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    baseUrl + "/usuarios/me",
+                    HttpMethod.PUT,
+                    comTokenEJson("{\"nickname\": \"nickextra\", \"bio\": \"Leitora apaixonada\", \"metaLeitura\": 24, \"perfilPublico\": true}"),
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            Map<String, Object> body = Objects.requireNonNull(response.getBody());
+            assertEquals("nickextra", body.get("nickname"));
+        }
+
+        @Test
+        @DisplayName("Deve atualizar listas de telefones e redesSociais")
+        void atualizar_listas_deveAtualizar() {
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    baseUrl + "/usuarios/me",
+                    HttpMethod.PUT,
+                    comTokenEJson("{\"telefones\": [\"11999999999\"], \"redesSociais\": [\"@ana\"]}"),
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
         }
 
         @Test
@@ -225,6 +256,22 @@ class UsuarioE2ETest extends BaseMongoTest {
         }
 
         @Test
+        @DisplayName("Deve retornar 403 para perfil privado acessado por nickname")
+        void perfilPorNickname_perfilPrivado_deveRetornar403() {
+            restTemplate.exchange(
+                    baseUrl + "/usuarios/me",
+                    HttpMethod.PUT,
+                    comTokenEJson("{\"nickname\": \"nickprivado\", \"perfilPublico\": false}"),
+                    Void.class
+            );
+
+            String url = baseUrl + "/usuarios/perfil/nickprivado";
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.GET, comToken(), String.class));
+            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
+        }
+
+        @Test
         @DisplayName("Deve retornar perfil publico pelo ID do usuario")
         void perfilPorId_deveRetornarPerfil() {
             ResponseEntity<Map<String, Object>> meRes = restTemplate.exchange(
@@ -251,6 +298,23 @@ class UsuarioE2ETest extends BaseMongoTest {
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 403 para perfil privado acessado pelo ID")
+        void perfilPorId_perfilPrivado_deveRetornar403() {
+            ResponseEntity<Map<String, Object>> meRes = restTemplate.exchange(
+                    baseUrl + "/usuarios/me",
+                    HttpMethod.GET,
+                    comToken(),
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+            String id = (String) Objects.requireNonNull(meRes.getBody()).get("id");
+
+            String url = baseUrl + "/usuarios/perfil/id/" + id;
+            HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
+                    () -> restTemplate.exchange(url, HttpMethod.GET, comToken(), String.class));
+            assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
         }
     }
 

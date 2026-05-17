@@ -341,6 +341,62 @@ class LivroE2ETest extends BaseMongoTest {
     }
 
     @Nested
+    @DisplayName("GET /api/livros/comunidade")
+    class ComunidadeTests {
+
+        @Test
+        @DisplayName("Deve retornar livros da comunidade de outros usuarios")
+        void comunidade_deveRetornarLivros() {
+            String token2 = registrarEObterToken("comunidade@email.com", "senha456");
+            HttpHeaders h2 = new HttpHeaders();
+            h2.setContentType(MediaType.APPLICATION_JSON);
+            h2.setBearerAuth(token2);
+            restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro da Comunidade", "Autor Comun"), h2), Livro.class);
+
+            ResponseEntity<Livro[]> response = restTemplate.exchange(
+                    livrosUrl + "/comunidade", HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt()), Livro[].class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/livros/recomendados")
+    class RecomendadosTests {
+
+        @Test
+        @DisplayName("Deve retornar lista vazia quando autor e categorias estao ausentes")
+        void recomendados_semParams_deveRetornarListaVazia() {
+            ResponseEntity<Livro[]> response = restTemplate.exchange(
+                    livrosUrl + "/recomendados", HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt()), Livro[].class);
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertEquals(0, Objects.requireNonNull(response.getBody()).length);
+        }
+
+        @Test
+        @DisplayName("Deve retornar recomendados quando autor e titulo sao fornecidos")
+        void recomendados_comAutor_deveRetornarLista() {
+            String token2 = registrarEObterToken("recom@email.com", "senha456");
+            HttpHeaders h2 = new HttpHeaders();
+            h2.setContentType(MediaType.APPLICATION_JSON);
+            h2.setBearerAuth(token2);
+            restTemplate.exchange(livrosUrl, HttpMethod.POST,
+                    new HttpEntity<>(novoLivro("Livro do Autor Recom", "Autor Recom"), h2), Livro.class);
+
+            ResponseEntity<Livro[]> response = restTemplate.exchange(
+                    livrosUrl + "/recomendados?autor=Autor+Recom&titulo=Outro+Titulo", HttpMethod.GET,
+                    new HttpEntity<>(headersComJwt()), Livro[].class);
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+        }
+    }
+
+    @Nested
     @DisplayName("DELETE /api/livros/{id}/permanente")
     class ExcluirPermanenteTests {
 
