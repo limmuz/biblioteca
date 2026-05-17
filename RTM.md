@@ -1064,10 +1064,13 @@ Teste → ViaCepService → WireMock (lê o cassete) → resposta real gravada
 ## Cobertura de Código (JaCoCo)
 
 - **Cobertura mínima exigida: 80%** — check JaCoCo aprovado no CI
+- **Cobertura de linhas atingida: 88.6%** — acima do mínimo exigido
+- Pacotes com maior cobertura: `validator` (97%), `exception` (98%), `config` (100%)
+- Pacotes de serviço: `controller` 88%, `security` 90%
 - Relatório gerado com: `./mvnw clean verify`
 - Abrir localmente: `backend/target/site/jacoco/index.html`
 
-![Relatório JaCoCo](./img/Jacoco.png)
+![Relatório JaCoCo](./img/jacoco.png)
 
 ---
 
@@ -1075,18 +1078,28 @@ Teste → ViaCepService → WireMock (lê o cassete) → resposta real gravada
 
 | Item | Evidência | Status |
 |---|---|---|
-| Cobertura JaCoCo ≥ 80% | `img/Jacoco.png` — check aprovado no CI | ✅ |
-| SonarCloud — Quality Gate | Passed — 0 issues, Security A, Reliability A, Maintainability A | ✅ |
-| GitHub Actions (CI) | Pipeline verde — backend ✅ frontend ✅ sonarcloud ✅ | ✅ |
+| Cobertura JaCoCo ≥ 80% | 88.6% de cobertura de linhas — check aprovado no CI | ✅ |
+| SonarCloud — Quality Gate | **Passed** — todas as condições aprovadas | ✅ |
+| SonarCloud — Cobertura | 91.6% — acima do mínimo exigido | ✅ |
+| SonarCloud — Duplicações | 0.0% | ✅ |
+| SonarCloud — Security Rating | A — 0 issues de segurança, 0 hotspots | ✅ |
+| SonarCloud — Reliability Rating | A — 0 issues de confiabilidade | ✅ |
+| SonarCloud — Maintainability Rating | A — 1 issue de manutenibilidade | ✅ |
+| GitHub Actions (CI) | Pipeline #92 verde — backend ✅ frontend ✅ sonarcloud ✅ em 2m 34s | ✅ |
 | Link SonarCloud | https://sonarcloud.io/project/overview?id=AnaPaula2024_biblioteca | ✅ |
 | Link GitHub Actions | https://github.com/AnaPaula2024/biblioteca/actions | ✅ |
 
 ### GitHub Actions — Pipeline Verde
 
-![GitHub Actions — detalhe do pipeline](./img/Github-3.png)
+![GitHub Actions — pipeline verde](./img/githubaction.png)
 
-![GitHub Actions — histórico de execuções](./img/github-.png)
+### SonarCloud — Quality Gate Passed
 
-### SonarCloud — Quality Gate
+- **Quality Gate Status:** Passed — All conditions passed
+- **Cobertura geral:** 91.6% (+5.5% vs últimos 30 dias)
+- **Duplicações:** 0.0% (-100% vs últimos 30 dias)
+- **Security Rating:** A — 0 issues, 100% Safe (hotspots)
+- **Reliability Rating:** A — 0 issues
+- **Maintainability Rating:** A — 1 issue (-96.5% vs últimos 30 dias)
 
-![SonarCloud Overview](./img/Sonar-3.png)
+![SonarCloud Overview — Quality Gate Passed](./img/sonarcloud.png)
