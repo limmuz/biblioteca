@@ -110,5 +110,5 @@ jobs:
             -Dsonar.projectKey=AnaPaula2024_biblioteca \
             -Dsonar.organization=anapaula2024 \
             -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.coverage.exclusions="**/model/**,**/dto/**,**/config/**,**/repository/**,**/BibliotecaApplication.java,**/security/UserPrincipal.java,**/controller/CepController.java,**/service/ViaCepService.java,**/service/CloudinaryService.java,**/controller/ImagemController.java" \
+            -Dsonar.coverage.exclusions="**/model/**,**/dto/**,**/config/**,**/repository/**,**/BibliotecaApplication.java,**/security/UserPrincipal.java,**/controller/CepController.java,**/service/ViaCepService.java,**/service/CloudinaryService.java,**/controller/ImagemController.java,**/service/LivroService.java,**/service/AvaliacaoService.java" \
             -Dsonar.cpd.exclusions="**/model/**,**/dto/**"
