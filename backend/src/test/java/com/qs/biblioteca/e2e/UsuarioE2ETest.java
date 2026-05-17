@@ -147,6 +147,38 @@ class UsuarioE2ETest extends BaseMongoTest {
         }
 
         @Test
+        @DisplayName("Deve atualizar lista de enderecos do usuario")
+        void atualizar_comEnderecos_deveAtualizar() {
+            String payload = "{\"enderecos\": [{\"cep\": \"01310-100\", \"logradouro\": \"Av. Paulista\","
+                    + " \"numero\": \"1578\", \"complemento\": \"Apto 10\","
+                    + " \"bairro\": \"Bela Vista\", \"cidade\": \"Sao Paulo\", \"uf\": \"SP\"}]}";
+
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    baseUrl + "/usuarios/me",
+                    HttpMethod.PUT,
+                    comTokenEJson(payload),
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+        }
+
+        @Test
+        @DisplayName("Deve atualizar leitoresSeguidos do usuario")
+        void atualizar_comLeitoresSeguidos_deveAtualizar() {
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    baseUrl + "/usuarios/me",
+                    HttpMethod.PUT,
+                    comTokenEJson("{\"leitoresSeguidos\": [\"id-leitor-1\", \"id-leitor-2\"]}"),
+                    new org.springframework.core.ParameterizedTypeReference<Map<String, Object>>() {}
+            );
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+        }
+
+        @Test
         @DisplayName("Deve retornar 401 ao tentar atualizar sem token")
         void atualizar_semToken_deveRetornar401() {
             HttpHeaders headers = new HttpHeaders();
@@ -226,6 +258,20 @@ class UsuarioE2ETest extends BaseMongoTest {
 
             assertEquals(HttpStatus.OK, response.getStatusCode());
         }
+
+        @Test
+        @DisplayName("Deve retornar lista vazia quando termo nao corresponde a nenhum nome")
+        void pesquisar_semResultadoPorNome_usaFallbackNickname() {
+            ResponseEntity<Object[]> response = restTemplate.exchange(
+                    baseUrl + "/usuarios/pesquisar?q=xyztermoquenoexiste99",
+                    HttpMethod.GET,
+                    comToken(),
+                    Object[].class
+            );
+
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
+        }
     }
 
     @Nested
@@ -264,8 +310,9 @@ class UsuarioE2ETest extends BaseMongoTest {
             );
 
             String url = baseUrl + "/usuarios/perfil/nickprivado";
+            HttpEntity<Void> tokenEntity = comToken();
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
-                    () -> restTemplate.exchange(url, HttpMethod.GET, comToken(), String.class));
+                    () -> restTemplate.exchange(url, HttpMethod.GET, tokenEntity, String.class));
             assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
         }
 
@@ -309,9 +356,17 @@ class UsuarioE2ETest extends BaseMongoTest {
             );
             String id = (String) Objects.requireNonNull(meRes.getBody()).get("id");
 
+            restTemplate.exchange(
+                    baseUrl + "/usuarios/me",
+                    HttpMethod.PUT,
+                    comTokenEJson("{\"perfilPublico\": false}"),
+                    Void.class
+            );
+
             String url = baseUrl + "/usuarios/perfil/id/" + id;
+            HttpEntity<Void> tokenEntity = comToken();
             HttpClientErrorException ex = assertThrows(HttpClientErrorException.class,
-                    () -> restTemplate.exchange(url, HttpMethod.GET, comToken(), String.class));
+                    () -> restTemplate.exchange(url, HttpMethod.GET, tokenEntity, String.class));
             assertEquals(HttpStatus.FORBIDDEN, ex.getStatusCode());
         }
     }

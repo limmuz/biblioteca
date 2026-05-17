@@ -12,7 +12,7 @@
 | RF-06 | Atualizar livro | E2E / Integração | `LivroE2ETest.java` (`AtualizarLivroTests`) + `LivroServiceIntegrationTest.java` | ✅ Implementado |
 | RF-07 | Excluir livro (soft delete — remove apenas da biblioteca do usuário) | E2E / Integração | `LivroE2ETest.java` (`RemoverLivroTests`) + `LivroServiceIntegrationTest.java` | ✅ Implementado |
 | RF-08 | Gerenciar sessão (usuário autenticado) | E2E / Caixa Preta | `UsuarioE2ETest.java` (`MeTests`) — GET /me com token (200) e sem token (401) | ✅ Implementado |
-| RF-09 | Consultar CEP via API externa (ViaCEP) | Integração / API Real + Parameterizado | `ViaCepIntegrationTest.java` — GET /api/cep/{cep} contra ViaCEP real; CEP válido (200); `@ParameterizedTest` cobre: inexistente (404), sem formatação (400), formato inválido (400) | ✅ Implementado |
+| RF-09 | Consultar CEP via API externa (ViaCEP) | Integração / API Real + VCR + Parameterizado | `ViaCepIntegrationTest.java` — GET /api/cep/{cep} contra ViaCEP real; CEP válido (200); `@ParameterizedTest` cobre: inexistente (404), sem formatação (400), formato inválido (400) · `ViaCepServiceVcrTest.java` — VCR com cassetes gravados da API real (WireMock): CEP válido, inexistente, nulo, insuficiente | ✅ Implementado |
 | RF-10 | Avaliar livro com estrelas e comentário | E2E / Caixa Preta | `AvaliacaoE2ETest.java` (`criarAvaliacao`) | ✅ Implementado |
 | RF-11 | Visualizar avaliações de outros leitores | E2E / Caixa Preta | `AvaliacaoE2ETest.java` (`listarAvaliacoes`) | ✅ Implementado |
 | RF-12 | Calcular média de avaliações por livro | E2E / Caixa Preta | `AvaliacaoE2ETest.java` (`mediasDeveRetornarLista`) | ✅ Implementado |
@@ -989,13 +989,75 @@ sequenceDiagram
 |---|---|---|---|
 | Unitário / Caixa Branca parametrizado | `LivroValidatorParamTest.java` | JUnit 5 `@ParameterizedTest` | Valida regras de negócio do `LivroValidator` com 50+ cenários (`@CsvSource`, `@ValueSource`, `@MethodSource`, `@NullAndEmptySource`) |
 | Integração com banco real | `LivroServiceIntegrationTest.java` | Testcontainers + MongoDB 7.0 | Testa `LivroRepository` e `LivroService` com MongoDB real e efêmero; inclui cenários de `naoTenho` e enriquecimento de metadados |
+| Unitário / Caixa Branca | `UsuarioValidatorTest.java` | JUnit 5 | Valida regras de negócio do `UsuarioValidator`: nome, e-mail e senha válidos/inválidos; `RegisterRequest` completo e incompleto |
+| Unitário / Caixa Branca | `GlobalExceptionHandlerTest.java` | JUnit 5 | Testa o `GlobalExceptionHandler`: `ResourceNotFoundException` → 404, `ResponseStatusException` com mensagem → status correto, exception genérica → 500 |
 | Integração com API externa real + Parameterizado | `ViaCepIntegrationTest.java` | Testcontainers + RestTemplate + ViaCEP real | Testa `GET /api/cep/{cep}` contra API ViaCEP real (sem simulação): CEP válido 200 + `@ParameterizedTest` (`@CsvSource`) cobre inexistente 404, sem formatação 400, formato inválido 400 |
+| VCR — cassetes gravados da API real | `ViaCepServiceVcrTest.java` | WireMock 3.x (`@WireMockTest`) | Testa `ViaCepService` com respostas reais gravadas do ViaCEP (cassetes em `/vcr/`): CEP válido retorna logradouro e UF, CEP inexistente retorna campo `erro`, CEP nulo e CEP curto retornam mapa vazio sem consultar a rede |
 | E2E / Caixa Preta | `AuthE2ETest.java` | Testcontainers + RestTemplate | Registro e login via HTTP: token gerado (200), credenciais inválidas (401), email duplicado (400) |
 | E2E / Caixa Preta | `LivroE2ETest.java` | Testcontainers + RestTemplate | CRUD completo: criar (201), listar (vazia, com livros, search), buscar por ID (200, 404), atualizar (200), remover (204, 404), excluir permanente — criador (204), não-criador (403), nao-tenho (livros da comunidade, exclusão do próprio livro), descobrir |
 | E2E / Caixa Preta | `AvaliacaoE2ETest.java` | Testcontainers + RestTemplate | Criar avaliação, listar, excluir, curtir/descurtir (toggle com 2 usuários), responder e excluir resposta, médias, outros leitores |
 | E2E / Caixa Preta | `UsuarioE2ETest.java` | Testcontainers + RestTemplate | GET /me (200, 401), PUT /me (atualizar), DELETE /me (204), listar leitores, pesquisar por nome e @nickname, perfil público por nickname e por ID, buscar por nickname |
 | E2E / Caixa Preta | `ImagemE2ETest.java` | Testcontainers + RestTemplate | POST /api/imagens/upload: sem token (401), Cloudinary não configurado (503) |
 | E2E / Caixa Preta | `NotificacaoE2ETest.java` | Testcontainers + RestTemplate | GET /notificacoes (lista com notificação disparada por avaliação de seguido), GET /notificacoes/contagem (naoLidas), PUT /notificacoes/marcar-lidas (204 + zera contagem), DELETE /notificacoes/{id} (204 + lista fica menor); 401 sem token em todos os endpoints |
+
+---
+
+## Padrão VCR — O que é e por que usamos
+
+### O problema
+
+O projeto consome uma API externa (ViaCEP). Testar com a API real cria dois problemas:
+- O CI pode falhar se o ViaCEP estiver fora do ar ou sem acesso à internet
+- Não se sabe exatamente o que a API vai retornar (pode mudar)
+
+### A solução errada: Mock
+
+Um **mock** inventa uma resposta que nunca existiu de verdade:
+
+```java
+// ERRADO — dado inventado, nunca veio do ViaCEP de verdade
+when(viaCepService.buscar("01310-100")).thenReturn(Map.of("uf", "SP"));
+```
+
+O problema é que se o comportamento real da API mudar, o mock continua passando — e o bug só aparece em produção.
+
+### A solução correta: VCR (Video Cassette Recorder)
+
+O padrão VCR tem duas etapas:
+
+**1. Gravação (feita uma vez, manualmente)**
+Você faz uma chamada real para o ViaCEP e salva a resposta exata num arquivo JSON — o "cassete":
+
+```
+GET https://viacep.com.br/ws/01310100/json
+→ salvo em: src/test/resources/vcr/viacep_01310-100.json
+```
+
+O arquivo contém a resposta real que o ViaCEP retornou: `"logradouro": "Avenida Paulista"`, `"uf": "SP"`, etc. Nenhum dado foi inventado.
+
+**2. Reprodução (a cada execução do teste)**
+O WireMock sobe um servidor HTTP local e serve esse arquivo quando o teste pedir. O `ViaCepService` não sabe que está falando com o WireMock — ele só recebe a resposta real gravada.
+
+```
+Teste → ViaCepService → WireMock (lê o cassete) → resposta real gravada
+```
+
+### Por que não é mock?
+
+| | Mock | VCR |
+|---|---|---|
+| Dados | Inventados pelo desenvolvedor | Gravados da API real |
+| Se a API mudar | Teste continua passando (falso positivo) | Cassete precisa ser regravado |
+| Rede no CI | Não usa | Não usa (reprodução) |
+| Confiança | Baixa | Alta — testou com dado real |
+
+### Como está implementado aqui
+
+- **Cassetes:** `src/test/resources/vcr/viacep_01310-100.json` e `viacep_00000-000.json`
+- **Teste:** `ViaCepServiceVcrTest.java` — usa `@WireMockTest` do WireMock 3.x
+- **Ferramenta:** WireMock 3.9.1 (adicionado no `pom.xml` com `scope=test`)
+- O teste cria o `ViaCepService` apontando para o servidor local do WireMock: `new ViaCepService("http://localhost:" + wm.getHttpPort())`
+- Nenhum `@MockBean`, nenhum `when(...).thenReturn(...)`, nenhum dado inventado
 
 ---
 

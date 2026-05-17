@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Collections;
 import java.util.Map;
@@ -26,11 +27,15 @@ public class ViaCepService {
         this.restTemplate = new RestTemplate(factory);
     }
 
-    @SuppressWarnings({"unchecked", "java:S7044"})
+    @SuppressWarnings("unchecked")
     public Map<String, Object> buscarEnderecoPorCep(String cep) {
         if (cep == null) return Collections.emptyMap();
         String digits = cep.replaceAll("\\D", "");
         if (digits.length() != 8) return Collections.emptyMap();
-        return restTemplate.getForObject(String.format("%s/%s/json", baseUrl, digits), Map.class);
+        String url = UriComponentsBuilder.fromUriString(baseUrl)
+                .pathSegment(digits, "json")
+                .build()
+                .toUriString();
+        return restTemplate.getForObject(url, Map.class);
     }
 }
